@@ -1,0 +1,26 @@
+name = "orvix-api"
+main = "src/index.ts"
+compatibility_date = "2026-09-15"
+compatibility_flags = ["nodejs_compat_v2"]
+
+[assets]
+directory = "../frontend/dist"
+binding = "ASSETS"
+
+[vars]
+FRONTEND_ORIGIN = "http://localhost:5173"
+
+[[r2_buckets]]
+binding = "BOOKS_BUCKET"
+bucket_name = "orvix-books"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "orvix-db"
+database_id = "24851b64-dd3f-4224-b043-3f0ba925d1d5"
+
+# Configure this binding after creating a Cloudflare Hyperdrive config for Neon.
+# [[hyperdrive]]
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "36aa37e2eebd4dafbde5171cbdab58a2"

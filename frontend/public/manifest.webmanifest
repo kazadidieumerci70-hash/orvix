@@ -1,0 +1,22 @@
+{
+  "name": "ORVIX — Assistant d'apprentissage",
+  "short_name": "ORVIX",
+  "description": "Comprenez vos documents, révisez et préparez vos examens avec ORVIX.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#f7faf9",
+  "theme_color": "#0f9f91",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/orvix-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
