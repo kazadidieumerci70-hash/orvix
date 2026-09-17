@@ -714,7 +714,7 @@ function ChatView({
         </div>
       )}
       {messages.map((item, index) => <ChatMessageBubble key={index} item={item} />)}
-      {loading && <div className="message-row assistant"><span className="assistant-avatar">O</span><div className="message-stack"><div className="message reading-state"><span>{readingDocument ? (activeDocument ? `Lecture du Document ${activeDocument.number}` : "Recherche dans vos supports") : "Orvix vous répond"}</span>{readingDocument && <small>{activeDocument?.name || "Recherche des passages pertinents"}</small>}<div className="typing"><i /><i /><i /></div></div></div></div>}
+      {loading && <div className="message-row assistant"><span className="assistant-avatar"><img src="/orvix-logo-transparent.png" alt="Orvix" /></span><div className="message-stack"><div className="message reading-state"><span>{readingDocument ? (activeDocument ? `Lecture du Document ${activeDocument.number}` : "Recherche dans vos supports") : "Orvix vous répond"}</span>{readingDocument && <small>{activeDocument?.name || "Recherche des passages pertinents"}</small>}<div className="typing"><i /><i /><i /></div></div></div></div>}
       <div ref={bottomRef} />
     </div>
     <form ref={composerRef} className={`composer ${composerExpanded ? "has-message" : ""} ${message ? "is-typing" : ""} ${mobileComposer ? "mobile-flat-input" : ""}`} onSubmit={submit}>
@@ -743,7 +743,7 @@ function ChatMessageBubble({ item }: { item: ChatMessage }) {
   const time = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const assistant = item.role === "assistant";
   return <div className={`message-row ${item.role}`}>
-    {assistant && <span className="assistant-avatar">O</span>}
+    {assistant && <span className="assistant-avatar"><img src="/orvix-logo-transparent.png" alt="Orvix" /></span>}
     <div className="message-stack">
       <div className="message">
         <FormattedMessage content={item.content} />

@@ -734,6 +734,8 @@ html[data-animations="on"] .subscription-panel { transition: color .2s ease, bac
   overflow-y: auto;
 }
 .chat-view .composer .composer-input-stack > textarea::placeholder { color: #83918e; }
+.assistant-avatar { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; background: transparent; }
+.assistant-avatar img { width: 30px; height: 30px; object-fit: contain; animation: onboarding-logo-rotate 8s linear infinite; }
 
 @media (max-width: 430px) {
   .chat-view .composer { min-height: 68px; }
