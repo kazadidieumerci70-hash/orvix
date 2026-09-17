@@ -103,6 +103,16 @@ button { cursor: pointer; }
   .chat-view .user .message-stack { max-width: 84%; }
 }
 
+.guest-topbar { position: absolute; top: 24px; left: 28px; right: 32px; display: flex; align-items: center; justify-content: space-between; z-index: 4; }
+.guest-topbar .brand { display: flex; align-items: center; gap: 12px; color: #168f87; font-size: 22px; font-weight: 800; }
+.guest-topbar .brand-logo { width: 38px; height: 38px; object-fit: contain; }
+.guest-topbar-actions { display: flex; align-items: center; gap: 14px; }
+.guest-menu-button, .guest-profile-button { width: 42px; height: 42px; display: grid; place-items: center; border: 0; background: transparent; color: #17202a; }
+.guest-menu-button svg { width: 28px; height: 28px; }
+.guest-profile-button { border: 1px solid #dce7e5; border-radius: 50%; }
+.guest-topbar .top-document-selector { position: static; }
+@media (max-width: 600px) { .guest-topbar { top: 12px; left: 14px; right: 14px; } .guest-topbar .brand span { display: none; } .guest-topbar .brand-logo { width: 34px; height: 34px; } .guest-topbar-actions { gap: 5px; } .guest-menu-button, .guest-profile-button { width: 34px; height: 34px; } }
+
 @media (max-width: 900px) {
   .chat-view .composer.mobile-flat-input { min-height: 76px !important; height: 76px !important; }
   .chat-view .composer.mobile-flat-input .composer-input-stack > textarea { height: 60px !important; min-height: 60px !important; max-height: 60px !important; font-size: 16px !important; line-height: 24px !important; padding-block: 12px !important; }
