@@ -125,7 +125,7 @@ button { cursor: pointer; }
 .onboarding-page::-webkit-scrollbar-track { background: transparent; }
 .onboarding-page::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: #aebbb9; background-clip: padding-box; }
 .auth-panel { width: min(430px, 100%); background: white; border: 1px solid #dceae7; border-radius: 20px; padding: 28px; box-shadow: 0 24px 70px #173f361c; }
-.onboarding-panel { width: min(760px, 100%); background: white; border: 1px solid #dceae7; border-radius: 20px; padding: 30px; box-shadow: 0 24px 70px #173f361c; }
+.onboarding-panel { width: min(760px, 100%); background: white; border: 1px solid #dceae7; border-radius: 20px; padding: 58px 30px 38px; box-shadow: 0 24px 70px #173f361c; }
 .auth-brand { color: #0d9c91; margin-bottom: 24px; }
 .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #eef7f5; border-radius: 14px; padding: 5px; margin-bottom: 22px; }
 .auth-tabs button { border: 0; border-radius: 10px; padding: 11px; background: transparent; color: #4d625f; font-weight: 700; }
@@ -421,7 +421,7 @@ html[data-animations="off"] *,html[data-animations="off"] *::before,html[data-an
 .onboarding-summary p span { color: #17202a; }
 .onboarding-summary small { margin-top: 14px; color: #71808d; font-size: 12px; }
 @media (max-width: 640px) { .first-welcome-page { padding: 14px; } .first-welcome-card { padding: 30px 18px; border-radius: 22px; } .welcome-brand { margin-bottom: 24px; font-size: 18px; } .welcome-brand img { width: 78px; height: 78px; } .first-welcome-card h1 { font-size: 32px; } .first-welcome-card > p { font-size: 15px; line-height: 1.5; } .first-welcome-card > button { width: 100%; justify-content: center; } }
-@media (max-width: 640px) { .lia-question { margin: 14px 0 20px; } .lia-question h2 { font-size: 23px; } .onboarding-panel { padding: 24px 18px; } }
+@media (max-width: 640px) { .lia-question { margin: 14px 0 20px; } .lia-question h2 { font-size: 23px; } .onboarding-panel { padding: 42px 18px 28px; } }
 
 /* Historique indépendant et séparation nette avec les réglages. */
 .recents {
