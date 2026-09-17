@@ -120,7 +120,7 @@ button { cursor: pointer; }
 .auth-loading { min-height: 100vh; display: grid; place-items: center; color: #07978f; font-size: 28px; font-weight: 700; background: #f8fbfa; }
 .auth-page { min-height: 100vh; display: grid; place-items: center; padding: 22px; background: linear-gradient(135deg, #f5faf9 0%, #edf5f2 100%); }
 .onboarding-page { height: 100dvh; overflow-x: hidden; overflow-y: auto; place-items: start center; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #aebbb9 transparent; }
-.onboarding-page .onboarding-panel { margin-block: auto; }
+.onboarding-page .onboarding-panel { margin-block: 20px; }
 .onboarding-page::-webkit-scrollbar { width: 9px; }
 .onboarding-page::-webkit-scrollbar-track { background: transparent; }
 .onboarding-page::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: #aebbb9; background-clip: padding-box; }
@@ -413,7 +413,8 @@ html[data-animations="off"] *,html[data-animations="off"] *::before,html[data-an
 .lia-question { margin: 18px 0 24px; text-align: left; }
 .lia-question span { color: #15998f; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .lia-question h2 { margin: 7px 0 0; color: #17202a; font-size: clamp(22px, 3vw, 30px); }
-.onboarding-progress { display: block; margin: 30px 0 0; color: #15998f; font-size: 13px; font-weight: 700; text-align: right; }
+.onboarding-progress { display: block; margin: 0 0 16px; color: #15998f; font-size: 13px; font-weight: 700; text-align: right; }
+.onboarding-panel .auth-brand { margin-bottom: 10px; }
 .onboarding-summary { display: grid; gap: 0; border-top: 1px solid #dce8e5; }
 .onboarding-summary p { display: grid; grid-template-columns: 130px 1fr; gap: 16px; margin: 0; padding: 12px 0; border-bottom: 1px solid #dce8e5; color: #53636a; }
 .onboarding-summary p strong { color: #22312f; }
