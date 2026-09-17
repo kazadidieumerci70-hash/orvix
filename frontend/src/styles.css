@@ -136,14 +136,20 @@ button { cursor: pointer; }
 }
 
 @media (min-width: 901px) {
-  .page-actions .mobile-menu { display: none !important; visibility: hidden !important; }
+  .page-actions {
+    left: 280px !important;
+    right: 32px !important;
+    display: grid !important;
+    grid-template-columns: 48px 1fr 48px !important;
+    align-items: center;
+  }
+  .page-actions .mobile-menu { display: grid !important; visibility: visible !important; position: static; }
   .page-actions .top-document-selector {
-    position: fixed;
-    top: 26px;
-    left: auto;
-    right: 110px;
+    position: static;
+    justify-self: center;
     transform: none;
   }
+  .page-actions > button:last-child { justify-self: end; }
 }
 
 .chat-empty-brand {
