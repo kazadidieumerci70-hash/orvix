@@ -110,13 +110,6 @@ button { cursor: pointer; }
 .guest-menu-button, .guest-profile-button { width: 42px; height: 42px; display: grid; place-items: center; border: 0; background: transparent; color: #17202a; }
 .guest-menu-button svg { width: 28px; height: 28px; }
 .guest-profile-button { border: 1px solid #dce7e5; border-radius: 50%; }
-.guest-menu-backdrop { position: fixed; inset: 0; z-index: 8; border: 0; background: rgba(8, 35, 32, .18); }
-.guest-menu-panel { position: fixed; top: 0; bottom: 0; left: 0; z-index: 9; width: min(290px, 82vw); padding: 28px 18px; display: flex; flex-direction: column; gap: 8px; background: #fff; box-shadow: 14px 0 40px rgba(15, 53, 48, .14); }
-.guest-menu-panel .brand { display: flex; align-items: center; gap: 10px; margin: 0 8px 28px; color: #168f87; font-size: 21px; font-weight: 800; }
-.guest-menu-panel .brand-logo { width: 34px; height: 34px; }
-.guest-menu-panel > button { border: 0; border-radius: 12px; background: transparent; padding: 14px 16px; text-align: left; color: #233431; font-size: 16px; }
-.guest-menu-panel > button.active, .guest-menu-panel > button:hover { background: #eaf7f5; color: #008f88; }
-.guest-menu-panel .guest-menu-login { margin-top: auto; background: #36b4aa; color: #fff; text-align: center; font-weight: 700; }
 .guest-topbar .top-document-selector { position: static; }
 @media (max-width: 600px) { .guest-topbar { top: 12px; left: 14px; right: 14px; } .guest-topbar .brand span { display: none; } .guest-topbar .brand-logo { width: 34px; height: 34px; } .guest-topbar-actions { gap: 5px; } .guest-menu-button, .guest-profile-button { width: 34px; height: 34px; } }
 
