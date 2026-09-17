@@ -708,18 +708,20 @@ html[data-animations="on"] .subscription-panel { transition: color .2s ease, bac
 
 /* Zone de message confortable sur deux à trois lignes. */
 .chat-view .composer {
-  min-height: 76px;
+  min-height: 64px;
+  padding: 7px 10px 7px 16px;
+  border-radius: 22px;
   align-items: center;
 }
 .chat-view .composer-input-stack {
-  min-height: 58px;
+  min-height: 42px;
   display: flex;
   align-items: center;
 }
 .chat-view .composer .composer-input-stack > textarea {
   width: 100%;
-  min-height: 58px;
-  max-height: 86px;
+  min-height: 42px;
+  max-height: 72px;
   resize: none;
   padding: 9px 5px;
   border: 0;
@@ -727,7 +729,7 @@ html[data-animations="on"] .subscription-panel { transition: color .2s ease, bac
   background: transparent;
   color: #263431;
   font: inherit;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.45;
   overflow-y: auto;
 }
