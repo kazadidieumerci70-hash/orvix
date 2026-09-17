@@ -490,6 +490,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [googleAccountUsed, setGoogleAccountUsed] = useState(() => localStorage.getItem("orvix_google_account_used") === "true");
   function completeAuthentication(profile: UserProfile) {
     localStorage.setItem("orvix_user", JSON.stringify(profile));
     onAuthenticated(profile);
@@ -504,7 +505,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
       if (!window.google?.accounts?.id || !googleButtonRef.current) return;
       window.google.accounts.id.initialize({ client_id: clientId, callback: async (response: { credential: string }) => {
         setLoading(true); setError("");
-        try { const result = await loginWithGoogle(response.credential); saveToken(result.token); completeAuthentication(result.user); }
+        try { const result = await loginWithGoogle(response.credential); localStorage.setItem("orvix_google_account_used", "true"); setGoogleAccountUsed(true); saveToken(result.token); completeAuthentication(result.user); }
         catch (e) { setError(e instanceof Error ? e.message : "Connexion Google impossible."); }
         finally { setLoading(false); }
       } });
@@ -528,7 +529,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
         const finish = (callback: () => void) => { if (settled) return; settled = true; window.clearTimeout(timeoutId); callback(); };
         const timeoutId = window.setTimeout(() => finish(() => reject(new Error("La fenêtre Google n’a pas pu être ouverte. Vérifiez les fenêtres pop-up bloquées puis réessayez."))), 12000);
         window.google.accounts.id.initialize({ client_id: clientId, callback: async (response: { credential: string }) => {
-          try { const result = await loginWithGoogle(response.credential); saveToken(result.token); completeAuthentication(result.user); finish(resolve); }
+          try { const result = await loginWithGoogle(response.credential); localStorage.setItem("orvix_google_account_used", "true"); setGoogleAccountUsed(true); saveToken(result.token); completeAuthentication(result.user); finish(resolve); }
           catch (e) { finish(() => reject(e)); }
         } });
         window.google.accounts.id.prompt((notice: any) => {
@@ -572,7 +573,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
         {mode === "login" && <header className="auth-welcome"><h1>Bienvenue !</h1><p>Connectez-vous pour continuer<br />avec <b>Orvix.</b></p></header>}
         {mode === "register" && <>
           <div className="google-account-block">
-            <p className="google-account-label">Compte récemment utilisé</p>
+            {googleAccountUsed && <p className="google-account-label">Compte récemment utilisé</p>}
             <div ref={googleButtonRef} className="google-primary" aria-label="Continuer avec Google" />
           </div>
           <div className="auth-divider auth-divider-compact"><span />ou avec ton e-mail<span /></div>
