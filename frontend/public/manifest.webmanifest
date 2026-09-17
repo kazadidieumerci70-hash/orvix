@@ -13,7 +13,7 @@
   "categories": ["education", "productivity"],
   "icons": [
     {
-      "src": "/orvix-logo.jpeg",
+      "src": "/orvix-logo-transparent.png",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

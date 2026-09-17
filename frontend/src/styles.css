@@ -381,7 +381,7 @@ html[data-animations="off"] *,html[data-animations="off"] *::before,html[data-an
 .first-welcome-card { width: min(980px, 100%); padding: 46px 54px; box-sizing: border-box; border: 1px solid #dfebe9; border-radius: 32px; background: rgba(255,255,255,.92); box-shadow: 0 28px 80px #173f3614; text-align: center; }
 .first-welcome-card .chat-empty-brand { margin-bottom: 26px; }
 .welcome-brand { display: inline-flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 28px; color: #087f78; font-size: 20px; font-weight: 800; letter-spacing: .08em; }
-.welcome-brand img { width: 96px; height: 96px; object-fit: contain; border-radius: 50%; mix-blend-mode: multiply; animation: orvix-logo-spin 7s ease-in-out infinite; }
+.welcome-brand img { width: 96px; height: 96px; object-fit: contain; animation: orvix-logo-spin 7s ease-in-out infinite; }
 @keyframes orvix-logo-spin { 0%, 18% { transform: rotate(0deg); } 50% { transform: rotate(180deg); } 82%, 100% { transform: rotate(360deg); } }
 .first-welcome-card h1 { margin: 0 0 18px; color: #111827; font-size: clamp(38px, 5vw, 62px); line-height: 1.08; }
 .first-welcome-card > p { max-width: 850px; margin: 12px auto; color: #667389; font-size: 18px; line-height: 1.55; }
@@ -524,7 +524,7 @@ html[data-animations="on"] .subscription-panel { transition: color .2s ease, bac
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 310px 1fr; background: #fbfcfe; }
 .brand { display: flex; align-items: center; gap: 16px; font-weight: 800; font-size: 28px; color: #008f88; letter-spacing: 0; }
 .brand-mark { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at 32% 32%, #23b6aa, #007d77 72%); color: white; font-family: Georgia, serif; box-shadow: 0 14px 28px #008f8830; }
-.brand-logo { width: 50px; height: 50px; object-fit: contain; border-radius: 50%; mix-blend-mode: multiply; }
+.brand-logo { width: 50px; height: 50px; object-fit: contain; }
 .sidebar { background: #fff; border-right: 1px solid #e3eaf0; padding: 42px 17px 22px; display: flex; flex-direction: column; z-index: 15; }
 .sidebar-brand { margin: 0 14px 52px; }
 .sidebar nav { display: grid; gap: 17px; }
@@ -3595,7 +3595,7 @@ html[data-theme="dark"] .quiz-radio-group label { color: #a8b5b3; }
 .auth-orbit::before { content: ""; width: 43px; height: 43px; border-radius: 50%; background: #fff; box-shadow: inset 8px 5px 16px rgba(5, 95, 90, .12); }
 .auth-orbit i { position: absolute; opacity: 0; }
 .auth-logo > strong { margin-top: 12px; color: #101722; font-size: 35px; line-height: 1; letter-spacing: .16em; }
-.auth-logo-image { width: 118px; height: 118px; object-fit: contain; border-radius: 50%; mix-blend-mode: multiply; }
+.auth-logo-image { width: 118px; height: 118px; object-fit: contain; }
 .auth-logo > small { margin-top: 12px; color: #5f6d7b; font-size: 13px; }
 .auth-logo > small b, .auth-welcome b, .terms-check b { color: #079b92; font-weight: 500; }
 .auth-welcome { margin: 33px 0 23px; }
