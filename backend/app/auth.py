@@ -51,7 +51,12 @@ def _write_users(data: dict) -> None:
 
 
 def _normalize_phone(phone: str) -> str:
-    cleaned = re.sub(r"[^\d+]", "", phone.strip())
+    value = phone.strip().lower()
+    if "@" in value:
+        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", value):
+            raise HTTPException(422, "Adresse e-mail invalide.")
+        return value
+    cleaned = re.sub(r"[^\d+]", "", value)
     if cleaned.startswith("00"):
         cleaned = "+" + cleaned[2:]
     if len(cleaned) < 6:
