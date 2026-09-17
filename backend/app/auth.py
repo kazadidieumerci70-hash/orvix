@@ -16,6 +16,24 @@ from .schemas import OnboardingRequest, UserProfile
 TOKEN_TTL_HOURS = 24 * 14
 _revoked_tokens: set[str] = set()
 
+def _database_url() -> str:
+    return os.getenv("DATABASE_URL", "").strip()
+
+def _db_connect():
+    import psycopg
+    return psycopg.connect(_database_url())
+
+def _db_ready() -> bool:
+    return bool(_database_url())
+
+def init_auth_database() -> None:
+    if not _db_ready():
+        return
+    migration = Path(__file__).resolve().parents[1] / "migrations" / "001_initial.sql"
+    with _db_connect() as connection:
+        connection.execute(migration.read_text(encoding="utf-8"))
+        connection.commit()
+
 def revoke_token(token: str) -> None:
     if token:
         _revoked_tokens.add(token)
@@ -100,9 +118,30 @@ def _profile(user: dict) -> UserProfile:
         welcome_seen=bool(user.get("welcome_seen", False)),
     )
 
+def _db_user(row) -> dict:
+    return {"id": row[0], "phone": row[1], "name": row[2], "password_hash": row[3],
+            "onboarding_completed": row[4], "level": row[5], "subjects": row[6] or [],
+            "goal": row[7] or "", "learning_style": row[8] or "", "difficulties": row[9] or "",
+            "welcome_seen": row[10]}
+
+def _user_select(connection, phone: str):
+    return connection.execute("SELECT id,phone,name,password_hash,onboarding_completed,level,subjects,goal,learning_style,difficulties,welcome_seen FROM users WHERE phone=%s", (phone,)).fetchone()
+
+def _user_by_id(connection, user_id: str):
+    return connection.execute("SELECT id,phone,name,password_hash,onboarding_completed,level,subjects,goal,learning_style,difficulties,welcome_seen FROM users WHERE id=%s", (user_id,)).fetchone()
+
 
 def register_user(phone: str, password: str) -> tuple[str, UserProfile]:
     normalized = _normalize_phone(phone)
+    if _db_ready():
+        with _db_connect() as connection:
+            if _user_select(connection, normalized):
+                raise HTTPException(409, "Ce numero a deja un compte.")
+            user_id = sha256(f"{normalized}:{secrets.token_urlsafe(8)}".encode()).hexdigest()[:16]
+            connection.execute("INSERT INTO users(id,phone,name,password_hash,created_at,subjects) VALUES(%s,%s,%s,%s,now(),'[]'::jsonb)", (user_id, normalized, "Etudiant", _hash_password(password)))
+            connection.commit()
+            user = _db_user(_user_by_id(connection, user_id))
+        return _make_token(user_id), _profile(user)
     data = _read_users()
     if any(user["phone"] == normalized for user in data["users"]):
         raise HTTPException(409, "Ce numero a deja un compte.")
@@ -120,6 +159,13 @@ def register_user(phone: str, password: str) -> tuple[str, UserProfile]:
 
 def login_user(phone: str, password: str) -> tuple[str, UserProfile]:
     normalized = _normalize_phone(phone)
+    if _db_ready():
+        with _db_connect() as connection:
+            row = _user_select(connection, normalized)
+        if row and _verify_password(password, row[3]):
+            user = _db_user(row)
+            return _make_token(user["id"]), _profile(user)
+        raise HTTPException(401, "Numero ou mot de passe incorrect.")
     data = _read_users()
     for user in data["users"]:
         if user["phone"] == normalized and _verify_password(password, user["password_hash"]):
@@ -131,6 +177,12 @@ def current_user(authorization: str | None = Header(default=None)) -> UserProfil
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(401, "Connectez-vous pour continuer.")
     user_id = _decode_token(authorization.removeprefix("Bearer ").strip())
+    if _db_ready():
+        with _db_connect() as connection:
+            row = _user_by_id(connection, user_id)
+        if row:
+            return _profile(_db_user(row))
+        raise HTTPException(401, "Utilisateur introuvable.")
     for user in _read_users()["users"]:
         if user["id"] == user_id:
             return _profile(user)
@@ -138,6 +190,14 @@ def current_user(authorization: str | None = Header(default=None)) -> UserProfil
 
 
 def mark_welcome_seen(user_id: str) -> UserProfile:
+    if _db_ready():
+        with _db_connect() as connection:
+            connection.execute("UPDATE users SET welcome_seen=TRUE, updated_at=now() WHERE id=%s", (user_id,))
+            row = _user_by_id(connection, user_id)
+            connection.commit()
+        if row:
+            return _profile(_db_user(row))
+        raise HTTPException(401, "Utilisateur introuvable.")
     data = _read_users()
     for user in data["users"]:
         if user["id"] == user_id:
@@ -149,8 +209,16 @@ def mark_welcome_seen(user_id: str) -> UserProfile:
 
 
 def complete_onboarding(user_id: str, payload: OnboardingRequest) -> UserProfile:
-    data = _read_users()
     subjects = [subject.strip() for subject in payload.subjects if subject.strip()][:8]
+    if _db_ready():
+        with _db_connect() as connection:
+            connection.execute("UPDATE users SET name=%s, level=%s, subjects=%s::jsonb, goal=%s, learning_style=%s, difficulties=%s, onboarding_completed=TRUE, updated_at=now() WHERE id=%s", (payload.name.strip(), payload.level.strip(), json.dumps(subjects), payload.goal.strip(), payload.learning_style.strip(), payload.difficulties.strip(), user_id))
+            row = _user_by_id(connection, user_id)
+            connection.commit()
+        if row:
+            return _profile(_db_user(row))
+        raise HTTPException(401, "Utilisateur introuvable.")
+    data = _read_users()
     for user in data["users"]:
         if user["id"] == user_id:
             user.update(

@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 
-from .auth import complete_onboarding, current_user, login_user, mark_welcome_seen, register_user, revoke_token
+from .auth import complete_onboarding, current_user, init_auth_database, login_user, mark_welcome_seen, register_user, revoke_token
 from .ai import ORVIX_PRESENTATION, OrvixAI
 from .config import get_settings
 from .conversations import append_exchange, get_conversation, list_conversations
@@ -48,6 +48,7 @@ logger = logging.getLogger("orvix.http")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    init_auth_database()
     app.state.ai = OrvixAI()
     yield
 
