@@ -84,6 +84,27 @@ button { cursor: pointer; }
   .chat-view > .composer > button[aria-label="Envoyer"] { width: 40px !important; height: 40px !important; }
 }
 
+@media (max-width: 900px) {
+  .chat-view .composer.mobile-flat-input { min-height: 64px !important; height: 64px !important; padding-block: 7px !important; }
+  .chat-view .composer.mobile-flat-input .composer-input-stack > textarea { height: 50px !important; min-height: 50px !important; max-height: 50px !important; font-size: 14px !important; line-height: 22px !important; padding-block: 10px !important; }
+}
+
+@media (max-width: 900px) {
+  .chat-view .composer.mobile-flat-input {
+    min-height: 64px !important;
+    height: 64px !important;
+    padding-block: 7px !important;
+  }
+  .chat-view .composer.mobile-flat-input .composer-input-stack > textarea {
+    height: 50px !important;
+    min-height: 50px !important;
+    max-height: 50px !important;
+    font-size: 14px !important;
+    line-height: 22px !important;
+    padding-block: 10px !important;
+  }
+}
+
 @media (min-width: 901px) {
   .page-actions .mobile-menu { display: none !important; visibility: hidden !important; }
   .page-actions .top-document-selector {
