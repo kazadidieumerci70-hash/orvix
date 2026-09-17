@@ -29,14 +29,13 @@ class Settings:
     ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
     ollama_model = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
     model_timeout = float(os.getenv("MODEL_TIMEOUT", "90"))
-    frontend_origins = tuple(
-        origin.strip()
-        for origin in os.getenv(
+    frontend_origins = tuple(dict.fromkeys(
+        [origin.strip() for origin in os.getenv(
             "FRONTEND_ORIGINS",
             "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://192.168.170.33:5173",
-        ).split(",")
-        if origin.strip()
-    )
+        ).split(",") if origin.strip()]
+        + ["https://orvix-ai.pages.dev"]
+    ))
     upload_dir = BACKEND_DIR / "data" / "uploads"
     data_dir = BACKEND_DIR / "data"
     users_file = BACKEND_DIR / "data" / "users.json"
