@@ -665,6 +665,7 @@ function ChatView({
   const [attachmentMenu, setAttachmentMenu] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mobileComposer, setMobileComposer] = useState(false);
+  const [composerOverflowing, setComposerOverflowing] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLFormElement>(null);
@@ -679,6 +680,7 @@ function ChatView({
     const textarea = textareaRef.current;
     if (!textarea) return;
     if (!mobileComposer) {
+      setComposerOverflowing(false);
       textarea.style.removeProperty("height");
       textarea.style.removeProperty("overflow-y");
       return;
@@ -690,6 +692,7 @@ function ChatView({
     const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
     const maxHeight = Math.ceil(lineHeight * 4 + paddingTop + paddingBottom);
     const nextHeight = Math.min(Math.max(textarea.scrollHeight, 28), maxHeight);
+    setComposerOverflowing(textarea.scrollHeight > maxHeight + 1);
     textarea.style.setProperty("height", `${nextHeight}px`, "important");
     textarea.style.setProperty("overflow-y", textarea.scrollHeight > maxHeight ? "auto" : "hidden", "important");
   }, [message, mobileComposer]);
@@ -767,7 +770,7 @@ function ChatView({
         </div>}
       </div>
       <div className="composer-input-stack">
-        <textarea ref={textareaRef} rows={1} value={message} onChange={(event) => { const value = event.target.value; setMessage(value); setComposerExpanded(value.includes("\n") || value.length > 72); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder={chatText.placeholder} aria-label={chatText.placeholder} />
+        <textarea className={composerOverflowing ? "is-overflowing" : ""} ref={textareaRef} rows={1} value={message} onChange={(event) => { const value = event.target.value; setMessage(value); setComposerExpanded(value.includes("\n") || value.length > 72); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder={chatText.placeholder} aria-label={chatText.placeholder} />
       </div>
       <button disabled={!message.trim() || loading} aria-label="Envoyer"><Send size={21} fill="currentColor" strokeWidth={1.5} /></button>
     </form>
