@@ -53,6 +53,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, { ...options, headers });
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
+    if (response.status === 401 && token) {
+      clearToken();
+      localStorage.removeItem("orvix_user");
+      window.dispatchEvent(new Event("orvix-auth-expired"));
+    }
     throw new Error(payload?.detail || "Le serveur Orvix est momentanément indisponible.");
   }
   return response.json() as Promise<T>;

@@ -111,6 +111,12 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const expireSession = () => setUser(null);
+    window.addEventListener("orvix-auth-expired", expireSession);
+    return () => window.removeEventListener("orvix-auth-expired", expireSession);
+  }, []);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("orvix_theme", theme);
   }, [theme]);
