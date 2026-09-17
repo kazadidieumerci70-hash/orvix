@@ -8,13 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 
-from .auth import complete_onboarding, current_user, init_auth_database, login_user, mark_welcome_seen, register_user, revoke_token
+from .auth import complete_onboarding, current_user, google_login_user, init_auth_database, login_user, mark_welcome_seen, register_user, revoke_token
 from .ai import ORVIX_PRESENTATION, OrvixAI
 from .config import get_settings
 from .conversations import append_exchange, get_conversation, list_conversations
 from .documents import delete_document, list_documents, save_document
 from .schemas import (
     AuthRequest,
+    GoogleAuthRequest,
     AuthResponse,
     CheckoutRequest,
     CheckoutResponse,
@@ -153,6 +154,11 @@ async def register(payload: AuthRequest):
 @app.post(f"{settings.api_prefix}/auth/login", response_model=AuthResponse)
 async def login(payload: AuthRequest):
     token, user = login_user(payload.phone, payload.password)
+    return AuthResponse(token=token, user=user)
+
+@app.post(f"{settings.api_prefix}/auth/google", response_model=AuthResponse)
+async def google_auth(payload: GoogleAuthRequest):
+    token, user = google_login_user(payload.credential)
     return AuthResponse(token=token, user=user)
 
 

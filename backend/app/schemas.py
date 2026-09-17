@@ -122,6 +122,9 @@ class AuthRequest(BaseModel):
     phone: str = Field(min_length=6, max_length=30)
     password: str = Field(min_length=6, max_length=120)
 
+class GoogleAuthRequest(BaseModel):
+    credential: str = Field(min_length=20, max_length=5000)
+
 
 class UserProfile(BaseModel):
     id: str

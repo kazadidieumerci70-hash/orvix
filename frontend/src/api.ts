@@ -74,6 +74,10 @@ export function login(phone: string, password: string) {
   });
 }
 
+export function loginWithGoogle(credential: string) {
+  return request<AuthResponse>("/api/v1/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ credential }) });
+}
+
 export function me() {
   return request<UserProfile>("/api/v1/auth/me");
 }

@@ -177,6 +177,31 @@ def login_user(phone: str, password: str) -> tuple[str, UserProfile]:
             return _make_token(user["id"]), _profile(user)
     raise HTTPException(401, "Numero ou mot de passe incorrect.")
 
+def google_login_user(credential: str) -> tuple[str, UserProfile]:
+    if not _db_ready():
+        raise HTTPException(503, "La base de données n'est pas configurée.")
+    from google.oauth2 import id_token
+    from google.auth.transport import requests
+    client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    if not client_id:
+        raise HTTPException(503, "Google OAuth n'est pas configuré.")
+    try:
+        info = id_token.verify_oauth2_token(credential, requests.Request(), client_id)
+    except Exception as exc:
+        raise HTTPException(401, "La connexion Google est invalide.") from exc
+    email = str(info.get("email", "")).strip().lower()
+    if not email or not info.get("email_verified"):
+        raise HTTPException(401, "L'adresse Google n'est pas vérifiée.")
+    with _db_connect() as connection:
+        row = _user_select(connection, email)
+        if not row:
+            user_id = sha256(f"google:{email}".encode()).hexdigest()[:16]
+            connection.execute("INSERT INTO users(id,phone,name,password_hash,created_at,subjects) VALUES(%s,%s,%s,%s,now(),'[]'::jsonb)", (user_id, email, str(info.get("name") or "Etudiant")[:160], _hash_password(secrets.token_urlsafe(32))))
+            row = _user_by_id(connection, user_id)
+        connection.commit()
+    user = _db_user(row)
+    return _make_token(user["id"]), _profile(user)
+
 
 def current_user(authorization: str | None = Header(default=None)) -> UserProfile:
     if not authorization or not authorization.startswith("Bearer "):

@@ -61,6 +61,7 @@ import {
   getSubscription,
   getSubscriptionPlans,
   login,
+  loginWithGoogle,
   markWelcomeSeen,
   listConversations,
   listDocuments,
@@ -72,6 +73,7 @@ import {
 } from "./api";
 
 type View = "chat" | "revision" | "quiz" | "exam" | "support" | "account";
+declare global { interface Window { google?: any; } }
 const nav = [
   { id: "chat" as View, label: "Chat", icon: MessageCircle },
   { id: "revision" as View, label: "Révision", icon: BookOpenText },
@@ -475,6 +477,16 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  async function continueWithGoogle() {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim();
+    if (!clientId) { setError("La connexion Google n’est pas configurée."); return; }
+    setLoading(true); setError("");
+    try {
+      if (!window.google?.accounts?.id) await new Promise<void>((resolve, reject) => { const script = document.createElement("script"); script.src = "https://accounts.google.com/gsi/client"; script.async = true; script.onload = () => resolve(); script.onerror = () => reject(new Error("Google est momentanément indisponible.")); document.head.appendChild(script); });
+      await new Promise<void>((resolve, reject) => { window.google.accounts.id.initialize({ client_id: clientId, callback: async (response: { credential: string }) => { try { const result = await loginWithGoogle(response.credential); saveToken(result.token); onAuthenticated(result.user); resolve(); } catch (e) { reject(e); } } }); window.google.accounts.id.prompt((notice: any) => { if (notice.isNotDisplayed?.() || notice.isSkippedMoment?.()) reject(new Error("La fenêtre Google n’a pas pu être ouverte.")); }); });
+    } catch (e) { setError(e instanceof Error ? e.message : "Connexion Google impossible."); } finally { setLoading(false); }
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!phone.trim() || loading) return;
@@ -508,7 +520,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
         <div className="auth-logo"><span className="auth-orbit"><i>O</i></span><strong>ORVIX</strong><small>{mode === "login" ? "Votre IA. Vos documents. Nos réponses." : <>Commencez votre expérience avec <b>Orvix.</b></>}</small></div>
         {mode === "login" && <header className="auth-welcome"><h1>Bienvenue !</h1><p>Connectez-vous pour continuer<br />avec <b>Orvix.</b></p></header>}
         {mode === "register" && <>
-          <button type="button" className="google-primary" onClick={() => setError("L’inscription Google sera activée après la configuration Google OAuth.")}><svg className="google-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.35 12.27c0-.71-.06-1.4-.18-2.05H12v3.88h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.7 2.91-4.2 2.91-7.22Z"/><path fill="#34A853" d="M12 21.6c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.7-1.72-5.47-4.03H3.28v2.53A9.74 9.74 0 0 0 12 21.6Z"/><path fill="#FBBC05" d="M6.53 13.68A5.85 5.85 0 0 1 6.22 12c0-.58.1-1.15.31-1.68V7.79H3.28A9.74 9.74 0 0 0 2.25 12c0 1.52.36 2.96 1.03 4.21l3.25-2.53Z"/><path fill="#EA4335" d="M12 6.29c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.36 14.63 2.4 12 2.4a9.74 9.74 0 0 0-8.72 5.39l3.25 2.53c.77-2.31 2.93-4.03 5.47-4.03Z"/></svg><span>Continuer avec Google</span></button>
+          <button type="button" className="google-primary" onClick={continueWithGoogle}><svg className="google-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.35 12.27c0-.71-.06-1.4-.18-2.05H12v3.88h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.7 2.91-4.2 2.91-7.22Z"/><path fill="#34A853" d="M12 21.6c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.7-1.72-5.47-4.03H3.28v2.53A9.74 9.74 0 0 0 12 21.6Z"/><path fill="#FBBC05" d="M6.53 13.68A5.85 5.85 0 0 1 6.22 12c0-.58.1-1.15.31-1.68V7.79H3.28A9.74 9.74 0 0 0 2.25 12c0 1.52.36 2.96 1.03 4.21l3.25-2.53Z"/><path fill="#EA4335" d="M12 6.29c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.36 14.63 2.4 12 2.4a9.74 9.74 0 0 0-8.72 5.39l3.25 2.53c.77-2.31 2.93-4.03 5.47-4.03Z"/></svg><span>Continuer avec Google</span></button>
           <div className="auth-divider auth-divider-compact"><span />ou avec ton e-mail<span /></div>
         </>}
         <form onSubmit={submit} className="auth-form auth-reference-form">
