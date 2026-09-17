@@ -532,6 +532,8 @@ html[data-animations="on"] .subscription-panel { transition: color .2s ease, bac
 .brand { display: flex; align-items: center; gap: 16px; font-weight: 800; font-size: 28px; color: #008f88; letter-spacing: 0; }
 .brand-mark { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at 32% 32%, #23b6aa, #007d77 72%); color: white; font-family: Georgia, serif; box-shadow: 0 14px 28px #008f8830; }
 .brand-logo { width: 50px; height: 50px; object-fit: contain; }
+.onboarding-panel .brand-logo { width: 62px; height: 62px; animation: onboarding-logo-rotate 8s linear infinite; transform-origin: center; }
+@keyframes onboarding-logo-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .sidebar { background: #fff; border-right: 1px solid #e3eaf0; padding: 42px 17px 22px; display: flex; flex-direction: column; z-index: 15; }
 .sidebar-brand { margin: 0 14px 52px; }
 .sidebar nav { display: grid; gap: 17px; }
