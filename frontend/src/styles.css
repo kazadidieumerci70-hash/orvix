@@ -92,6 +92,10 @@ button { cursor: pointer; }
   border-radius: 28px !important;
 }
 .chat-empty-brand .brand-logo { width: 64px !important; height: 64px !important; object-fit: contain; }
+.chat-empty-brand { width: auto !important; height: auto !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; border-radius: 0 !important; }
+.chat-empty-brand .chat-empty-logo { width: 104px !important; height: 104px !important; animation: orvix-logo-spin 8s linear infinite; }
+@keyframes orvix-logo-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .chat-empty-brand .chat-empty-logo { animation: none; } }
 .auth-shell {
   width: min(1040px, 100%);
   min-height: min(680px, calc(100dvh - 48px));

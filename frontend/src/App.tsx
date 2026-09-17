@@ -734,7 +734,7 @@ function ChatView({
     <div className="messages" aria-live="polite">
       {!messages.length && !loading && (
         <div className="chat-empty">
-          <div className="brand chat-empty-brand"><img className="brand-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /></div>
+          <div className="brand chat-empty-brand"><img className="brand-logo chat-empty-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /></div>
           <div className="orvix-introduction regular-welcome"><h1>{chatText.title}</h1><p>{chatText.hint}</p></div>
           <div className="starter-grid">
             {starterPrompts.map(({ prompt, icon: Icon }, index) => { const item = localizedStarters[index]; return <button key={prompt} onClick={() => setMessage(prompt)}><span><Icon size={30} /></span><strong>{item.title}</strong><small>{item.detail}</small><b>›</b></button>; })}
