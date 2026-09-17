@@ -436,6 +436,12 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
     try {
       onCompleted(await completeOnboarding({ ...form, subjects, goal: form.goal.trim() || "À définir" }));
     } catch (e) {
+      if (e instanceof Error && e.message.toLowerCase().includes("utilisateur introuvable")) {
+        clearToken();
+        localStorage.removeItem("orvix_user");
+        onLogout();
+        return;
+      }
       setError(e instanceof Error ? e.message : "Impossible d'enregistrer le profil.");
     } finally {
       setLoading(false);
