@@ -436,10 +436,10 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
     <main className="auth-page onboarding-page">
       <section className="onboarding-panel">
         <div className="brand auth-brand"><img className="brand-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /><span>ORVIX</span></div>
-        <div className="lia-intro"><span className="lia-avatar">L</span><div><strong>Lia</strong><small>Ton guide d’apprentissage</small></div><span className="lia-progress">{step + 1}/5</span></div>
-        <div className="page-intro compact"><span>QUELQUES QUESTIONS</span><h1>Faisons connaissance</h1><p>Lia va te poser quelques questions pour mieux t’accompagner.</p></div>
+        <div className="lia-intro"><span className="lia-avatar">O</span><div><strong>Orvix</strong><small>Ton assistant d’apprentissage</small></div><span className="lia-progress">{step + 1}/5</span></div>
+        <div className="page-intro compact"><span>QUELQUES QUESTIONS</span><h1>Faisons connaissance</h1><p>Réponds à chaque question, puis Orvix continuera.</p></div>
         <form className="onboarding-form" onSubmit={submit}>
-          <div className="lia-question"><span>Lia te demande</span><h2>{["Comment tu t’appelles ?", "Tu es en quelle classe ou quel niveau ?", "Quelles matières veux-tu travailler avec moi ?", "Quel est ton objectif ?", "Comment préfères-tu apprendre ?"][step]}</h2></div>
+          <div className="lia-question"><span>Orvix te demande</span><h2>{["Comment tu t’appelles ?", "Tu es en quelle classe ou quel niveau ?", "Quelles matières veux-tu travailler avec moi ?", "Quel est ton objectif ?", "Comment préfères-tu apprendre ?"][step]}</h2></div>
           {step === 0 && <><label htmlFor="student-name">Ton prénom et ton nom</label><input id="student-name" autoFocus value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Ex. Alex Dupont" /></>}
           {step === 1 && <><label htmlFor="student-level">Ton niveau</label><input id="student-level" autoFocus value={form.level} onChange={(event) => update("level", event.target.value)} placeholder="Ex. Terminale, L1, 4e secondaire" /></>}
           {step === 2 && <><label>Matières principales</label><div className="chip-grid">{subjectOptions.map((subject) => <button type="button" key={subject} className={form.subjects.includes(subject) ? "selected" : ""} onClick={() => toggleSubject(subject)}>{subject}</button>)}</div></>}
