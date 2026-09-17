@@ -85,12 +85,13 @@ button { cursor: pointer; }
 }
 
 @media (min-width: 901px) {
-  .page-actions .mobile-menu { display: none !important; }
+  .page-actions .mobile-menu { display: none !important; visibility: hidden !important; }
   .page-actions .top-document-selector {
     position: fixed;
     top: 26px;
-    left: calc(50% + 185px);
-    transform: translateX(-50%);
+    left: auto;
+    right: 110px;
+    transform: none;
   }
 }
 
