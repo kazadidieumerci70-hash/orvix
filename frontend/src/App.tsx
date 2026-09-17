@@ -210,7 +210,7 @@ function FirstWelcomeView({ onContinue }: { onContinue: () => Promise<void> }) {
     catch (e) { setError(e instanceof Error ? e.message : "Impossible de continuer."); setLoading(false); }
   }
   return <main className="first-welcome-page"><section className="first-welcome-card">
-    <div className="brand chat-empty-brand"><span className="brand-mark">O</span><span>ORVIX</span></div>
+    <div className="welcome-brand"><img src="/orvix-logo.jpeg" alt="Logo Orvix" /><span>ORVIX</span></div>
     <h1>Bonjour, je suis ORVIX.</h1>
     <p className="creator-credit">Créé par <strong>DIEU MERCI KAZADI</strong></p>
     <p>Je suis une intelligence artificielle conçue avec une mission simple : <strong>vous aider à comprendre vos documents en discutant directement avec eux.</strong></p>

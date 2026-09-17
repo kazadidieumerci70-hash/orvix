@@ -380,6 +380,8 @@ html[data-animations="off"] *,html[data-animations="off"] *::before,html[data-an
 .first-welcome-page { min-height: 100dvh; display: grid; place-items: center; padding: 28px; box-sizing: border-box; background: radial-gradient(circle at 50% 5%, #eaf8f6 0, transparent 40%), #fbfcfe; }
 .first-welcome-card { width: min(980px, 100%); padding: 46px 54px; box-sizing: border-box; border: 1px solid #dfebe9; border-radius: 32px; background: rgba(255,255,255,.92); box-shadow: 0 28px 80px #173f3614; text-align: center; }
 .first-welcome-card .chat-empty-brand { margin-bottom: 26px; }
+.welcome-brand { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 28px; padding: 8px 18px 8px 10px; border: 1px solid #dcebe9; border-radius: 999px; color: #087f78; background: #fff; font-size: 20px; font-weight: 800; letter-spacing: .08em; box-shadow: 0 12px 30px #0f172a0b; }
+.welcome-brand img { width: 38px; height: 38px; object-fit: contain; border-radius: 50%; }
 .first-welcome-card h1 { margin: 0 0 18px; color: #111827; font-size: clamp(38px, 5vw, 62px); line-height: 1.08; }
 .first-welcome-card > p { max-width: 850px; margin: 12px auto; color: #667389; font-size: 18px; line-height: 1.55; }
 .first-welcome-card > p strong { color: #263445; }
@@ -401,7 +403,7 @@ html[data-animations="off"] *,html[data-animations="off"] *::before,html[data-an
 }
 .first-welcome-card > button { display: inline-flex; align-items: center; gap: 12px; margin-top: 25px; border: 0; border-radius: 14px; padding: 13px 22px; color: #fff; background: linear-gradient(135deg, #2eb4a9, #168d85); font-weight: 800; cursor: pointer; }
 .first-welcome-card > button:disabled { opacity: .55; }
-@media (max-width: 640px) { .first-welcome-page { padding: 14px; } .first-welcome-card { padding: 28px 18px; border-radius: 22px; } .first-welcome-card .chat-empty-brand { margin-bottom: 20px; } .first-welcome-card h1 { font-size: 34px; } .first-welcome-card > p { font-size: 14px; } .first-welcome-card > button { width: 100%; justify-content: center; } }
+@media (max-width: 640px) { .first-welcome-page { padding: 14px; } .first-welcome-card { padding: 28px 18px; border-radius: 22px; } .welcome-brand { margin-bottom: 20px; font-size: 17px; } .welcome-brand img { width: 32px; height: 32px; } .first-welcome-card h1 { font-size: 34px; } .first-welcome-card > p { font-size: 14px; } .first-welcome-card > button { width: 100%; justify-content: center; } }
 
 /* Historique indépendant et séparation nette avec les réglages. */
 .recents {
