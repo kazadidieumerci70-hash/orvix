@@ -114,7 +114,7 @@ button { cursor: pointer; }
 .chat-view > .composer .composer-input-stack > textarea::placeholder { color: #5e8f8b !important; }
 .chat-view > .composer .composer-support { color: #148f87 !important; background: #d8f1ee !important; }
 .chat-view > .composer > button[aria-label="Envoyer"] { background: linear-gradient(145deg, #43bdb3, #199b93) !important; }
-@media (max-width: 600px) { .chat-empty-brand .chat-empty-logo { width: 116px !important; height: 116px !important; } .chat-empty { transform: translateY(-24px); } .chat-view > .composer { transform: translateY(-34px); } }
+@media (max-width: 600px) { .chat-empty-brand .chat-empty-logo { width: 116px !important; height: 116px !important; } .chat-empty { transform: translateY(-24px); } .chat-view > .composer { transform: none !important; margin-bottom: 4px !important; min-height: 60px !important; height: 60px !important; } .chat-view > .composer .composer-input-stack > textarea { height: 46px !important; min-height: 46px !important; max-height: 46px !important; } }
 @keyframes orvix-logo-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .chat-empty-brand .chat-empty-logo { animation: none; } }
 .auth-shell {
