@@ -12,7 +12,7 @@ load_dotenv(BACKEND_DIR.parent / ".env")
 class Settings:
     app_name = "Orvix API"
     api_prefix = "/api/v1"
-    database_url = next((os.getenv(name, "").strip() for name in ("DATABASE_URL", "DATABASE_PRIVATE_URL", "POSTGRES_URL") if os.getenv(name, "").strip()), "")
+    database_url = next((os.getenv(name, "").strip() for name in ("DATABASE_URL", "DATABASE_PRIVATE_URL", "DATABASE_PUBLIC_URL", "POSTGRES_URL") if os.getenv(name, "").strip()), "")
     gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip().replace("\\_", "_")
     orvix_auth_secret = os.getenv("ORVIX_AUTH_SECRET", "")
     gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")

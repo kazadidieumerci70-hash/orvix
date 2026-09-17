@@ -178,8 +178,6 @@ def login_user(phone: str, password: str) -> tuple[str, UserProfile]:
     raise HTTPException(401, "Numero ou mot de passe incorrect.")
 
 def google_login_user(credential: str) -> tuple[str, UserProfile]:
-    if not _db_ready():
-        raise HTTPException(503, "La base de données n'est pas configurée.")
     from google.oauth2 import id_token
     from google.auth.transport import requests
     client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
@@ -192,6 +190,13 @@ def google_login_user(credential: str) -> tuple[str, UserProfile]:
     email = str(info.get("email", "")).strip().lower()
     if not email or not info.get("email_verified"):
         raise HTTPException(401, "L'adresse Google n'est pas vérifiée.")
+    if not _db_ready():
+        data = _read_users()
+        row = next((user for user in data["users"] if user.get("phone") == email), None)
+        if not row:
+            row = {"id": sha256(f"google:{email}".encode()).hexdigest()[:16], "phone": email, "name": str(info.get("name") or "Etudiant")[:160], "password_hash": _hash_password(secrets.token_urlsafe(32)), "created_at": datetime.now(timezone.utc).isoformat()}
+            data["users"].append(row); _write_users(data)
+        return _make_token(row["id"]), _profile(row)
     with _db_connect() as connection:
         row = _user_select(connection, email)
         if not row:
