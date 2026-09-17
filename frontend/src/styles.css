@@ -513,6 +513,7 @@ html[data-animations="on"] .subscription-panel { transition: color .2s ease, bac
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 310px 1fr; background: #fbfcfe; }
 .brand { display: flex; align-items: center; gap: 16px; font-weight: 800; font-size: 28px; color: #008f88; letter-spacing: 0; }
 .brand-mark { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at 32% 32%, #23b6aa, #007d77 72%); color: white; font-family: Georgia, serif; box-shadow: 0 14px 28px #008f8830; }
+.brand-logo { width: 50px; height: 50px; object-fit: contain; border-radius: 50%; mix-blend-mode: multiply; }
 .sidebar { background: #fff; border-right: 1px solid #e3eaf0; padding: 42px 17px 22px; display: flex; flex-direction: column; z-index: 15; }
 .sidebar-brand { margin: 0 14px 52px; }
 .sidebar nav { display: grid; gap: 17px; }
@@ -3583,6 +3584,7 @@ html[data-theme="dark"] .quiz-radio-group label { color: #a8b5b3; }
 .auth-orbit::before { content: ""; width: 43px; height: 43px; border-radius: 50%; background: #fff; box-shadow: inset 8px 5px 16px rgba(5, 95, 90, .12); }
 .auth-orbit i { position: absolute; opacity: 0; }
 .auth-logo > strong { margin-top: 12px; color: #101722; font-size: 35px; line-height: 1; letter-spacing: .16em; }
+.auth-logo-image { width: 84px; height: 84px; object-fit: contain; border-radius: 50%; mix-blend-mode: multiply; }
 .auth-logo > small { margin-top: 12px; color: #5f6d7b; font-size: 13px; }
 .auth-logo > small b, .auth-welcome b, .terms-check b { color: #079b92; font-weight: 500; }
 .auth-welcome { margin: 33px 0 23px; }
