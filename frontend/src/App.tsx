@@ -95,9 +95,9 @@ function App() {
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);
   const [activeDocumentId, setActiveDocumentId] = useState("");
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState("");
+  const [activeConversationId, setActiveConversationId] = useState(() => localStorage.getItem("orvix_active_conversation") || "");
   const [activeMessages, setActiveMessages] = useState<ChatMessage[]>([]);
-  const [view, setView] = useState<View>("chat");
+  const [view, setView] = useState<View>(() => (localStorage.getItem("orvix_view") as View) || "chat");
   const [mobileNav, setMobileNav] = useState(false);
   const [accountPlanName, setAccountPlanName] = useState("Gratuit");
   const [theme, setTheme] = useState<"light" | "dark">(() => localStorage.getItem("orvix_theme") === "dark" ? "dark" : "light");
@@ -124,6 +124,30 @@ function App() {
     localStorage.setItem("orvix_language", language);
     document.documentElement.lang = language === "English" ? "en" : language === "Italiano" ? "it" : language === "Español" ? "es" : "fr";
   }, [language]);
+
+  useEffect(() => {
+    localStorage.setItem("orvix_view", view);
+    if (activeConversationId) localStorage.setItem("orvix_active_conversation", activeConversationId);
+    else localStorage.removeItem("orvix_active_conversation");
+    if (activeDocumentId) localStorage.setItem("orvix_active_document", activeDocumentId);
+    else localStorage.removeItem("orvix_active_document");
+  }, [view, activeConversationId, activeDocumentId]);
+
+  useEffect(() => {
+    const savedDocument = localStorage.getItem("orvix_active_document");
+    if (savedDocument) setActiveDocumentId(savedDocument);
+  }, []);
+
+  useEffect(() => {
+    if (!user?.onboarding_completed || !activeConversationId) return;
+    getConversation(activeConversationId).then((conversation) => {
+      setActiveMessages(conversation.messages);
+      setActiveDocumentId(conversation.document_ids.length > 1 ? "__all__" : conversation.document_ids[0] || "");
+    }).catch(() => {
+      setActiveConversationId("");
+      setActiveMessages([]);
+    });
+  }, [user?.onboarding_completed, activeConversationId]);
 
   useEffect(() => {
     if (!user?.onboarding_completed) return;
