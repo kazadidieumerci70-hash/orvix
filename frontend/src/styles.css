@@ -4743,7 +4743,7 @@ select:focus-visible {
 }
 
 /* Barre de conversation finale : compacte, centrée et confortable à utiliser. */
-.chat-view > .composer { width: min(900px, calc(100% - 40px)); min-height: 64px !important; height: 64px !important; display: grid !important; grid-template-columns: 42px minmax(0, 1fr) 46px !important; align-items: center !important; gap: 10px !important; padding: 8px 12px !important; border-radius: 22px !important; box-sizing: border-box; }
+.chat-view > .composer { width: min(820px, calc(100% - 40px)); min-height: 64px !important; height: 64px !important; display: grid !important; grid-template-columns: 42px minmax(0, 1fr) 46px !important; align-items: center !important; gap: 10px !important; padding: 8px 12px !important; border-radius: 22px !important; box-sizing: border-box; }
 .chat-view > .composer .composer-tools, .chat-view > .composer .composer-input-stack { min-width: 0; height: 100% !important; }
 .chat-view > .composer .composer-support { width: 40px !important; height: 40px !important; }
 .chat-view > .composer .composer-input-stack > textarea { width: 100% !important; height: 44px !important; min-height: 44px !important; max-height: 44px !important; padding: 11px 4px !important; line-height: 22px !important; font-size: 15px !important; resize: none !important; overflow-y: auto !important; }
