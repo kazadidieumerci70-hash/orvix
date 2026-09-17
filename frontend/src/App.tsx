@@ -288,7 +288,6 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (loading) return;
-    if (step < 4) { setStep((value) => value + 1); return; }
     if (!form.name.trim() || !form.level.trim() || !form.goal.trim()) return;
     setLoading(true);
     setError("");
