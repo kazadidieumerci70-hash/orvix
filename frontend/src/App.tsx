@@ -287,7 +287,9 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!form.name.trim() || !form.level.trim() || !form.goal.trim() || loading) return;
+    if (loading) return;
+    if (step < 4) { setStep((value) => value + 1); return; }
+    if (!form.name.trim() || !form.level.trim() || !form.goal.trim()) return;
     setLoading(true);
     setError("");
     setMessage("");
@@ -402,6 +404,7 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [step, setStep] = useState(0);
 
   function update<K extends keyof OnboardingPayload>(key: K, value: OnboardingPayload[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -416,7 +419,9 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!form.name.trim() || !form.level.trim() || !form.goal.trim() || loading) return;
+    if (loading) return;
+    if (step < 4) { setStep((value) => value + 1); return; }
+    if (!form.name.trim() || !form.level.trim() || !form.goal.trim()) return;
     setLoading(true);
     setError("");
     try {
@@ -432,32 +437,18 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
     <main className="auth-page onboarding-page">
       <section className="onboarding-panel">
         <div className="brand auth-brand"><img className="brand-logo" src="/orvix-logo.jpeg" alt="Logo Orvix" /><span>ORVIX</span></div>
-        <div className="page-intro compact"><span>PROFIL D'APPRENTISSAGE</span><h1>Dis-nous comment Orvix doit t'aider</h1><p>Ces réponses servent à adapter le ton, les exemples, les quiz et les fiches.</p></div>
+        <div className="lia-intro"><span className="lia-avatar">L</span><div><strong>Lia</strong><small>Ton guide d’apprentissage</small></div><span className="lia-progress">{step + 1}/5</span></div>
+        <div className="page-intro compact"><span>QUELQUES QUESTIONS</span><h1>Faisons connaissance</h1><p>Lia va te poser quelques questions pour mieux t’accompagner.</p></div>
         <form className="onboarding-form" onSubmit={submit}>
-          <label htmlFor="student-name">Ton nom</label>
-          <input id="student-name" value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Ex. Alex" />
-
-          <label htmlFor="student-level">Niveau ou classe</label>
-          <input id="student-level" value={form.level} onChange={(event) => update("level", event.target.value)} placeholder="Ex. Terminale, L1, 4e secondaire..." />
-
-          <label>Matières principales</label>
-          <div className="chip-grid">
-            {subjectOptions.map((subject) => <button type="button" key={subject} className={form.subjects.includes(subject) ? "selected" : ""} onClick={() => toggleSubject(subject)}>{subject}</button>)}
-          </div>
-
-          <label htmlFor="student-goal">Ton objectif</label>
-          <textarea id="student-goal" value={form.goal} onChange={(event) => update("goal", event.target.value)} placeholder="Ex. Préparer les examens, mieux comprendre mes cours, faire des fiches..." />
-
-          <label>Façon d'apprendre préférée</label>
-          <div className="chip-grid">
-            {styleOptions.map((style) => <button type="button" key={style} className={form.learning_style === style ? "selected" : ""} onClick={() => update("learning_style", style)}>{style}</button>)}
-          </div>
-
-          <label htmlFor="student-difficulties">Ce qui est difficile pour toi</label>
-          <textarea id="student-difficulties" value={form.difficulties} onChange={(event) => update("difficulties", event.target.value)} placeholder="Ex. Je bloque sur les exercices, je retiens difficilement les formules..." />
+          <div className="lia-question"><span>Lia te demande</span><h2>{["Comment tu t’appelles ?", "Tu es en quelle classe ou quel niveau ?", "Quelles matières veux-tu travailler avec moi ?", "Quel est ton objectif ?", "Comment préfères-tu apprendre ?"][step]}</h2></div>
+          {step === 0 && <><label htmlFor="student-name">Ton prénom et ton nom</label><input id="student-name" autoFocus value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Ex. Alex Dupont" /></>}
+          {step === 1 && <><label htmlFor="student-level">Ton niveau</label><input id="student-level" autoFocus value={form.level} onChange={(event) => update("level", event.target.value)} placeholder="Ex. Terminale, L1, 4e secondaire" /></>}
+          {step === 2 && <><label>Matières principales</label><div className="chip-grid">{subjectOptions.map((subject) => <button type="button" key={subject} className={form.subjects.includes(subject) ? "selected" : ""} onClick={() => toggleSubject(subject)}>{subject}</button>)}</div></>}
+          {step === 3 && <><label htmlFor="student-goal">Ton objectif</label><textarea id="student-goal" autoFocus value={form.goal} onChange={(event) => update("goal", event.target.value)} placeholder="Ex. Réussir mes examens, mieux comprendre mes cours..." /></>}
+          {step === 4 && <><label>Ta façon d’apprendre</label><div className="chip-grid">{styleOptions.map((style) => <button type="button" key={style} className={form.learning_style === style ? "selected" : ""} onClick={() => update("learning_style", style)}>{style}</button>)}</div></>}
 
           {error && <p className="error-banner">{error}</p>}
-          <div className="onboarding-actions"><button type="button" onClick={onLogout}>Retour</button><button disabled={!form.name.trim() || !form.level.trim() || !form.goal.trim() || loading}>{loading ? "Enregistrement..." : "Commencer avec Orvix"}</button></div>
+          <div className="onboarding-actions"><button type="button" onClick={() => step > 0 ? setStep((value) => value - 1) : onLogout()}>Retour</button><button disabled={loading}>{loading ? "Enregistrement..." : step === 4 ? "Commencer avec Orvix" : "Suivant"}</button></div>
         </form>
       </section>
     </main>
