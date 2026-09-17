@@ -439,7 +439,7 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
     <main className="auth-page onboarding-page">
       <section className="onboarding-panel">
         <div className="brand auth-brand"><img className="brand-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /><span>ORVIX</span></div>
-        <span className="onboarding-progress">{step < 5 ? `${step + 1}/5` : "Récapitulatif"}</span>
+        <div className="onboarding-steps" aria-label={`Étape ${Math.min(step + 1, 5)} sur 5`}>{[0, 1, 2, 3, 4].map((item) => <span key={item} className={item <= step ? "active" : ""} />)}</div>
         <form className="onboarding-form" onSubmit={submit}>
           <div className="lia-question"><h2>{step === 5 ? `Oui ${form.name || "à toi"}, voici ton profil.` : ["Comment tu t’appelles ?", "Tu es en quelle classe ou quel niveau ?", "Quelles matières veux-tu travailler avec moi ?", "Quel est ton objectif ?", "Comment préfères-tu apprendre ?"][step]}</h2></div>
           {step === 0 && <input id="student-name" autoFocus value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Ton prénom et ton nom" aria-label="Ton prénom et ton nom" />}
