@@ -4829,6 +4829,8 @@ select:focus-visible {
 .chat-view > .composer .composer-support { width: 40px !important; height: 40px !important; }
 .chat-view > .composer .composer-input-stack > textarea { width: 100% !important; height: 44px !important; min-height: 44px !important; max-height: 44px !important; padding: 11px 4px !important; line-height: 22px !important; font-size: 15px !important; resize: none !important; overflow-y: hidden !important; }
 .chat-view > .composer .composer-input-stack > textarea.is-overflowing { overflow-y: auto !important; }
+.chat-view > .composer .composer-input-stack > textarea::-webkit-scrollbar { display: none !important; }
+.chat-view > .composer .composer-input-stack > textarea.is-overflowing::-webkit-scrollbar { display: block !important; width: 8px !important; }
 .chat-view > .composer > button[aria-label="Envoyer"] { width: 44px !important; height: 44px !important; margin: 0 !important; border-radius: 50% !important; }
 @media (max-width: 600px) {
   .chat-view > .composer { width: calc(100% - 20px) !important; min-height: 54px !important; height: 54px !important; grid-template-columns: 38px minmax(0, 1fr) 42px !important; gap: 7px !important; padding: 6px 7px !important; border-radius: 19px !important; }
