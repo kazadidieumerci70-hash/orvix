@@ -419,7 +419,7 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (loading) return;
-    if (step < 4) { setStep((value) => value + 1); return; }
+    if (step < 5) { setStep((value) => value + 1); return; }
     if (!form.name.trim() || !form.level.trim() || !form.goal.trim()) return;
     setLoading(true);
     setError("");
@@ -436,18 +436,19 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
     <main className="auth-page onboarding-page">
       <section className="onboarding-panel">
         <div className="brand auth-brand"><img className="brand-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /><span>ORVIX</span></div>
-        <div className="lia-intro"><span className="lia-avatar">O</span><div><strong>Orvix</strong><small>Ton assistant d’apprentissage</small></div><span className="lia-progress">{step + 1}/5</span></div>
+        <div className="lia-intro"><span className="lia-avatar">O</span><div><strong>Orvix</strong><small>Ton assistant d’apprentissage</small></div><span className="lia-progress">{step < 5 ? `${step + 1}/5` : "Récapitulatif"}</span></div>
         <div className="page-intro compact"><span>QUELQUES QUESTIONS</span><h1>Faisons connaissance</h1><p>Réponds à chaque question, puis Orvix continuera.</p></div>
         <form className="onboarding-form" onSubmit={submit}>
-          <div className="lia-question"><span>Orvix te demande</span><h2>{["Comment tu t’appelles ?", "Tu es en quelle classe ou quel niveau ?", "Quelles matières veux-tu travailler avec moi ?", "Quel est ton objectif ?", "Comment préfères-tu apprendre ?"][step]}</h2></div>
+          <div className="lia-question"><span>{step === 5 ? "Voici ce qu’Orvix a compris" : "Orvix te demande"}</span><h2>{step === 5 ? `Oui ${form.name || "à toi"}, voici ton profil.` : ["Comment tu t’appelles ?", "Tu es en quelle classe ou quel niveau ?", "Quelles matières veux-tu travailler avec moi ?", "Quel est ton objectif ?", "Comment préfères-tu apprendre ?"][step]}</h2></div>
           {step === 0 && <><label htmlFor="student-name">Ton prénom et ton nom</label><input id="student-name" autoFocus value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Ex. Alex Dupont" /></>}
           {step === 1 && <><label htmlFor="student-level">Ton niveau</label><input id="student-level" autoFocus value={form.level} onChange={(event) => update("level", event.target.value)} placeholder="Ex. Terminale, L1, 4e secondaire" /></>}
           {step === 2 && <><label>Matières principales</label><div className="chip-grid">{subjectOptions.map((subject) => <button type="button" key={subject} className={form.subjects.includes(subject) ? "selected" : ""} onClick={() => toggleSubject(subject)}>{subject}</button>)}</div></>}
           {step === 3 && <><label htmlFor="student-goal">Ton objectif</label><textarea id="student-goal" autoFocus value={form.goal} onChange={(event) => update("goal", event.target.value)} placeholder="Ex. Réussir mes examens, mieux comprendre mes cours..." /></>}
           {step === 4 && <><label>Ta façon d’apprendre</label><div className="chip-grid">{styleOptions.map((style) => <button type="button" key={style} className={form.learning_style === style ? "selected" : ""} onClick={() => update("learning_style", style)}>{style}</button>)}</div></>}
+          {step === 5 && <div className="onboarding-summary"><p><strong>Nom</strong><span>{form.name || "Non renseigné"}</span></p><p><strong>Niveau</strong><span>{form.level || "Non renseigné"}</span></p><p><strong>Matières</strong><span>{form.subjects.length ? form.subjects.join(", ") : "Non renseigné"}</span></p><p><strong>Objectif</strong><span>{form.goal || "Non renseigné"}</span></p><p><strong>Préférence</strong><span>{form.learning_style || "Non renseignée"}</span></p><small>Tu peux revenir en arrière pour modifier une réponse avant de valider.</small></div>}
 
           {error && <p className="error-banner">{error}</p>}
-          <div className="onboarding-actions"><button type="button" onClick={() => step > 0 ? setStep((value) => value - 1) : onLogout()}>Retour</button><button disabled={loading}>{loading ? "Enregistrement..." : step === 4 ? "Commencer avec Orvix" : "Suivant"}</button></div>
+          <div className="onboarding-actions"><button type="button" onClick={() => step > 0 ? setStep((value) => value - 1) : onLogout()}>Modifier</button><button disabled={loading}>{loading ? "Enregistrement..." : step === 5 ? "Valider mon profil" : "Suivant"}</button></div>
         </form>
       </section>
     </main>
