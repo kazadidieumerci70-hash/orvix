@@ -2329,6 +2329,8 @@ html[data-theme="dark"] .exam-columns p,html[data-theme="dark"] .exam-plan artic
   .onboarding-panel { padding: 24px 16px; }
   .onboarding-form input,.onboarding-form textarea { min-height: 56px; padding: 14px 16px; font-size: 16px; border-radius: 16px; }
   .onboarding-form textarea { min-height: 126px; }
+  .onboarding-form input { min-height: 68px; font-size: 17px; padding-block: 18px; }
+  .onboarding-form textarea { min-height: 150px; font-size: 17px; }
   .chip-grid { max-width: 100%; }
   .chip-grid button { min-width: 0; }
 }
