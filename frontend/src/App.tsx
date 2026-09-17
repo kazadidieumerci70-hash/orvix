@@ -472,7 +472,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
     setLoading(true); setError("");
     try {
       if (!window.google?.accounts?.id) await new Promise<void>((resolve, reject) => { const script = document.createElement("script"); script.src = "https://accounts.google.com/gsi/client"; script.async = true; script.onload = () => resolve(); script.onerror = () => reject(new Error("Google est momentanément indisponible.")); document.head.appendChild(script); });
-      await new Promise<void>((resolve, reject) => { window.google.accounts.id.initialize({ client_id: clientId, callback: async (response: { credential: string }) => { try { const result = await loginWithGoogle(response.credential); saveToken(result.token); onAuthenticated(result.user); resolve(); } catch (e) { reject(e); } } }); window.google.accounts.id.prompt((notice: any) => { if (notice.isNotDisplayed?.() || notice.isSkippedMoment?.()) reject(new Error("La fenêtre Google n’a pas pu être ouverte.")); }); });
+      await new Promise<void>((resolve, reject) => { window.google.accounts.id.initialize({ client_id: clientId, callback: async (response: { credential: string }) => { try { const result = await loginWithGoogle(response.credential); saveToken(result.token); onAuthenticated(result.user); resolve(); } catch (e) { reject(e); } } }); window.google.accounts.id.prompt((notice: any) => { if (notice.isNotDisplayed?.() || notice.isSkippedMoment?.()) resolve(); }); });
     } catch (e) { setError(e instanceof Error ? e.message : "Connexion Google impossible."); } finally { setLoading(false); }
   }
 

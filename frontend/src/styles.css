@@ -3595,7 +3595,7 @@ html[data-theme="dark"] .quiz-radio-group label { color: #a8b5b3; }
 .auth-orbit::before { content: ""; width: 43px; height: 43px; border-radius: 50%; background: #fff; box-shadow: inset 8px 5px 16px rgba(5, 95, 90, .12); }
 .auth-orbit i { position: absolute; opacity: 0; }
 .auth-logo > strong { margin-top: 12px; color: #101722; font-size: 35px; line-height: 1; letter-spacing: .16em; }
-.auth-logo-image { width: 118px; height: 118px; object-fit: contain; border-radius: 50%; mix-blend-mode: multiply; filter: drop-shadow(0 12px 18px rgba(8, 127, 120, .14)); }
+.auth-logo-image { width: 118px; height: 118px; object-fit: contain; border-radius: 50%; mix-blend-mode: multiply; }
 .auth-logo > small { margin-top: 12px; color: #5f6d7b; font-size: 13px; }
 .auth-logo > small b, .auth-welcome b, .terms-check b { color: #079b92; font-weight: 500; }
 .auth-welcome { margin: 33px 0 23px; }
