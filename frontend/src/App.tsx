@@ -715,7 +715,7 @@ function ChatView({
       : language === "Español"
         ? { title: "¿Qué quieres comprender hoy?", hint: "Haz una pregunta o elige un documento desde la zona de entrada.", placeholder: "Escribe tu mensaje…" }
         : { title: "Que veux-tu comprendre aujourd’hui ?", hint: "Pose une question, ou choisis un support depuis la zone de saisie.", placeholder: "Écrivez votre message…" };
-  return <section className="chat-view">
+  return <section className={`chat-view ${messages.length || loading ? "has-messages" : "empty-chat"}`}>
     <div className="messages" aria-live="polite">
       {!messages.length && !loading && (
         <div className="chat-empty">

@@ -97,6 +97,7 @@ button { cursor: pointer; }
 .chat-empty { transform: translateY(-42px); }
 .chat-empty .orvix-introduction { margin-bottom: 0 !important; }
 .chat-view > .composer { transform: translateY(-104px); }
+.chat-view.has-messages > .composer { width: min(1060px, calc(100% - 40px)) !important; transform: none !important; }
 .chat-view > .composer { border-color: #9fd8d3 !important; background: rgba(239, 250, 248, .94) !important; box-shadow: 0 16px 34px rgba(20, 130, 122, .12) !important; }
 .chat-view > .composer .composer-input-stack > textarea { color: #145f5b !important; }
 .chat-view > .composer .composer-input-stack > textarea::placeholder { color: #5e8f8b !important; }
