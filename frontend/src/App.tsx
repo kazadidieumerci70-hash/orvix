@@ -397,13 +397,6 @@ function ProfileMenuGroup({ title, children }: { title: string; children: ReactN
 
 const subjectOptions = ["Maths", "Physique", "Chimie", "SVT", "Français", "Anglais", "Histoire", "Informatique", "Autres"];
 const styleOptions = ["Explications simples", "Exemples concrets", "Questions pas a pas", "Fiches courtes"];
-const starterPrompts = [
-  { title: "Explique-moi", detail: "ce cours simplement", prompt: "Explique-moi ce cours simplement", icon: MessageCircle },
-  { title: "Aide-moi à", detail: "comprendre un concept", prompt: "Aide-moi à comprendre un concept", icon: Sparkles },
-  { title: "Pose-moi des questions", detail: "pour réviser", prompt: "Pose-moi des questions pour réviser", icon: HelpCircle },
-  { title: "Résume le document", detail: "sélectionné", prompt: "Résume le document sélectionné", icon: FileText },
-];
-
 function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; onCompleted: (user: UserProfile) => void; onLogout: () => void }) {
   const [form, setForm] = useState<OnboardingPayload>({
     name: user.name === "Etudiant" ? "" : user.name,
@@ -722,23 +715,12 @@ function ChatView({
       : language === "Español"
         ? { title: "¿Qué quieres comprender hoy?", hint: "Haz una pregunta o elige un documento desde la zona de entrada.", placeholder: "Escribe tu mensaje…" }
         : { title: "Que veux-tu comprendre aujourd’hui ?", hint: "Pose une question, ou choisis un support depuis la zone de saisie.", placeholder: "Écrivez votre message…" };
-  const localizedStarters = language === "English"
-    ? [{ title: "Explain to me", detail: "this lesson simply" }, { title: "Help me understand", detail: "a concept" }, { title: "Ask me questions", detail: "to revise" }, { title: "Summarize the document", detail: "selected" }]
-    : language === "Italiano"
-      ? [{ title: "Spiegami", detail: "questa lezione in modo semplice" }, { title: "Aiutami a capire", detail: "un concetto" }, { title: "Fammi delle domande", detail: "per ripassare" }, { title: "Riassumi il documento", detail: "selezionato" }]
-      : language === "Español"
-        ? [{ title: "Explícame", detail: "esta lección de forma sencilla" }, { title: "Ayúdame a entender", detail: "un concepto" }, { title: "Hazme preguntas", detail: "para repasar" }, { title: "Resume el documento", detail: "seleccionado" }]
-        : starterPrompts;
-
   return <section className="chat-view">
     <div className="messages" aria-live="polite">
       {!messages.length && !loading && (
         <div className="chat-empty">
           <div className="brand chat-empty-brand"><img className="brand-logo chat-empty-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /></div>
           <div className="orvix-introduction regular-welcome"><h1>{chatText.title}</h1><p>{chatText.hint}</p></div>
-          <div className="starter-grid">
-            {starterPrompts.map(({ prompt, icon: Icon }, index) => { const item = localizedStarters[index]; return <button key={prompt} onClick={() => setMessage(prompt)}><span><Icon size={30} /></span><strong>{item.title}</strong><small>{item.detail}</small><b>›</b></button>; })}
-          </div>
         </div>
       )}
       {messages.map((item, index) => <ChatMessageBubble key={index} item={item} />)}

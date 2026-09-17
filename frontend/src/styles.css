@@ -93,7 +93,11 @@ button { cursor: pointer; }
 }
 .chat-empty-brand .brand-logo { width: 64px !important; height: 64px !important; object-fit: contain; }
 .chat-empty-brand { width: auto !important; height: auto !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; border-radius: 0 !important; }
-.chat-empty-brand .chat-empty-logo { width: 104px !important; height: 104px !important; animation: orvix-logo-spin 8s linear infinite; }
+.chat-empty-brand .chat-empty-logo { width: 144px !important; height: 144px !important; animation: orvix-logo-spin 8s linear infinite; }
+.chat-empty { transform: translateY(-42px); }
+.chat-empty .orvix-introduction { margin-bottom: 0 !important; }
+.chat-view > .composer { transform: translateY(-34px); }
+@media (max-width: 600px) { .chat-empty-brand .chat-empty-logo { width: 116px !important; height: 116px !important; } .chat-empty { transform: translateY(-24px); } .chat-view > .composer { transform: none; } }
 @keyframes orvix-logo-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .chat-empty-brand .chat-empty-logo { animation: none; } }
 .auth-shell {
