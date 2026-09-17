@@ -288,7 +288,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (loading) return;
-    if (!form.name.trim() || !form.level.trim() || !form.goal.trim()) return;
+    if (!form.name.trim() || !form.level.trim()) { setError("Indique au moins ton nom et ton niveau pour continuer."); return; }
     setLoading(true);
     setError("");
     setMessage("");
@@ -427,7 +427,7 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
     setLoading(true);
     setError("");
     try {
-      onCompleted(await completeOnboarding({ ...form, subjects }));
+      onCompleted(await completeOnboarding({ ...form, subjects, goal: form.goal.trim() || "À définir" }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Impossible d'enregistrer le profil.");
     } finally {
