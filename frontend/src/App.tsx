@@ -541,7 +541,10 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
         <div className="auth-logo"><img className="auth-logo-image" src="/orvix-logo-transparent.png" alt="Logo Orvix" /><strong>ORVIX</strong><small>{mode === "login" ? "Votre IA. Vos documents. Nos réponses." : <>Commencez votre expérience avec <b>Orvix.</b></>}</small></div>
         {mode === "login" && <header className="auth-welcome"><h1>Bienvenue !</h1><p>Connectez-vous pour continuer<br />avec <b>Orvix.</b></p></header>}
         {mode === "register" && <>
-          <div ref={googleButtonRef} className="google-primary" aria-label="Continuer avec Google" />
+          <div className="google-account-block">
+            <p className="google-account-label">Compte récemment utilisé</p>
+            <div ref={googleButtonRef} className="google-primary" aria-label="Continuer avec Google" />
+          </div>
           <div className="auth-divider auth-divider-compact"><span />ou avec ton e-mail<span /></div>
         </>}
         <form onSubmit={submit} className="auth-form auth-reference-form">
