@@ -88,7 +88,9 @@ const navLabels: Record<string, Record<string, string>> = {
 };
 
 function App() {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    try { const cached = localStorage.getItem("orvix_user"); return localStorage.getItem("orvix_token") && cached ? JSON.parse(cached) as UserProfile : null; } catch { return null; }
+  });
   const [authChecked, setAuthChecked] = useState(false);
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);
   const [activeDocumentId, setActiveDocumentId] = useState("");
@@ -102,7 +104,7 @@ function App() {
   const [language, setLanguage] = useState("Français");
 
   useEffect(() => {
-    me().then(setUser).catch(() => clearToken()).finally(() => setAuthChecked(true));
+    me().then((profile) => { localStorage.setItem("orvix_user", JSON.stringify(profile)); setUser(profile); }).catch(() => undefined).finally(() => setAuthChecked(true));
     document.documentElement.dataset.textSize = localStorage.getItem("orvix_text_size") || "normal";
     document.documentElement.dataset.density = localStorage.getItem("orvix_density") || "comfortable";
     document.documentElement.dataset.animations = localStorage.getItem("orvix_animations") === "off" ? "off" : "on";
@@ -136,7 +138,7 @@ function App() {
     if (!user.welcome_seen) {
       return <FirstWelcomeView onContinue={async () => setUser(await markWelcomeSeen())} />;
     }
-    return <OnboardingView user={user} onCompleted={setUser} onLogout={() => { clearToken(); setUser(null); }} />;
+    return <OnboardingView user={user} onCompleted={(profile) => { localStorage.setItem("orvix_user", JSON.stringify(profile)); setUser(profile); }} onLogout={() => { clearToken(); localStorage.removeItem("orvix_user"); setUser(null); }} />;
   }
 
   const activeDocumentIds = activeDocumentId === "__all__"
@@ -195,7 +197,7 @@ function App() {
         {view === "revision" && <RevisionView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} />}
         {view === "quiz" && <QuizView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} />}
         {view === "support" && <SupportView documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} />}
-        {view === "account" && <AccountView user={user} onSaved={setUser} documentCount={documents.length} conversationCount={conversations.length} theme={theme} onThemeChange={() => setTheme((current) => current === "dark" ? "light" : "dark")} language={language} onLanguageChange={setLanguage} onLogout={() => { clearToken(); setUser(null); }} />}
+        {view === "account" && <AccountView user={user} onSaved={(profile) => { localStorage.setItem("orvix_user", JSON.stringify(profile)); setUser(profile); }} documentCount={documents.length} conversationCount={conversations.length} theme={theme} onThemeChange={() => setTheme((current) => current === "dark" ? "light" : "dark")} language={language} onLanguageChange={setLanguage} onLogout={() => { clearToken(); localStorage.removeItem("orvix_user"); setUser(null); }} />}
       </main>
     </div>
   );
@@ -467,6 +469,10 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  function completeAuthentication(profile: UserProfile) {
+    localStorage.setItem("orvix_user", JSON.stringify(profile));
+    onAuthenticated(profile);
+  }
   const googleButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -477,7 +483,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
       if (!window.google?.accounts?.id || !googleButtonRef.current) return;
       window.google.accounts.id.initialize({ client_id: clientId, callback: async (response: { credential: string }) => {
         setLoading(true); setError("");
-        try { const result = await loginWithGoogle(response.credential); saveToken(result.token); onAuthenticated(result.user); }
+        try { const result = await loginWithGoogle(response.credential); saveToken(result.token); completeAuthentication(result.user); }
         catch (e) { setError(e instanceof Error ? e.message : "Connexion Google impossible."); }
         finally { setLoading(false); }
       } });
@@ -501,7 +507,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
         const finish = (callback: () => void) => { if (settled) return; settled = true; window.clearTimeout(timeoutId); callback(); };
         const timeoutId = window.setTimeout(() => finish(() => reject(new Error("La fenêtre Google n’a pas pu être ouverte. Vérifiez les fenêtres pop-up bloquées puis réessayez."))), 12000);
         window.google.accounts.id.initialize({ client_id: clientId, callback: async (response: { credential: string }) => {
-          try { const result = await loginWithGoogle(response.credential); saveToken(result.token); onAuthenticated(result.user); finish(resolve); }
+          try { const result = await loginWithGoogle(response.credential); saveToken(result.token); completeAuthentication(result.user); finish(resolve); }
           catch (e) { finish(() => reject(e)); }
         } });
         window.google.accounts.id.prompt((notice: any) => {
@@ -529,7 +535,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
     try {
       const result = mode === "register" ? await register(phone, password) : await login(phone, password);
       saveToken(result.token);
-      onAuthenticated(result.user);
+      completeAuthentication(result.user);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Connexion impossible.");
     } finally {
