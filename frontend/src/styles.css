@@ -4218,6 +4218,11 @@ html[data-theme="dark"] .top-document-selector select { color: #dce7e5; }
   .chat-view .composer { margin-bottom: calc(15px + env(safe-area-inset-bottom)); }
 }
 
+/* Sur desktop, le menu latéral est déjà visible : seul le profil reste dans l’en-tête. */
+@media (min-width: 901px) {
+  .page-actions .mobile-menu { display: none !important; }
+}
+
 /* Bouton d'ajout mobile : cercle net, sans étirement. */
 @media (max-width: 900px) {
   .chat-view .composer-tools {
