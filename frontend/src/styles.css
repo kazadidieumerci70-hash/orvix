@@ -97,6 +97,11 @@ button { cursor: pointer; }
 .chat-empty { transform: translateY(-42px); }
 .chat-empty .orvix-introduction { margin-bottom: 0 !important; }
 .chat-view > .composer { transform: translateY(-104px); }
+.chat-view > .composer { border-color: #9fd8d3 !important; background: rgba(239, 250, 248, .94) !important; box-shadow: 0 16px 34px rgba(20, 130, 122, .12) !important; }
+.chat-view > .composer .composer-input-stack > textarea { color: #145f5b !important; }
+.chat-view > .composer .composer-input-stack > textarea::placeholder { color: #5e8f8b !important; }
+.chat-view > .composer .composer-support { color: #148f87 !important; background: #d8f1ee !important; }
+.chat-view > .composer > button[aria-label="Envoyer"] { background: linear-gradient(145deg, #43bdb3, #199b93) !important; }
 @media (max-width: 600px) { .chat-empty-brand .chat-empty-logo { width: 116px !important; height: 116px !important; } .chat-empty { transform: translateY(-24px); } .chat-view > .composer { transform: translateY(-34px); } }
 @keyframes orvix-logo-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .chat-empty-brand .chat-empty-logo { animation: none; } }
