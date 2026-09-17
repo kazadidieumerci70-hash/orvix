@@ -212,10 +212,8 @@ function FirstWelcomeView({ onContinue }: { onContinue: () => Promise<void> }) {
   return <main className="first-welcome-page"><section className="first-welcome-card">
     <div className="welcome-brand"><img src="/orvix-logo.jpeg" alt="Logo Orvix" /><span>ORVIX</span></div>
     <h1>Bonjour, je suis ORVIX.</h1>
-    <p className="creator-credit">Créé par <strong>DIEU MERCI KAZADI</strong></p>
-    <p>Je suis une intelligence artificielle conçue avec une mission simple : <strong>vous aider à comprendre vos documents en discutant directement avec eux.</strong></p>
-    <p>Je peux analyser, résumer et expliquer leur contenu, retrouver les informations importantes et répondre clairement à vos questions.</p>
-    <p className="welcome-callout"><strong>Importez votre document, posez vos questions et avançons ensemble.</strong></p>
+    <p>Je suis là pour t’aider à comprendre tes cours, tes documents et à avancer plus facilement.</p>
+    <p className="welcome-callout"><strong>Pose tes questions, je t’accompagne.</strong></p>
     {error && <p className="error-banner">{error}</p>}
     <button onClick={continueToProfile} disabled={loading}>{loading ? "Préparation…" : "Continuer"}<span>→</span></button>
   </section></main>;
