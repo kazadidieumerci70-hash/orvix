@@ -447,7 +447,7 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
           {step === 5 && <div className="onboarding-summary"><p><strong>Nom</strong><span>{form.name || "Non renseigné"}</span></p><p><strong>Niveau</strong><span>{form.level || "Non renseigné"}</span></p><p><strong>Matières</strong><span>{form.subjects.length ? form.subjects.join(", ") : "Non renseigné"}</span></p><p><strong>Objectif</strong><span>{form.goal || "Non renseigné"}</span></p><p><strong>Préférence</strong><span>{form.learning_style || "Non renseignée"}</span></p><small>Tu peux revenir en arrière pour modifier une réponse avant de valider.</small></div>}
 
           {error && <p className="error-banner">{error}</p>}
-          <div className="onboarding-actions"><button type="button" onClick={() => step > 0 ? setStep((value) => value - 1) : onLogout()}>Modifier</button><button disabled={loading}>{loading ? "Enregistrement..." : step === 5 ? "Valider mon profil" : "Suivant"}</button></div>
+          <div className="onboarding-actions">{step > 0 && <button type="button" onClick={() => setStep((value) => value - 1)}>{step === 5 ? "Modifier" : "Retour"}</button>}<button disabled={loading}>{loading ? "Enregistrement..." : step === 5 ? "Valider mon profil" : "Suivant"}</button></div>
         </form>
       </section>
     </main>
