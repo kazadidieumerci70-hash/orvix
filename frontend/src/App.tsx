@@ -404,6 +404,7 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [step, setStep] = useState(0);
+  const [customSubject, setCustomSubject] = useState("");
 
   function update<K extends keyof OnboardingPayload>(key: K, value: OnboardingPayload[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -421,10 +422,12 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
     if (loading) return;
     if (step < 5) { setStep((value) => value + 1); return; }
     if (!form.name.trim() || !form.level.trim() || !form.goal.trim()) return;
+    const subjects = form.subjects.filter((subject) => subject !== "Autres");
+    if (customSubject.trim()) subjects.push(customSubject.trim());
     setLoading(true);
     setError("");
     try {
-      onCompleted(await completeOnboarding(form));
+      onCompleted(await completeOnboarding({ ...form, subjects }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Impossible d'enregistrer le profil.");
     } finally {
@@ -441,10 +444,10 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
           <div className="lia-question"><h2>{step === 5 ? `Oui ${form.name || "à toi"}, voici ton profil.` : ["Comment tu t’appelles ?", "Tu es en quelle classe ou quel niveau ?", "Quelles matières veux-tu travailler avec moi ?", "Quel est ton objectif ?", "Comment préfères-tu apprendre ?"][step]}</h2></div>
           {step === 0 && <input id="student-name" autoFocus value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Ton prénom et ton nom" aria-label="Ton prénom et ton nom" />}
           {step === 1 && <input id="student-level" autoFocus value={form.level} onChange={(event) => update("level", event.target.value)} placeholder="Ton niveau ou ta classe" aria-label="Ton niveau ou ta classe" />}
-          {step === 2 && <><label>Matières principales</label><div className="chip-grid">{subjectOptions.map((subject) => <button type="button" key={subject} className={form.subjects.includes(subject) ? "selected" : ""} onClick={() => toggleSubject(subject)}>{subject}</button>)}</div></>}
+          {step === 2 && <><label>Matières principales</label><div className="chip-grid">{subjectOptions.map((subject) => <button type="button" key={subject} className={form.subjects.includes(subject) ? "selected" : ""} onClick={() => toggleSubject(subject)}>{subject}</button>)}</div>{form.subjects.includes("Autres") && <input autoFocus value={customSubject} onChange={(event) => setCustomSubject(event.target.value)} placeholder="Écris ta matière" aria-label="Ta matière personnalisée" />}</>}
           {step === 3 && <textarea id="student-goal" autoFocus value={form.goal} onChange={(event) => update("goal", event.target.value)} placeholder="Ton objectif" aria-label="Ton objectif" />}
           {step === 4 && <><label>Ta façon d’apprendre</label><div className="chip-grid">{styleOptions.map((style) => <button type="button" key={style} className={form.learning_style === style ? "selected" : ""} onClick={() => update("learning_style", style)}>{style}</button>)}</div></>}
-          {step === 5 && <div className="onboarding-summary"><p><strong>Nom</strong><span>{form.name || "Non renseigné"}</span></p><p><strong>Niveau</strong><span>{form.level || "Non renseigné"}</span></p><p><strong>Matières</strong><span>{form.subjects.length ? form.subjects.join(", ") : "Non renseigné"}</span></p><p><strong>Objectif</strong><span>{form.goal || "Non renseigné"}</span></p><p><strong>Préférence</strong><span>{form.learning_style || "Non renseignée"}</span></p><small>Tu peux revenir en arrière pour modifier une réponse avant de valider.</small></div>}
+          {step === 5 && <div className="onboarding-summary"><p><strong>Nom</strong><span>{form.name || "Non renseigné"}</span></p><p><strong>Niveau</strong><span>{form.level || "Non renseigné"}</span></p><p><strong>Matières</strong><span>{[...form.subjects.filter((subject) => subject !== "Autres"), ...(customSubject.trim() ? [customSubject.trim()] : [])].join(", ") || "Non renseigné"}</span></p><p><strong>Objectif</strong><span>{form.goal || "Non renseigné"}</span></p><p><strong>Préférence</strong><span>{form.learning_style || "Non renseignée"}</span></p><small>Tu peux revenir en arrière pour modifier une réponse avant de valider.</small></div>}
 
           {error && <p className="error-banner">{error}</p>}
           <div className="onboarding-actions">{step > 0 && <button type="button" onClick={() => setStep((value) => value - 1)}>{step === 5 ? "Modifier" : "Retour"}</button>}<button disabled={loading}>{loading ? "Enregistrement..." : step === 5 ? "Valider mon profil" : "Suivant"}</button></div>
