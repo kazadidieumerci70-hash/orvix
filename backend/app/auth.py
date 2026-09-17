@@ -17,7 +17,7 @@ TOKEN_TTL_HOURS = 24 * 14
 _revoked_tokens: set[str] = set()
 
 def _database_url() -> str:
-    return os.getenv("DATABASE_URL", "").strip()
+    return get_settings().database_url
 
 def _db_connect():
     import psycopg
