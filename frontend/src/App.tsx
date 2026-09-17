@@ -466,6 +466,7 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
 
 function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) => void }) {
   const [mode, setMode] = useState<"login" | "register">("register");
+  const [registerStep, setRegisterStep] = useState<"email" | "password">("email");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
@@ -476,7 +477,13 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!phone.trim() || password.length < 6 || loading) return;
+    if (!phone.trim() || loading) return;
+    if (mode === "register" && registerStep === "email") {
+      setRegisterStep("password");
+      setError("");
+      return;
+    }
+    if (password.length < 6) return;
     if (mode === "register" && (password !== passwordConfirmation || !acceptedTerms)) {
       setError(password !== passwordConfirmation ? "Les mots de passe ne correspondent pas." : "Vous devez accepter les conditions d’utilisation.");
       return;
@@ -497,7 +504,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
   return (
     <main className="auth-page">
       <section className={`auth-panel auth-reference ${mode}`}>
-        {mode === "register" && <div className="auth-topline"><button type="button" aria-label="Retour à la connexion" onClick={() => { setMode("login"); setError(""); }}><ArrowLeft /></button><strong>Créer un compte</strong><span /></div>}
+        {mode === "register" && <div className="auth-topline"><button type="button" aria-label="Retour à la connexion" onClick={() => { setMode("login"); setRegisterStep("email"); setError(""); }}><ArrowLeft /></button><strong>Créer un compte</strong><span /></div>}
         <div className="auth-logo"><span className="auth-orbit"><i>O</i></span><strong>ORVIX</strong><small>{mode === "login" ? "Votre IA. Vos documents. Nos réponses." : <>Commencez votre expérience avec <b>Orvix.</b></>}</small></div>
         {mode === "login" && <header className="auth-welcome"><h1>Bienvenue !</h1><p>Connectez-vous pour continuer<br />avec <b>Orvix.</b></p></header>}
         {mode === "register" && <>
@@ -506,15 +513,15 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
         </>}
         <form onSubmit={submit} className="auth-form auth-reference-form">
           <div className="auth-input"><Phone size={20} /><input id="phone" aria-label={mode === "register" ? "Adresse e-mail" : "Numéro de téléphone ou e-mail"} type={mode === "register" ? "email" : "text"} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={mode === "register" ? "Adresse e-mail" : "Numéro de téléphone ou e-mail"} autoComplete={mode === "register" ? "email" : "username"} /></div>
-          <div className="auth-input"><LockKeyhole size={20} /><input id="password" aria-label="Mot de passe" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mot de passe" type={showPassword ? "text" : "password"} autoComplete={mode === "register" ? "new-password" : "current-password"} /><button type="button" className="password-visibility" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div>
-          {mode === "register" && <div className="auth-input"><LockKeyhole size={20} /><input aria-label="Confirmer le mot de passe" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} placeholder="Confirmer le mot de passe" type={showPassword ? "text" : "password"} autoComplete="new-password" /></div>}
+          {(mode === "login" || registerStep === "password") && <div className="auth-input"><LockKeyhole size={20} /><input id="password" aria-label="Mot de passe" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mot de passe" type={showPassword ? "text" : "password"} autoComplete={mode === "register" ? "new-password" : "current-password"} /><button type="button" className="password-visibility" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div>}
+          {mode === "register" && registerStep === "password" && <div className="auth-input"><LockKeyhole size={20} /><input aria-label="Confirmer le mot de passe" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} placeholder="Confirmer le mot de passe" type={showPassword ? "text" : "password"} autoComplete="new-password" /></div>}
           {mode === "login" && <button type="button" className="forgot-password">Mot de passe oublié ?</button>}
-          {mode === "register" && <label className="terms-check"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} /><span>J’accepte les <b>Conditions d’utilisation</b><br />et la <b>Politique de confidentialité.</b></span></label>}
+          {mode === "register" && registerStep === "password" && <label className="terms-check"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} /><span>J’accepte les <b>Conditions d’utilisation</b><br />et la <b>Politique de confidentialité.</b></span></label>}
           {error && <p className="error-banner">{error}</p>}
-          <button className="auth-submit" disabled={!phone.trim() || password.length < 6 || loading || (mode === "register" && (!acceptedTerms || password !== passwordConfirmation))}>{loading ? "Patientez…" : mode === "register" ? "S’inscrire" : "Se connecter"}<span>→</span></button>
+          <button className="auth-submit" disabled={!phone.trim() || loading || (mode === "login" && password.length < 6) || (mode === "register" && registerStep === "password" && (password.length < 6 || !acceptedTerms || password !== passwordConfirmation))}>{loading ? "Patientez…" : mode === "register" ? registerStep === "email" ? "Suivant" : "Créer le compte" : "Se connecter"}<span>→</span></button>
         </form>
         {mode === "login" && <><div className="auth-divider"><span />ou continuer avec<span /></div><div className="social-auth"><button type="button" title="Bientôt disponible"><b>G</b>Google</button><button type="button" title="Bientôt disponible"><b>●</b>Apple</button></div></>}
-        <p className="auth-switch">{mode === "register" ? "Déjà un compte ?" : "Pas encore de compte ?"}<button type="button" onClick={() => { setMode(mode === "register" ? "login" : "register"); setError(""); }}>{mode === "register" ? "Se connecter" : "S’inscrire"}</button></p>
+        <p className="auth-switch">{mode === "register" ? "Déjà un compte ?" : "Pas encore de compte ?"}<button type="button" onClick={() => { setMode(mode === "register" ? "login" : "register"); setRegisterStep("email"); setError(""); }}>{mode === "register" ? "Se connecter" : "S’inscrire"}</button></p>
       </section>
     </main>
   );
