@@ -58,7 +58,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       localStorage.removeItem("orvix_user");
       window.dispatchEvent(new Event("orvix-auth-expired"));
     }
-    throw new Error(payload?.detail || "Le serveur Orvix est momentanément indisponible.");
+    const detail = typeof payload?.detail === "string"
+      ? payload.detail
+      : Array.isArray(payload?.detail)
+        ? payload.detail.map((item: { msg?: string }) => item?.msg).filter(Boolean).join(" ")
+        : "Le serveur Orvix est momentanément indisponible.";
+    throw new Error(detail);
   }
   return response.json() as Promise<T>;
 }
