@@ -125,7 +125,7 @@ button { cursor: pointer; }
 .onboarding-page::-webkit-scrollbar-track { background: transparent; }
 .onboarding-page::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: #aebbb9; background-clip: padding-box; }
 .auth-panel { width: min(430px, 100%); background: white; border: 1px solid #dceae7; border-radius: 20px; padding: 28px; box-shadow: 0 24px 70px #173f361c; }
-.onboarding-panel { width: min(760px, 100%); background: white; border: 1px solid #dceae7; border-radius: 20px; padding: 58px 30px 38px; box-shadow: 0 24px 70px #173f361c; }
+.onboarding-panel { width: min(620px, 100%); background: white; border: 1px solid #dceae7; border-radius: 24px; padding: 34px 38px 30px; box-shadow: 0 18px 50px #173f3614; }
 .auth-brand { color: #0d9c91; margin-bottom: 24px; }
 .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #eef7f5; border-radius: 14px; padding: 5px; margin-bottom: 22px; }
 .auth-tabs button { border: 0; border-radius: 10px; padding: 11px; background: transparent; color: #4d625f; font-weight: 700; }
@@ -146,7 +146,7 @@ button { cursor: pointer; }
 .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip-grid button { border: 1px solid #d5e4e1; background: #f8fbfa; color: #304341; border-radius: 999px; padding: 9px 13px; font-weight: 700; }
 .chip-grid button.selected { border-color: #13b7a6; background: #e3f7f4; color: #078d84; }
-.onboarding-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+.onboarding-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 .onboarding-actions button { border: 0; border-radius: 14px; padding: 13px 18px; font-weight: 700; }
 .onboarding-actions button:first-child { background: #eef4f2; color: #50615f; }
 .onboarding-actions button:last-child { background: #12b5a5; color: white; }
@@ -410,10 +410,10 @@ html[data-animations="off"] *,html[data-animations="off"] *::before,html[data-an
 .lia-intro strong { color: #17202a; font-size: 15px; }
 .lia-intro small { color: #71808d; font-size: 12px; }
 .lia-progress { color: #15998f; font-size: 13px; font-weight: 700; }
-.lia-question { margin: 18px 0 24px; text-align: left; }
+.lia-question { margin: 24px 0 16px; text-align: left; }
 .lia-question span { color: #15998f; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .lia-question h2 { margin: 7px 0 0; color: #17202a; font-size: clamp(22px, 3vw, 30px); }
-.onboarding-progress { display: block; margin: 0 0 16px; color: #15998f; font-size: 13px; font-weight: 700; text-align: right; }
+.onboarding-progress { display: none; }
 .onboarding-panel .auth-brand { margin-bottom: 10px; }
 .onboarding-summary { display: grid; gap: 0; border-top: 1px solid #dce8e5; }
 .onboarding-summary p { display: grid; grid-template-columns: 130px 1fr; gap: 16px; margin: 0; padding: 12px 0; border-bottom: 1px solid #dce8e5; color: #53636a; }
