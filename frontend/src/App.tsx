@@ -102,7 +102,6 @@ function App() {
   const [accountPlanName, setAccountPlanName] = useState("Gratuit");
   const [theme, setTheme] = useState<"light" | "dark">(() => localStorage.getItem("orvix_theme") === "dark" ? "dark" : "light");
   const [language, setLanguage] = useState("Français");
-  const [showGuestAuth, setShowGuestAuth] = useState(false);
 
   useEffect(() => {
     me().then((profile) => { localStorage.setItem("orvix_user", JSON.stringify(profile)); setUser(profile); }).catch(() => undefined).finally(() => setAuthChecked(true));
@@ -162,8 +161,7 @@ function App() {
   }
 
   if (!user) {
-    if (showGuestAuth) return <AuthView onAuthenticated={(profile) => { setShowGuestAuth(false); setUser(profile); }} />;
-    return <GuestChatView onRequireAuth={() => setShowGuestAuth(true)} />;
+    return <AuthView onAuthenticated={setUser} />;
   }
 
   if (!user.onboarding_completed) {
@@ -301,7 +299,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     difficulties: user.difficulties,
   });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(() => localStorage.getItem("orvix_guest_message") || "");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
@@ -617,17 +615,6 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
       </section>
     </main>
   );
-}
-
-function GuestChatView({ onRequireAuth }: { onRequireAuth: () => void }) {
-  const [message, setMessage] = useState(() => localStorage.getItem("orvix_guest_message") || "");
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    if (!message.trim()) return;
-    localStorage.setItem("orvix_guest_message", message.trim());
-    onRequireAuth();
-  }
-  return <section className="chat-view guest-chat-view"><header className="guest-topbar"><div className="brand"><img className="brand-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /><span>ORVIX</span></div><div className="guest-topbar-actions"><button type="button" className="guest-menu-button" onClick={onRequireAuth} aria-label="Ouvrir le menu"><Menu /></button><label className="top-document-selector"><FileText size={17} /><select aria-label="Mode de réponse" defaultValue=""><option value="">Question libre</option></select></label><button type="button" className="guest-profile-button" onClick={onRequireAuth} aria-label="Se connecter"><User /></button></div></header><div className="messages"><div className="chat-empty"><div className="brand chat-empty-brand"><img className="brand-logo chat-empty-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /></div><div className="orvix-introduction regular-welcome"><h1>Que veux-tu comprendre aujourd’hui ?</h1></div></div></div><form className="composer guest-composer" onSubmit={submit}><div className="composer-tools"><button className="composer-support" type="button" aria-label="Ajouter une pièce jointe"><Plus size={18} /></button></div><div className="composer-input-stack"><textarea rows={1} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Écrivez votre message…" aria-label="Écrivez votre message…" /></div><button disabled={!message.trim()} aria-label="Envoyer"><Send size={21} fill="currentColor" /></button></form></section>;
 }
 
 function PageIntro({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
