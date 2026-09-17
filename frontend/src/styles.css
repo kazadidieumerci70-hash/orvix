@@ -84,10 +84,15 @@ button { cursor: pointer; }
   .chat-view > .composer > button[aria-label="Envoyer"] { width: 40px !important; height: 40px !important; }
 }
 
+@media (max-width: 900px) {
+  .chat-view .composer.mobile-flat-input { min-height: 76px !important; height: 76px !important; }
+  .chat-view .composer.mobile-flat-input .composer-input-stack > textarea { height: 60px !important; min-height: 60px !important; max-height: 60px !important; font-size: 16px !important; line-height: 24px !important; padding-block: 12px !important; }
+}
+
 /* Hauteur finale du champ de chat sur mobile. */
 @media (max-width: 900px) {
-  .chat-view .composer.mobile-flat-input { min-height: 64px !important; height: 64px !important; padding-block: 7px !important; }
-  .chat-view .composer.mobile-flat-input .composer-input-stack > textarea { height: 50px !important; min-height: 50px !important; max-height: 50px !important; font-size: 14px !important; line-height: 22px !important; padding-block: 10px !important; }
+  .chat-view .composer.mobile-flat-input { min-height: 76px !important; height: 76px !important; padding-block: 8px !important; }
+  .chat-view .composer.mobile-flat-input .composer-input-stack > textarea { height: 60px !important; min-height: 60px !important; max-height: 60px !important; font-size: 16px !important; line-height: 24px !important; padding-block: 12px !important; }
 }
 
 @media (max-width: 900px) {
@@ -4645,7 +4650,7 @@ select:focus-visible {
 
 /* Verrou mobile réel : barre de saisie très fine, style iMessage. */
 .chat-view .composer.mobile-flat-input {
-  min-height: 36px !important;
+  min-height: 76px !important;
   height: auto !important;
   max-height: 90px !important;
   display: block !important;
@@ -4667,8 +4672,8 @@ select:focus-visible {
 }
 
 .chat-view .composer.mobile-flat-input .composer-input-stack > textarea {
-  min-height: 28px !important;
-  max-height: 76px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
   padding: 0 7px !important;
   font-size: 11px !important;
   line-height: 19px !important;
