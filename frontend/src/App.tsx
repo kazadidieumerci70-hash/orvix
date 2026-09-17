@@ -422,7 +422,12 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (loading) return;
-    if (step < 5) { setStep((value) => value + 1); return; }
+    if (step === 0 && !form.name.trim()) { setError("Écris ton nom pour continuer."); return; }
+    if (step === 1 && !form.level.trim()) { setError("Indique ton niveau ou ta classe pour continuer."); return; }
+    if (step === 2 && !form.subjects.length) { setError("Choisis au moins une matière pour continuer."); return; }
+    if (step === 2 && form.subjects.includes("Autres") && !customSubject.trim()) { setError("Écris la matière que tu veux ajouter."); return; }
+    if (step === 3 && !form.goal.trim()) { setError("Indique ton objectif pour continuer."); return; }
+    if (step < 5) { setError(""); setStep((value) => value + 1); return; }
     if (!form.name.trim() || !form.level.trim() || !form.goal.trim()) return;
     const subjects = form.subjects.filter((subject) => subject !== "Autres");
     if (customSubject.trim()) subjects.push(customSubject.trim());
