@@ -25,7 +25,6 @@ import {
   Trash2,
   UploadCloud,
   User,
-  Phone,
   ArrowLeft,
   Bell,
   ChevronRight,
