@@ -136,7 +136,17 @@ function App() {
 
   if (!user.onboarding_completed) {
     if (!user.welcome_seen) {
-      return <FirstWelcomeView onContinue={async () => setUser(await markWelcomeSeen())} />;
+      return <FirstWelcomeView onContinue={async () => {
+        try {
+          const profile = await markWelcomeSeen();
+          localStorage.setItem("orvix_user", JSON.stringify(profile));
+          setUser(profile);
+        } catch {
+          const profile = { ...user, welcome_seen: true };
+          localStorage.setItem("orvix_user", JSON.stringify(profile));
+          setUser(profile);
+        }
+      }} />;
     }
     return <OnboardingView user={user} onCompleted={(profile) => { localStorage.setItem("orvix_user", JSON.stringify(profile)); setUser(profile); }} onLogout={() => { clearToken(); localStorage.removeItem("orvix_user"); setUser(null); }} />;
   }
