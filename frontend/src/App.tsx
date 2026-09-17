@@ -720,7 +720,7 @@ function ChatView({
       {!messages.length && !loading && (
         <div className="chat-empty">
           <div className="brand chat-empty-brand"><img className="brand-logo chat-empty-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /></div>
-          <div className="orvix-introduction regular-welcome"><h1>{chatText.title}</h1><p>{chatText.hint}</p></div>
+          <div className="orvix-introduction regular-welcome"><h1>{chatText.title}</h1></div>
         </div>
       )}
       {messages.map((item, index) => <ChatMessageBubble key={index} item={item} />)}
