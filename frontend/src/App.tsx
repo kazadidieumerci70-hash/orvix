@@ -11,6 +11,7 @@ import {
   Eye,
   EyeOff,
   LockKeyhole,
+  Mail,
   Menu,
   MessageCircle,
   Moon,
@@ -512,7 +513,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
           <div className="auth-divider auth-divider-compact"><span />ou avec ton e-mail<span /></div>
         </>}
         <form onSubmit={submit} className="auth-form auth-reference-form">
-          <div className="auth-input"><Phone size={20} /><input id="phone" aria-label={mode === "register" ? "Adresse e-mail" : "Numéro de téléphone ou e-mail"} type={mode === "register" ? "email" : "text"} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={mode === "register" ? "Adresse e-mail" : "Numéro de téléphone ou e-mail"} autoComplete={mode === "register" ? "email" : "username"} /></div>
+          <div className="auth-input">{mode === "register" ? <Mail size={20} /> : <Phone size={20} />}<input id="phone" aria-label={mode === "register" ? "Adresse e-mail" : "Numéro de téléphone ou e-mail"} type={mode === "register" ? "email" : "text"} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={mode === "register" ? "Adresse e-mail" : "Numéro de téléphone ou e-mail"} autoComplete={mode === "register" ? "email" : "username"} /></div>
           {(mode === "login" || registerStep === "password") && <div className="auth-input"><LockKeyhole size={20} /><input id="password" aria-label="Mot de passe" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mot de passe" type={showPassword ? "text" : "password"} autoComplete={mode === "register" ? "new-password" : "current-password"} /><button type="button" className="password-visibility" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div>}
           {mode === "register" && registerStep === "password" && <div className="auth-input"><LockKeyhole size={20} /><input aria-label="Confirmer le mot de passe" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} placeholder="Confirmer le mot de passe" type={showPassword ? "text" : "password"} autoComplete="new-password" /></div>}
           {mode === "login" && <button type="button" className="forgot-password">Mot de passe oublié ?</button>}
