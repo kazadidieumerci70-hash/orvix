@@ -301,7 +301,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     difficulties: user.difficulties,
   });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(() => localStorage.getItem("orvix_guest_message") || "");
   const [error, setError] = useState("");
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
@@ -672,7 +672,7 @@ function ChatView({
   onMessagesChange: (messages: ChatMessage[]) => void;
   onSaved: () => Promise<void>;
 }) {
-  const [message, setMessage] = useState(() => localStorage.getItem("orvix_guest_message") || "");
+  const [message, setMessage] = useState("");
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [pendingMessage, setPendingMessage] = useState("");
   const [attachmentMenu, setAttachmentMenu] = useState(false);
