@@ -4225,6 +4225,24 @@ html[data-theme="dark"] .top-document-selector select { color: #dce7e5; }
 }
 .chat-view > .composer .composer-input-stack > textarea:not(.is-overflowing)::-webkit-scrollbar { display: none !important; width: 0 !important; }
 
+/* Composition de référence : colonne latérale fine, scène centrale aérée et champ centré. */
+@media (min-width: 901px) {
+  .app-shell { grid-template-columns: clamp(190px, 20vw, 270px) minmax(0, 1fr) !important; }
+  .main-content { position: relative; overflow: hidden; background: #fbfdfd; }
+  .main-content::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse 62% 35% at 55% 31%, rgba(255,255,255,.96) 0 55%, rgba(232,248,246,.5) 56% 70%, transparent 71%), radial-gradient(circle at 7% 21%, rgba(117,218,207,.24) 0 18px, transparent 19px), radial-gradient(circle at 94% 24%, rgba(117,218,207,.2) 0 11px, transparent 12px);
+  }
+  .chat-view { position: relative; z-index: 1; }
+  .chat-view.empty-chat .chat-empty { padding-top: 7vh; }
+  .chat-view.empty-chat .chat-empty-brand .chat-empty-logo { width: 92px !important; height: 92px !important; }
+  .chat-view.empty-chat .orvix-introduction h1 { max-width: 560px; font-size: clamp(30px, 3.2vw, 44px); line-height: 1.08; }
+  .chat-view.empty-chat > .composer { width: min(64vw, 980px) !important; }
+}
+
 /* Sur desktop, le menu latéral est déjà visible : seul le profil reste dans l’en-tête. */
 @media (min-width: 901px) {
   .page-actions {
