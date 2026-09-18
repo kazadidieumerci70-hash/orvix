@@ -42,7 +42,7 @@ from .subscriptions import ensure_ai_quota, ensure_document_quota, plans_config,
 from .payments import create_checkout, valid_hmac, verify_and_apply
 from .core_engine import OrvixCoreEngine
 from .model_gateway import ModelGateway, create_model_provider
-from .memory import remember, relevant
+from .memory import remember
 
 settings = get_settings()
 logger = logging.getLogger("orvix.http")
@@ -208,7 +208,12 @@ async def chat(payload: ChatRequest, language: str = Header("Français", alias="
         return ChatResponse(conversation_id=conversation.id, answer=ORVIX_PRESENTATION)
     language_instruction = {"English": "Respond in English.", "Italiano": "Rispondi in italiano.", "Español": "Responde en español."}.get(language, "Réponds en français.")
     remember(user.id, payload.message)
-    answer = (await core_engine.generate(user_id=user.id, session_id=payload.conversation_id, message=f"{language_instruction}\n\n{payload.message}", language=language, context=relevant(user.id, payload.message)))['response']['content']
+    answer = await get_ai().chat(
+        f"{language_instruction}\n\n{payload.message}",
+        history,
+        user,
+        payload.document_ids,
+    )
     record_ai_request(user.id)
     conversation = append_exchange(user.id, payload.conversation_id, payload.message, answer, payload.document_ids)
     return ChatResponse(conversation_id=conversation.id, answer=answer)
