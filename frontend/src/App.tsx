@@ -27,6 +27,7 @@ import {
   User,
   ArrowLeft,
   Bell,
+  NotebookPen,
   ChevronRight,
   CreditCard,
   Crown,
@@ -251,7 +252,7 @@ function App() {
         <div className="page-actions">
           <button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Ouvrir le menu"><Menu /></button>
           {view === "chat" && <label className="top-document-selector"><select aria-label="Mode de réponse et support utilisé" value={activeDocumentId} onChange={(event) => setActiveDocumentId(event.target.value)}><option value="">Question libre</option><option value="__all__">Tous les documents</option>{documents.map((doc) => <option key={doc.id} value={doc.id}>Document {doc.number} · {doc.name}</option>)}</select></label>}
-          <div className="top-actions-right"><button className="top-new-conversation-button" aria-label="Nouvelle discussion" onClick={newChat}><BookOpenText size={20} /></button><button className="top-notification-button" aria-label="Notifications"><Bell size={19} /></button><button className="top-profile-button" aria-label="Profil" onClick={() => setView("account")}><User size={22} /></button></div>
+          <div className="top-actions-right"><button className="top-new-conversation-button" aria-label="Nouvelle discussion" onClick={newChat}><NotebookPen size={26} /></button><button className="top-notification-button" aria-label="Notifications"><Bell size={26} /></button><button className="top-profile-button" aria-label="Profil" onClick={() => setView("account")}><User size={22} /></button></div>
         </div>
         {view === "chat" && <ChatView language={language} documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} conversationId={activeConversationId} onConversationChange={setActiveConversationId} messages={activeMessages} onMessagesChange={setActiveMessages} onSaved={refreshConversations} />}
         {view === "revision" && <RevisionView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} />}
@@ -782,7 +783,7 @@ function ChatView({
       {!messages.length && !loading && (
         <div className="chat-empty">
           <div className="brand chat-empty-brand"><img className="brand-logo chat-empty-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /></div>
-          <div className="orvix-introduction regular-welcome"><h1>{chatText.title}</h1></div>
+          <div className="orvix-introduction regular-welcome"><h1>{language === "Français" ? <><span>Que veux-tu comprendre</span><br /><em>aujourd’hui ?</em></> : chatText.title}</h1></div>
         </div>
       )}
       {messages.map((item, index) => <ChatMessageBubble key={index} item={item} />)}
