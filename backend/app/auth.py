@@ -6,6 +6,7 @@ import json
 import os
 import re
 import secrets
+from pathlib import Path
 
 from fastapi import Header, HTTPException
 
@@ -217,16 +218,19 @@ def google_login_user(credential: str) -> tuple[str, UserProfile, bool]:
     email = str(info.get("email", "")).strip().lower()
     if not email or not info.get("email_verified"):
         raise HTTPException(401, "L'adresse Google n'est pas vérifiée.")
+    existing_account = False
     if not _db_ready():
         data = _read_users()
         row = next((user for user in data["users"] if user.get("phone") == email), None)
         if not row:
             row = {"id": sha256(f"google:{email}".encode()).hexdigest()[:16], "phone": email, "name": str(info.get("name") or "Etudiant")[:160], "password_hash": _hash_password(secrets.token_urlsafe(32)), "created_at": datetime.now(timezone.utc).isoformat()}
             data["users"].append(row); _write_users(data)
-        elif not row.get("onboarding_completed"):
-            row["onboarding_completed"] = True
-            row["updated_at"] = datetime.now(timezone.utc).isoformat()
-            _write_users(data)
+        else:
+            existing_account = True
+            if not row.get("onboarding_completed"):
+                row["onboarding_completed"] = True
+                row["updated_at"] = datetime.now(timezone.utc).isoformat()
+                _write_users(data)
         return _make_token(row["id"], email), _profile(row), existing_account
     with _db_connect() as connection:
         row = _user_select(connection, email)
@@ -234,9 +238,11 @@ def google_login_user(credential: str) -> tuple[str, UserProfile, bool]:
             user_id = sha256(f"google:{email}".encode()).hexdigest()[:16]
             connection.execute("INSERT INTO users(id,phone,name,password_hash,created_at,subjects) VALUES(%s,%s,%s,%s,now(),'[]'::jsonb)", (user_id, email, str(info.get("name") or "Etudiant")[:160], _hash_password(secrets.token_urlsafe(32))))
             row = _user_by_id(connection, user_id)
-        elif not bool(row[4]):
-            connection.execute("UPDATE users SET onboarding_completed=TRUE, updated_at=now() WHERE id=%s", (row[0],))
-            row = _user_by_id(connection, row[0])
+        else:
+            existing_account = True
+            if not bool(row[4]):
+                connection.execute("UPDATE users SET onboarding_completed=TRUE, updated_at=now() WHERE id=%s", (row[0],))
+                row = _user_by_id(connection, row[0])
         connection.commit()
     user = _db_user(row)
     return _make_token(user["id"], email), _profile(user), existing_account
