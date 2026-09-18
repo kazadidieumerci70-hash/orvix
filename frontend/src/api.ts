@@ -14,7 +14,7 @@ export type UserProfile = {
   difficulties: string;
   welcome_seen: boolean;
 };
-export type AuthResponse = { token: string; user: UserProfile };
+export type AuthResponse = { token: string; user: UserProfile; existing_account?: boolean };
 export type OnboardingPayload = {
   name: string;
   level: string;

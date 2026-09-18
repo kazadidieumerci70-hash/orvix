@@ -204,7 +204,7 @@ def login_user(phone: str, password: str) -> tuple[str, UserProfile]:
             return _make_token(user["id"], normalized), _profile(user)
     raise HTTPException(401, "Numero ou mot de passe incorrect.")
 
-def google_login_user(credential: str) -> tuple[str, UserProfile]:
+def google_login_user(credential: str) -> tuple[str, UserProfile, bool]:
     from google.oauth2 import id_token
     from google.auth.transport import requests
     client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
@@ -227,7 +227,7 @@ def google_login_user(credential: str) -> tuple[str, UserProfile]:
             row["onboarding_completed"] = True
             row["updated_at"] = datetime.now(timezone.utc).isoformat()
             _write_users(data)
-        return _make_token(row["id"], email), _profile(row)
+        return _make_token(row["id"], email), _profile(row), existing_account
     with _db_connect() as connection:
         row = _user_select(connection, email)
         if not row:
@@ -239,7 +239,7 @@ def google_login_user(credential: str) -> tuple[str, UserProfile]:
             row = _user_by_id(connection, row[0])
         connection.commit()
     user = _db_user(row)
-    return _make_token(user["id"], email), _profile(user)
+    return _make_token(user["id"], email), _profile(user), existing_account
 
 
 def current_user(authorization: str | None = Header(default=None)) -> UserProfile:

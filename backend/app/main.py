@@ -158,8 +158,8 @@ async def login(payload: AuthRequest):
 
 @app.post(f"{settings.api_prefix}/auth/google", response_model=AuthResponse)
 async def google_auth(payload: GoogleAuthRequest):
-    token, user = google_login_user(payload.credential)
-    return AuthResponse(token=token, user=user)
+    token, user, existing_account = google_login_user(payload.credential)
+    return AuthResponse(token=token, user=user, existing_account=existing_account)
 
 
 @app.get(f"{settings.api_prefix}/auth/me", response_model=UserProfile)

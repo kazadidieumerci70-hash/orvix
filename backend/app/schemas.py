@@ -151,6 +151,7 @@ class OnboardingRequest(BaseModel):
 class AuthResponse(BaseModel):
     token: str
     user: UserProfile
+    existing_account: bool = False
 
 
 class CheckoutRequest(BaseModel):
