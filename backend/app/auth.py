@@ -110,11 +110,12 @@ def _decode_token(token: str) -> str:
 
 
 def _profile(user: dict) -> UserProfile:
+    completed = bool(user.get("onboarding_completed", False)) or _profile_is_complete(user)
     return UserProfile(
         id=user["id"],
         phone=user["phone"],
         name=user.get("name", "Etudiant"),
-        onboarding_completed=bool(user.get("onboarding_completed", False)),
+        onboarding_completed=completed,
         level=user.get("level", ""),
         subjects=user.get("subjects", []),
         goal=user.get("goal", ""),
@@ -123,11 +124,23 @@ def _profile(user: dict) -> UserProfile:
         welcome_seen=bool(user.get("welcome_seen", False)),
     )
 
+def _profile_is_complete(user: dict) -> bool:
+    return bool(
+        str(user.get("name", "")).strip()
+        and str(user.get("name", "")).strip().lower() not in {"etudiant", "étudiant"}
+        and str(user.get("level", "")).strip()
+        and user.get("subjects")
+        and str(user.get("goal", "")).strip()
+        and str(user.get("learning_style", "")).strip()
+    )
+
 def _db_user(row) -> dict:
-    return {"id": row[0], "phone": row[1], "name": row[2], "password_hash": row[3],
+    user = {"id": row[0], "phone": row[1], "name": row[2], "password_hash": row[3],
             "onboarding_completed": row[4], "level": row[5], "subjects": row[6] or [],
             "goal": row[7] or "", "learning_style": row[8] or "", "difficulties": row[9] or "",
             "welcome_seen": row[10]}
+    user["onboarding_completed"] = bool(user["onboarding_completed"]) or _profile_is_complete(user)
+    return user
 
 def _user_select(connection, phone: str):
     return connection.execute("SELECT id,phone,name,password_hash,onboarding_completed,level,subjects,goal,learning_style,difficulties,welcome_seen FROM users WHERE phone=%s", (phone,)).fetchone()
