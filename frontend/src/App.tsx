@@ -527,7 +527,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
     if (!clientId) { setError("La connexion Google n’est pas configurée."); return; }
     const render = () => {
       if (!window.google?.accounts?.id || !googleButtonRef.current) return;
-      window.google.accounts.id.initialize({ client_id: clientId, callback: async (response: { credential: string }) => {
+      window.google.accounts.id.initialize({ client_id: clientId, auto_select: true, use_fedcm_for_prompt: true, callback: async (response: { credential: string }) => {
         setLoading(true); setError("");
         try { const result = await loginWithGoogle(response.credential); localStorage.setItem("orvix_google_account_used", "true"); setGoogleAccountUsed(true); saveToken(result.token); completeAuthentication(result.user); }
         catch (e) { setError(e instanceof Error ? e.message : "Connexion Google impossible."); }
@@ -535,6 +535,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
       } });
       googleButtonRef.current.innerHTML = "";
       window.google.accounts.id.renderButton(googleButtonRef.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: Math.min(520, googleButtonRef.current.clientWidth || 520) });
+      window.google.accounts.id.prompt();
     };
     if (window.google?.accounts?.id) render();
     else {
