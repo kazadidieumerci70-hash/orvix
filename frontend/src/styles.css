@@ -4241,6 +4241,16 @@ html[data-theme="dark"] .top-document-selector select { color: #dce7e5; }
   .chat-view.empty-chat .chat-empty-brand .chat-empty-logo { width: 92px !important; height: 92px !important; }
   .chat-view.empty-chat .orvix-introduction h1 { max-width: 560px; font-size: clamp(30px, 3.2vw, 44px); line-height: 1.08; }
   .chat-view.empty-chat > .composer { width: min(64vw, 980px) !important; }
+  .page-actions .top-document-selector {
+    position: absolute !important;
+    left: 50% !important;
+    top: 0 !important;
+    transform: translateX(-50%) !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 10 !important;
+  }
 }
 
 /* Sur desktop, le menu latéral est déjà visible : seul le profil reste dans l’en-tête. */
