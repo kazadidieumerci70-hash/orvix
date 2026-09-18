@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 from io import BytesIO
 
 from .auth import complete_onboarding, current_user, google_login_user, init_auth_database, login_user, mark_welcome_seen, register_user, revoke_token
-from .ai import ORVIX_PRESENTATION, OrvixAI
+from .ai import OrvixAI
 from .config import get_settings
 from .conversations import append_exchange, get_conversation, list_conversations
 from .documents import delete_document, list_documents, save_document
@@ -191,21 +191,6 @@ async def chat(payload: ChatRequest, language: str = Header("Français", alias="
     history = payload.history[-MAX_CONTEXT_MESSAGES:]
     if payload.conversation_id:
         history = get_conversation(user.id, payload.conversation_id).messages[-MAX_CONTEXT_MESSAGES:]
-    normalized_message = payload.message.lower().replace("-", " ").strip()
-    presentation_requests = (
-        "présente" in normalized_message
-        or "presente" in normalized_message
-        or "qui es tu" in normalized_message
-        or "qui êtes vous" in normalized_message
-        or "qui etes vous" in normalized_message
-        or "c'est quoi orvix" in normalized_message
-        or "c est quoi orvix" in normalized_message
-    )
-    if presentation_requests:
-        remember(user.id, payload.message)
-        record_ai_request(user.id)
-        conversation = append_exchange(user.id, payload.conversation_id, payload.message, ORVIX_PRESENTATION, payload.document_ids)
-        return ChatResponse(conversation_id=conversation.id, answer=ORVIX_PRESENTATION)
     language_instruction = {"English": "Respond in English.", "Italiano": "Rispondi in italiano.", "Español": "Responde en español."}.get(language, "Réponds en français.")
     remember(user.id, payload.message)
     answer = await get_ai().chat(

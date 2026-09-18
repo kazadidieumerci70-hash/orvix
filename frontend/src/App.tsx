@@ -147,14 +147,27 @@ function App() {
 
   useEffect(() => {
     if (!user?.onboarding_completed || !activeConversationId) return;
+    const accountKey = encodeURIComponent(user.phone || user.name);
+    const messageKey = `orvix_messages_${accountKey}_${activeConversationId}`;
+    const cachedMessages = localStorage.getItem(messageKey);
     getConversation(activeConversationId).then((conversation) => {
       setActiveMessages(conversation.messages);
       setActiveDocumentId(conversation.document_ids.length > 1 ? "__all__" : conversation.document_ids[0] || "");
+      localStorage.setItem(messageKey, JSON.stringify(conversation.messages));
     }).catch(() => {
+      if (cachedMessages) {
+        try { setActiveMessages(JSON.parse(cachedMessages) as ChatMessage[]); return; } catch { localStorage.removeItem(messageKey); }
+      }
       setActiveConversationId("");
       setActiveMessages([]);
     });
   }, [user?.onboarding_completed, activeConversationId]);
+
+  useEffect(() => {
+    if (!user || !activeConversationId || !activeMessages.length) return;
+    const accountKey = encodeURIComponent(user.phone || user.name);
+    localStorage.setItem(`orvix_messages_${accountKey}_${activeConversationId}`, JSON.stringify(activeMessages));
+  }, [user?.phone, user?.name, activeConversationId, activeMessages]);
 
   useEffect(() => {
     if (!user?.onboarding_completed) return;
@@ -170,7 +183,12 @@ function App() {
     }
     if (cachedActiveConversation && cachedActiveConversation !== activeConversationId) setActiveConversationId(cachedActiveConversation);
     listDocuments().then((result) => setDocuments(result.documents)).catch(() => undefined);
-    listConversations().then((result) => { setConversations(result.conversations); localStorage.setItem(`orvix_conversations_${accountKey}`, JSON.stringify(result.conversations)); }).catch(() => undefined);
+    listConversations().then((result) => {
+      const serverIds = new Set(result.conversations.map((item) => item.id));
+      const merged = [...result.conversations, ...((cachedConversations ? JSON.parse(cachedConversations) as ConversationSummary[] : []).filter((item) => !serverIds.has(item.id)))];
+      setConversations(merged);
+      localStorage.setItem(`orvix_conversations_${accountKey}`, JSON.stringify(merged));
+    }).catch(() => undefined);
     getSubscription().then((result) => setAccountPlanName(result.plan.name)).catch(() => undefined);
   }, [user?.onboarding_completed, user?.phone]);
 
