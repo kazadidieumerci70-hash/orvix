@@ -270,7 +270,7 @@ function App() {
       </aside>
 
       {mobileNav && <button className="backdrop" onClick={() => setMobileNav(false)} aria-label="Fermer le menu" />}
-      <main className={`main-content ${view === "account" ? "account-scroll" : ""}`}>
+      <main className={`main-content ${view === "account" ? "account-scroll" : ""} ${view === "chat" ? "chat-main" : ""}`}>
         <div className="page-actions">
           <button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Ouvrir le menu"><Menu /></button>
           {view === "chat" && <label className="top-document-selector"><select aria-label="Mode de réponse et support utilisé" value={activeDocumentId} onChange={(event) => setActiveDocumentId(event.target.value)}><option value="">Question libre</option><option value="__all__">Tous les documents</option>{documents.map((doc) => <option key={doc.id} value={doc.id}>Document {doc.number} · {doc.name}</option>)}</select></label>}
