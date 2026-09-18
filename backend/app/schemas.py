@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+MAX_CONTEXT_MESSAGES = 60  # 30 échanges utilisateur/assistant au maximum
+
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
@@ -11,7 +13,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     conversation_id: str = ""
     message: str = Field(min_length=1, max_length=8_000)
-    history: list[ChatMessage] = Field(default_factory=list, max_length=30)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=MAX_CONTEXT_MESSAGES)
     document_ids: list[str] = Field(default_factory=list, max_length=20)
 
 

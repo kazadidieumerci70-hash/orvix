@@ -741,7 +741,8 @@ function ChatView({
     const next = [...messages, { role: "user" as const, content: value }];
     onMessagesChange(next); setPendingMessage(value); setMessage(""); setComposerExpanded(false); setLoading(true);
     try {
-      const result = await sendChat(value, messages.slice(-30), documentIds, conversationId);
+      // Garder 30 échanges complets pour que l'IA conserve le fil de la discussion.
+      const result = await sendChat(value, messages.slice(-60), documentIds, conversationId);
       onConversationChange(result.conversation_id);
       setLoading(false);
       setPendingMessage("");

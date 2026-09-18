@@ -12,7 +12,7 @@ from google.genai import types
 
 from .config import get_settings
 from .documents import document_context
-from .schemas import ChatMessage, ExamModeResponse, QuizResponse, UserProfile
+from .schemas import ChatMessage, ExamModeResponse, QuizResponse, UserProfile, MAX_CONTEXT_MESSAGES
 
 os.environ.setdefault("SSL_CERT_FILE", certifi.where())
 os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
@@ -216,7 +216,7 @@ class OrvixAI:
             return "ORVIX a été créé par DIEU MERCI KAZADI."
         if self._asks_for_presentation(message):
             return ORVIX_PRESENTATION
-        transcript = "\n".join(f"{item.role}: {item.content}" for item in history[-30:])
+        transcript = "\n".join(f"{item.role}: {item.content}" for item in history[-MAX_CONTEXT_MESSAGES:])
         allow_general = self._general_knowledge_authorized(message, history)
         needs_document = self._needs_document_context(message)
         requested_support = bool(document_ids)
@@ -231,7 +231,7 @@ class OrvixAI:
             mode = "QUESTION LIBRE : réponds naturellement avec tes connaissances générales, sans prétendre avoir consulté un document."
         else:
             mode = "ECHANGE SOCIAL : ne prétends pas lire un document."
-        prompt = f"MODE : {mode}\n\nHISTORIQUE DE CETTE DISCUSSION (30 DERNIERS MESSAGES MAXIMUM) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
+        prompt = f"MODE : {mode}\n\nHISTORIQUE DE CETTE DISCUSSION (30 DERNIERS ÉCHANGES, 60 MESSAGES MAXIMUM) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
         return await self._generate(prompt)
 
     async def revision(self, topic: str, user: UserProfile, document_ids: list[str]) -> str:

@@ -35,6 +35,7 @@ from .schemas import (
     TextResponse,
     TopicRequest,
     UserProfile,
+    MAX_CONTEXT_MESSAGES,
 )
 from .quiz_word import build_quiz_docx
 from .subscriptions import ensure_ai_quota, ensure_document_quota, plans_config, record_ai_request, subscription_status
@@ -187,9 +188,9 @@ async def logout(authorization: str | None = Header(default=None), user: UserPro
 @app.post(f"{settings.api_prefix}/chat", response_model=ChatResponse)
 async def chat(payload: ChatRequest, language: str = Header("Français", alias="X-Orvix-Language"), user: UserProfile = Depends(current_user)):
     ensure_ai_quota(user.id)
-    history = payload.history[-30:]
+    history = payload.history[-MAX_CONTEXT_MESSAGES:]
     if payload.conversation_id:
-        history = get_conversation(user.id, payload.conversation_id).messages[-30:]
+        history = get_conversation(user.id, payload.conversation_id).messages[-MAX_CONTEXT_MESSAGES:]
     normalized_message = payload.message.lower().replace("-", " ").strip()
     presentation_requests = (
         "présente" in normalized_message
