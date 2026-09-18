@@ -201,7 +201,7 @@ def login_user(phone: str, password: str) -> tuple[str, UserProfile]:
     data = _read_users()
     for user in data["users"]:
         if user["phone"] == normalized and _verify_password(password, user["password_hash"]):
-            return _make_token(user["id"]), _profile(user)
+            return _make_token(user["id"], normalized), _profile(user)
     raise HTTPException(401, "Numero ou mot de passe incorrect.")
 
 def google_login_user(credential: str) -> tuple[str, UserProfile]:

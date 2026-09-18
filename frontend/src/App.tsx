@@ -555,7 +555,8 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
       } });
       googleButtonRef.current.innerHTML = "";
       window.google.accounts.id.renderButton(googleButtonRef.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: Math.min(520, googleButtonRef.current.clientWidth || 520) });
-      window.google.accounts.id.prompt();
+      // Le bouton Google gère lui-même l'ouverture du sélecteur. Ne lançons pas
+      // automatiquement une seconde invite, qui peut bloquer le clic sur mobile.
     };
     if (window.google?.accounts?.id) render();
     else {
