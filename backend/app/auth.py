@@ -83,30 +83,44 @@ def _token_secret() -> bytes:
     return sha256(key.encode("utf-8")).digest()
 
 
-def _make_token(user_id: str) -> str:
+def _identity_segment(value: str) -> str:
+    return base64.urlsafe_b64encode(value.encode("utf-8")).decode("ascii").rstrip("=")
+
+
+def _identity_from_segment(value: str) -> str:
+    return base64.urlsafe_b64decode((value + "=" * (-len(value) % 4)).encode("ascii")).decode("utf-8")
+
+
+def _make_token(user_id: str, phone: str = "") -> str:
     expires_at = int((datetime.now(timezone.utc) + timedelta(hours=TOKEN_TTL_HOURS)).timestamp())
     nonce = secrets.token_urlsafe(12)
-    payload = f"{user_id}.{expires_at}.{nonce}"
+    payload = f"{user_id}.{expires_at}.{nonce}.{_identity_segment(phone)}" if phone else f"{user_id}.{expires_at}.{nonce}"
     signature = hmac.new(_token_secret(), payload.encode("utf-8"), sha256).hexdigest()
     return base64.urlsafe_b64encode(f"{payload}.{signature}".encode("utf-8")).decode("utf-8")
 
 
-def _decode_token(token: str) -> str:
+def _decode_token(token: str) -> tuple[str, str]:
     if token in _revoked_tokens:
         raise HTTPException(401, "Session révoquée.")
     try:
         raw = base64.urlsafe_b64decode(token.encode("utf-8")).decode("utf-8")
-        user_id, expires_at, nonce, signature = raw.rsplit(".", 3)
+        parts = raw.split(".")
+        if len(parts) == 5:
+            user_id, expires_at, nonce, phone_segment, signature = parts
+            phone = _identity_from_segment(phone_segment)
+        else:
+            user_id, expires_at, nonce, signature = raw.rsplit(".", 3)
+            phone = ""
     except Exception as exc:
         raise HTTPException(401, "Session invalide.") from exc
 
-    payload = f"{user_id}.{expires_at}.{nonce}"
+    payload = f"{user_id}.{expires_at}.{nonce}.{_identity_segment(phone)}" if phone else f"{user_id}.{expires_at}.{nonce}"
     expected = hmac.new(_token_secret(), payload.encode("utf-8"), sha256).hexdigest()
     if not hmac.compare_digest(signature, expected):
         raise HTTPException(401, "Session invalide.")
     if int(expires_at) < int(datetime.now(timezone.utc).timestamp()):
         raise HTTPException(401, "Session expiree.")
-    return user_id
+    return user_id, phone
 
 
 def _profile(user: dict) -> UserProfile:
@@ -155,16 +169,16 @@ def register_user(phone: str, password: str) -> tuple[str, UserProfile]:
         with _db_connect() as connection:
             if _user_select(connection, normalized):
                 raise HTTPException(409, "Ce numero a deja un compte.")
-            user_id = sha256(f"{normalized}:{secrets.token_urlsafe(8)}".encode()).hexdigest()[:16]
+            user_id = sha256(f"user:{normalized}".encode()).hexdigest()[:16]
             connection.execute("INSERT INTO users(id,phone,name,password_hash,created_at,subjects) VALUES(%s,%s,%s,%s,now(),'[]'::jsonb)", (user_id, normalized, "Etudiant", _hash_password(password)))
             connection.commit()
             user = _db_user(_user_by_id(connection, user_id))
-        return _make_token(user_id), _profile(user)
+        return _make_token(user_id, normalized), _profile(user)
     data = _read_users()
     if any(user["phone"] == normalized for user in data["users"]):
         raise HTTPException(409, "Ce numero a deja un compte.")
     user = {
-        "id": sha256(f"{normalized}:{secrets.token_urlsafe(8)}".encode("utf-8")).hexdigest()[:16],
+        "id": sha256(f"user:{normalized}".encode("utf-8")).hexdigest()[:16],
         "phone": normalized,
         "name": "Etudiant",
         "password_hash": _hash_password(password),
@@ -172,7 +186,7 @@ def register_user(phone: str, password: str) -> tuple[str, UserProfile]:
     }
     data["users"].append(user)
     _write_users(data)
-    return _make_token(user["id"]), _profile(user)
+    return _make_token(user["id"], normalized), _profile(user)
 
 
 def login_user(phone: str, password: str) -> tuple[str, UserProfile]:
@@ -182,7 +196,7 @@ def login_user(phone: str, password: str) -> tuple[str, UserProfile]:
             row = _user_select(connection, normalized)
         if row and _verify_password(password, row[3]):
             user = _db_user(row)
-            return _make_token(user["id"]), _profile(user)
+            return _make_token(user["id"], normalized), _profile(user)
         raise HTTPException(401, "Numero ou mot de passe incorrect.")
     data = _read_users()
     for user in data["users"]:
@@ -209,7 +223,7 @@ def google_login_user(credential: str) -> tuple[str, UserProfile]:
         if not row:
             row = {"id": sha256(f"google:{email}".encode()).hexdigest()[:16], "phone": email, "name": str(info.get("name") or "Etudiant")[:160], "password_hash": _hash_password(secrets.token_urlsafe(32)), "created_at": datetime.now(timezone.utc).isoformat()}
             data["users"].append(row); _write_users(data)
-        return _make_token(row["id"]), _profile(row)
+        return _make_token(row["id"], email), _profile(row)
     with _db_connect() as connection:
         row = _user_select(connection, email)
         if not row:
@@ -218,16 +232,18 @@ def google_login_user(credential: str) -> tuple[str, UserProfile]:
             row = _user_by_id(connection, user_id)
         connection.commit()
     user = _db_user(row)
-    return _make_token(user["id"]), _profile(user)
+    return _make_token(user["id"], email), _profile(user)
 
 
 def current_user(authorization: str | None = Header(default=None)) -> UserProfile:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(401, "Connectez-vous pour continuer.")
-    user_id = _decode_token(authorization.removeprefix("Bearer ").strip())
+    user_id, identity = _decode_token(authorization.removeprefix("Bearer ").strip())
     if _db_ready():
         with _db_connect() as connection:
             row = _user_by_id(connection, user_id)
+            if not row and identity:
+                row = _user_select(connection, _normalize_phone(identity))
         if row:
             return _profile(_db_user(row))
         raise HTTPException(401, "Utilisateur introuvable.")
