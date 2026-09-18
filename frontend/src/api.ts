@@ -48,25 +48,21 @@ export function clearToken() {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = getToken();
-  let response: Response;
-  try {
-    const headers = new Headers(options?.headers);
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-    const language = localStorage.getItem("orvix_language");
-    if (language) headers.set("X-Orvix-Language", language);
-    response = await fetch(`${API_URL}${path}`, { ...options, headers, cache: "no-store" });
-  } catch {
-    await new Promise((resolve) => window.setTimeout(resolve, 700));
+  let response: Response | undefined;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const headers = new Headers(options?.headers);
       if (token) headers.set("Authorization", `Bearer ${token}`);
       const language = localStorage.getItem("orvix_language");
       if (language) headers.set("X-Orvix-Language", language);
       response = await fetch(`${API_URL}${path}`, { ...options, headers, cache: "no-store" });
+      if (![502, 503, 504].includes(response.status) || attempt === 1) break;
     } catch {
-      throw new Error("Le serveur ORVIX est momentanément inaccessible. Vérifiez votre connexion puis réessayez.");
+      if (attempt === 1) throw new Error("Le serveur ORVIX est momentanément inaccessible. Vérifiez votre connexion puis réessayez.");
     }
+    await new Promise((resolve) => window.setTimeout(resolve, 900));
   }
+  if (!response) throw new Error("Le serveur ORVIX est momentanément inaccessible. Vérifiez votre connexion puis réessayez.");
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     if (response.status === 401 && token) {
