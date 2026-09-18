@@ -739,7 +739,15 @@ function ChatView({
     try {
       const result = await sendChat(value, messages.slice(-30), documentIds, conversationId);
       onConversationChange(result.conversation_id);
-      onMessagesChange([...next, { role: "assistant", content: result.answer }]);
+      setLoading(false);
+      setPendingMessage("");
+      let visibleAnswer = "";
+      const answer = result.answer || "";
+      for (let index = 0; index < answer.length; index += 6) {
+        visibleAnswer += answer.slice(index, index + 6);
+        onMessagesChange([...next, { role: "assistant", content: visibleAnswer }]);
+        await new Promise((resolve) => window.setTimeout(resolve, 18));
+      }
       await onSaved();
     } catch (error) {
       onMessagesChange([...next, { role: "assistant", content: error instanceof Error ? error.message : "Une erreur est survenue." }]);
