@@ -28,7 +28,7 @@ export type SubscriptionStatus = { subscription: { plan_id: string; status: stri
 export type ExamPlan = { title: string; readiness_score: number; summary: string; mastered: string[]; priorities: string[]; plan: { day: number; title: string; tasks: string[]; minutes: number }[]; first_questions: QuizQuestion[] };
 
 const configuredUrl = import.meta.env.VITE_API_URL?.trim();
-const API_URL = (configuredUrl || (import.meta.env.DEV ? `http://${window.location.hostname}:8010` : "")).replace(/\/$/, "");
+const API_URL = (configuredUrl || (import.meta.env.DEV ? `http://${window.location.hostname}:8010` : "https://orvix-production.up.railway.app")).replace(/\/$/, "");
 const TOKEN_KEY = "orvix_token";
 
 export function getToken() {
@@ -44,13 +44,26 @@ export function clearToken() {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const headers = new Headers(options?.headers);
   const token = getToken();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  const language = localStorage.getItem("orvix_language");
-  if (language) headers.set("X-Orvix-Language", language);
-
-  const response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let response: Response;
+  try {
+    const headers = new Headers(options?.headers);
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const language = localStorage.getItem("orvix_language");
+    if (language) headers.set("X-Orvix-Language", language);
+    response = await fetch(`${API_URL}${path}`, { ...options, headers, cache: "no-store" });
+  } catch {
+    await new Promise((resolve) => window.setTimeout(resolve, 700));
+    try {
+      const headers = new Headers(options?.headers);
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+      const language = localStorage.getItem("orvix_language");
+      if (language) headers.set("X-Orvix-Language", language);
+      response = await fetch(`${API_URL}${path}`, { ...options, headers, cache: "no-store" });
+    } catch {
+      throw new Error("Le serveur ORVIX est momentanément inaccessible. Vérifiez votre connexion puis réessayez.");
+    }
+  }
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     if (response.status === 401 && token) {
