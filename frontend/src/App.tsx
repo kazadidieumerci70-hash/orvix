@@ -103,6 +103,7 @@ function App() {
   const [accountPlanName, setAccountPlanName] = useState("Gratuit");
   const [theme, setTheme] = useState<"light" | "dark">(() => localStorage.getItem("orvix_theme") === "dark" ? "dark" : "light");
   const [language, setLanguage] = useState("Français");
+  const openedFreshChat = useRef(false);
 
   useEffect(() => {
     me().then((profile) => { localStorage.setItem("orvix_user", JSON.stringify(profile)); setUser(profile); }).catch(() => undefined).finally(() => setAuthChecked(true));
@@ -157,6 +158,12 @@ function App() {
 
   useEffect(() => {
     if (!user?.onboarding_completed) return;
+    if (!openedFreshChat.current) {
+      openedFreshChat.current = true;
+      setActiveConversationId("");
+      setActiveMessages([]);
+      setView("chat");
+    }
     const accountKey = encodeURIComponent(user.phone || user.name);
     const cachedConversations = localStorage.getItem(`orvix_conversations_${accountKey}`);
     const cachedActiveConversation = localStorage.getItem(`orvix_active_conversation_${accountKey}`);
