@@ -131,11 +131,11 @@ def _profile(user: dict) -> UserProfile:
         phone=user["phone"],
         name=user.get("name", "Etudiant"),
         onboarding_completed=completed,
-        level=user.get("level", ""),
+        level=user.get("level") or "",
         subjects=user.get("subjects", []),
-        goal=user.get("goal", ""),
-        learning_style=user.get("learning_style", ""),
-        difficulties=user.get("difficulties", ""),
+        goal=user.get("goal") or "",
+        learning_style=user.get("learning_style") or "",
+        difficulties=user.get("difficulties") or "",
         welcome_seen=bool(user.get("welcome_seen", False)),
     )
 
