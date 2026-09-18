@@ -1309,10 +1309,22 @@ html[data-animations="on"] .subscription-panel { transition: color .2s ease, bac
   padding: 18px 38px;
   align-items: center;
   justify-content: center;
-  background: rgba(251, 252, 254, .94);
-  border-bottom: 1px solid #dce7e5;
+  background: rgba(251, 252, 254, .72);
+  border-bottom: 0;
   backdrop-filter: blur(14px);
   z-index: 20;
+}
+
+.chat-main > .page-actions::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: min(420px, calc(100% - 48px));
+  height: 2px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #dce7e5;
 }
 
 .chat-main > .page-actions .top-actions-right {
@@ -1330,6 +1342,7 @@ html[data-animations="on"] .subscription-panel { transition: color .2s ease, bac
     height: 68px;
     padding: 10px 16px;
   }
+  .chat-main > .page-actions::after { width: min(260px, calc(100% - 40px)); }
   .chat-main > .page-actions .top-actions-right { right: 16px; }
   .chat-main .messages {
     padding-top: 82px;
