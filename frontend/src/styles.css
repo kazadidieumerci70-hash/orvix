@@ -4227,7 +4227,7 @@ html[data-theme="dark"] .top-document-selector select { color: #dce7e5; }
 
 /* Verrouillage final de la composition de la maquette. */
 @media (min-width: 901px) {
-  .app-shell { grid-template-columns: clamp(190px, 20vw, 270px) minmax(0, 1fr) !important; }
+  .app-shell { grid-template-columns: clamp(190px, 20vw, 324px) minmax(0, 1fr) !important; }
   .sidebar-brand { min-height: 44px; align-items: center; }
   .page-actions { top: 25px !important; left: 0 !important; right: 0 !important; display: block !important; }
   .page-actions .top-document-selector { left: 50% !important; top: 0 !important; transform: translateX(-50%) !important; }
