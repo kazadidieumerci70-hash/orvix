@@ -109,6 +109,7 @@ async def health():
         "provider": settings.model_provider,
         "model": settings.gemini_model if settings.model_provider.lower() == "gemini" else settings.ollama_model,
         "ai": "healthy" if provider_healthy else "unhealthy",
+        "storage": "postgresql" if settings.database_url else "filesystem",
     }
 
 

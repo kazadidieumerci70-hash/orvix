@@ -261,7 +261,9 @@ def current_user(authorization: str | None = Header(default=None)) -> UserProfil
             return _profile(_db_user(row))
         raise HTTPException(401, "Utilisateur introuvable.")
     for user in _read_users()["users"]:
-        if user["id"] == user_id:
+        same_id = user.get("id") == user_id
+        same_identity = bool(identity) and user.get("phone", "").strip().lower() == identity.strip().lower()
+        if same_id or same_identity:
             return _profile(user)
     raise HTTPException(401, "Utilisateur introuvable.")
 
