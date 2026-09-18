@@ -4235,6 +4235,15 @@ html[data-theme="dark"] .top-document-selector select { color: #dce7e5; }
     pointer-events: auto;
   }
   .page-actions .mobile-menu { display: none !important; }
+  .page-actions .top-document-selector {
+    min-width: 132px !important;
+    height: 34px !important;
+    border: 1px solid #38aaa0 !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, .78) !important;
+    box-shadow: 0 5px 16px rgba(35, 145, 137, .08) !important;
+  }
+  .page-actions .top-document-selector select { font-size: 10px !important; font-weight: 600; color: #187f79; }
 }
 
 /* Bouton d'ajout mobile : cercle net, sans étirement. */
