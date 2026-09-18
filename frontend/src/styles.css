@@ -4218,6 +4218,13 @@ html[data-theme="dark"] .top-document-selector select { color: #dce7e5; }
   .chat-view .composer { margin-bottom: calc(15px + env(safe-area-inset-bottom)); }
 }
 
+/* Dernière priorité : aucune flèche dans le champ tant que le texte ne déborde pas. */
+.chat-view > .composer .composer-input-stack > textarea:not(.is-overflowing) {
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+}
+.chat-view > .composer .composer-input-stack > textarea:not(.is-overflowing)::-webkit-scrollbar { display: none !important; width: 0 !important; }
+
 /* Sur desktop, le menu latéral est déjà visible : seul le profil reste dans l’en-tête. */
 @media (min-width: 901px) {
   .page-actions {
