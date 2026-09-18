@@ -28,7 +28,10 @@ export type SubscriptionStatus = { subscription: { plan_id: string; status: stri
 export type ExamPlan = { title: string; readiness_score: number; summary: string; mastered: string[]; priorities: string[]; plan: { day: number; title: string; tasks: string[]; minutes: number }[]; first_questions: QuizQuestion[] };
 
 const configuredUrl = import.meta.env.VITE_API_URL?.trim();
-const API_URL = (configuredUrl || (import.meta.env.DEV ? `http://${window.location.hostname}:8010` : "https://orvix-production.up.railway.app")).replace(/\/$/, "");
+// In production the Pages Function proxies /api to the FastAPI service. This
+// keeps auth and chat same-origin in the browser and avoids cross-origin fetch
+// failures in embedded/mobile browsers.
+const API_URL = (import.meta.env.DEV ? (configuredUrl || `http://${window.location.hostname}:8010`) : "").replace(/\/$/, "");
 const TOKEN_KEY = "orvix_token";
 
 export function getToken() {
