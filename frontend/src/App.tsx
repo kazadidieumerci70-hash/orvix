@@ -160,8 +160,6 @@ function App() {
     if (!user?.onboarding_completed) return;
     if (!openedFreshChat.current) {
       openedFreshChat.current = true;
-      setActiveConversationId("");
-      setActiveMessages([]);
       setView("chat");
     }
     const accountKey = encodeURIComponent(user.phone || user.name);
@@ -212,11 +210,17 @@ function App() {
   }
 
   async function openConversation(conversationId: string) {
-    const conversation = await getConversation(conversationId);
-    setActiveConversationId(conversation.id);
-    setActiveMessages(conversation.messages);
-    setActiveDocumentId(conversation.document_ids.length > 1 ? "__all__" : conversation.document_ids[0] || "");
-    setView("chat");
+    try {
+      const conversation = await getConversation(conversationId);
+      setActiveConversationId(conversation.id);
+      setActiveMessages(conversation.messages);
+      setActiveDocumentId(conversation.document_ids.length > 1 ? "__all__" : conversation.document_ids[0] || "");
+      setView("chat");
+      setMobileNav(false);
+    } catch {
+      setActiveConversationId("");
+      setActiveMessages([]);
+    }
   }
 
   async function refreshConversations() {
