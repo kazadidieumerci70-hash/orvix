@@ -4302,7 +4302,6 @@ html[data-theme="dark"] .top-document-selector select { color: #dce7e5; }
 .top-actions-right button { width: 38px; height: 38px; border: 0; border-radius: 50%; display: grid; place-items: center; color: #162033; background: transparent; cursor: pointer; }
 .top-actions-right button:hover { background: #eaf7f5; color: #168f87; }
 .top-notification-button { position: relative; }
-.top-notification-button::after { content: ""; position: absolute; top: 8px; right: 8px; width: 5px; height: 5px; border-radius: 50%; background: #0da49b; }
 @media (max-width: 900px) {
   .sidebar-menu-button { display: none; }
   .top-actions-right { position: absolute; right: 0; top: 0; }
