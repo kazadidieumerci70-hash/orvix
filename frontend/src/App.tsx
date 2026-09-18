@@ -577,8 +577,11 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
       } });
       googleButtonRef.current.innerHTML = "";
       window.google.accounts.id.renderButton(googleButtonRef.current, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: Math.min(520, googleButtonRef.current.clientWidth || 520) });
-      // Le bouton Google gère lui-même l'ouverture du sélecteur. Ne lançons pas
-      // automatiquement une seconde invite, qui peut bloquer le clic sur mobile.
+      // Après une première connexion réussie, Google peut restaurer la session
+      // du même navigateur et déclencher automatiquement le callback.
+      if (localStorage.getItem("orvix_google_account_used") === "true") {
+        window.google.accounts.id.prompt();
+      }
     };
     if (window.google?.accounts?.id) render();
     else {
