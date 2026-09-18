@@ -4220,6 +4220,20 @@ html[data-theme="dark"] .top-document-selector select { color: #dce7e5; }
 
 /* Sur desktop, le menu latéral est déjà visible : seul le profil reste dans l’en-tête. */
 @media (min-width: 901px) {
+  .page-actions {
+    top: 28px !important;
+    left: 0 !important;
+    right: 0 !important;
+    justify-content: center !important;
+    pointer-events: none;
+  }
+  .page-actions .top-document-selector { pointer-events: auto; }
+  .page-actions > button:last-child {
+    position: absolute !important;
+    right: 40px !important;
+    top: 0 !important;
+    pointer-events: auto;
+  }
   .page-actions .mobile-menu { display: none !important; }
 }
 
