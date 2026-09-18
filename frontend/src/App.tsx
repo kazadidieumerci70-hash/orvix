@@ -130,9 +130,14 @@ function App() {
     localStorage.setItem("orvix_view", view);
     if (activeConversationId) localStorage.setItem("orvix_active_conversation", activeConversationId);
     else localStorage.removeItem("orvix_active_conversation");
+    if (user) {
+      const accountKey = encodeURIComponent(user.phone || user.name);
+      if (activeConversationId) localStorage.setItem(`orvix_active_conversation_${accountKey}`, activeConversationId);
+      else localStorage.removeItem(`orvix_active_conversation_${accountKey}`);
+    }
     if (activeDocumentId) localStorage.setItem("orvix_active_document", activeDocumentId);
     else localStorage.removeItem("orvix_active_document");
-  }, [view, activeConversationId, activeDocumentId]);
+  }, [view, activeConversationId, activeDocumentId, user?.phone]);
 
   useEffect(() => {
     const savedDocument = localStorage.getItem("orvix_active_document");
@@ -152,10 +157,17 @@ function App() {
 
   useEffect(() => {
     if (!user?.onboarding_completed) return;
+    const accountKey = encodeURIComponent(user.phone || user.name);
+    const cachedConversations = localStorage.getItem(`orvix_conversations_${accountKey}`);
+    const cachedActiveConversation = localStorage.getItem(`orvix_active_conversation_${accountKey}`);
+    if (cachedConversations) {
+      try { setConversations(JSON.parse(cachedConversations) as ConversationSummary[]); } catch { localStorage.removeItem(`orvix_conversations_${accountKey}`); }
+    }
+    if (cachedActiveConversation && cachedActiveConversation !== activeConversationId) setActiveConversationId(cachedActiveConversation);
     listDocuments().then((result) => setDocuments(result.documents)).catch(() => undefined);
-    listConversations().then((result) => setConversations(result.conversations)).catch(() => undefined);
+    listConversations().then((result) => { setConversations(result.conversations); localStorage.setItem(`orvix_conversations_${accountKey}`, JSON.stringify(result.conversations)); }).catch(() => undefined);
     getSubscription().then((result) => setAccountPlanName(result.plan.name)).catch(() => undefined);
-  }, [user?.onboarding_completed]);
+  }, [user?.onboarding_completed, user?.phone]);
 
   if (!authChecked) {
     return <div className="auth-loading">ORVIX</div>;
@@ -203,6 +215,7 @@ function App() {
   async function refreshConversations() {
     const result = await listConversations();
     setConversations(result.conversations);
+    if (user) localStorage.setItem(`orvix_conversations_${encodeURIComponent(user.phone || user.name)}`, JSON.stringify(result.conversations));
   }
 
   return (
