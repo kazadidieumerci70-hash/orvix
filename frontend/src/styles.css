@@ -1304,7 +1304,7 @@ html[data-animations="on"] .subscription-panel { transition: color .2s ease, bac
 .chat-main > .page-actions {
   position: absolute;
   inset: 0 0 auto 0;
-  height: 88px;
+  height: 118px;
   box-sizing: border-box;
   padding: 18px 38px;
   align-items: center;
@@ -1333,20 +1333,20 @@ html[data-animations="on"] .subscription-panel { transition: color .2s ease, bac
 }
 
 .chat-main .messages {
-  padding-top: 104px;
-  scroll-padding-top: 104px;
+  padding-top: 134px;
+  scroll-padding-top: 134px;
 }
 
 @media (max-width: 900px) {
   .chat-main > .page-actions {
-    height: 68px;
+    height: 82px;
     padding: 10px 16px;
   }
   .chat-main > .page-actions::after { width: min(260px, calc(100% - 40px)); }
   .chat-main > .page-actions .top-actions-right { right: 16px; }
   .chat-main .messages {
-    padding-top: 82px;
-    scroll-padding-top: 82px;
+    padding-top: 96px;
+    scroll-padding-top: 96px;
   }
 }
 
