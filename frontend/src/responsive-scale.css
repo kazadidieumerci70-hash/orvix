@@ -186,6 +186,9 @@
 .chat-view > .composer:not(.mobile-flat-input).is-typing {
   align-self: end !important;
   transform-origin: bottom center !important;
+  border-radius: 9999px !important;
+}
+.chat-view > .composer.has-message {
   border-radius: 10px !important;
 }
 
