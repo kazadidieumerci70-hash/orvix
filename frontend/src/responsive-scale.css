@@ -248,7 +248,7 @@
     pointer-events: auto !important;
     align-items: flex-end !important;
     padding: 6px 7px 6px 10px !important;
-    border-radius: 16px !important;
+    border-radius: 9999px !important;
   }
   .chat-main > .composer .composer-tools {
     align-self: flex-end !important;
@@ -330,14 +330,14 @@
     align-items: flex-end !important;
     grid-column: auto !important;
     grid-row: auto !important;
-    margin-left: 4px !important;
+    margin-left: 16px !important;
   }
   .chat-main > .chat-view > .composer .composer-input-stack > textarea {
     width: 100% !important;
     min-width: 0 !important;
     min-height: 24px !important;
     max-height: 120px !important;
-    padding: 7px 8px 7px 18px !important;
+    padding: 7px 8px 7px 8px !important;
     margin: 0 !important;
     border: 0 !important;
     outline: 0 !important;
