@@ -318,6 +318,7 @@
     place-items: center !important;
     grid-column: auto !important;
     grid-row: auto !important;
+    margin-right: 6px !important;
   }
   .chat-main > .chat-view > .composer .composer-input-stack {
     flex: 1 1 auto !important;
@@ -336,7 +337,7 @@
     min-width: 0 !important;
     min-height: 24px !important;
     max-height: 120px !important;
-    padding: 7px 8px 7px 10px !important;
+    padding: 7px 8px 7px 18px !important;
     margin: 0 !important;
     border: 0 !important;
     outline: 0 !important;
