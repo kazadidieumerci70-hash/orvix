@@ -654,4 +654,16 @@
     transform: none !important;
     align-self: center !important;
   }
+  .chat-view > .composer:not(.mobile-flat-input).has-message {
+    height: auto !important;
+    min-height: 48px !important;
+    max-height: 136px !important;
+    align-items: flex-end !important;
+  }
+  .chat-view > .composer:not(.mobile-flat-input).has-message .composer-input-stack {
+    height: auto !important;
+    min-height: 24px !important;
+    max-height: 120px !important;
+    align-self: flex-end !important;
+  }
 }
