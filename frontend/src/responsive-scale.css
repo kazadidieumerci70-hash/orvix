@@ -579,3 +579,79 @@
     color: #078d84 !important;
   }
 }
+
+/* Highest-priority desktop correction: replace the legacy absolute/grid composer rules. */
+@media (min-width: 901px) {
+  .chat-view > .composer:not(.mobile-flat-input) {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    width: min(900px, calc(100% - 40px)) !important;
+    height: auto !important;
+    min-height: 48px !important;
+    max-height: 136px !important;
+    padding: 6px 8px 6px 12px !important;
+    gap: 16px !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    border-radius: 9999px !important;
+    overflow: visible !important;
+  }
+  .chat-view > .composer:not(.mobile-flat-input) .composer-tools {
+    position: static !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    flex: 0 0 34px !important;
+    margin: 0 !important;
+    transform: none !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+  .chat-view > .composer:not(.mobile-flat-input) .composer-support {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    margin: 0 !important;
+  }
+  .chat-view > .composer:not(.mobile-flat-input) .composer-input-stack {
+    position: static !important;
+    display: flex !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 24px !important;
+    max-height: 120px !important;
+    margin: 0 !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+  .chat-view > .composer:not(.mobile-flat-input) .composer-input-stack > textarea {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 24px !important;
+    max-height: 120px !important;
+    height: 24px !important;
+    padding: 7px 4px !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    line-height: 20px !important;
+    overflow-y: hidden !important;
+  }
+  .chat-view > .composer:not(.mobile-flat-input) > button[aria-label="Envoyer"] {
+    position: static !important;
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    margin: 0 !important;
+    transform: none !important;
+    align-self: center !important;
+  }
+}
