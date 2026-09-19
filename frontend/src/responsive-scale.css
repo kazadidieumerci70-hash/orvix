@@ -160,7 +160,7 @@
 /* Message composer only: compact reference treatment. */
 @media (min-width: 901px) {
   /* The empty-state messages layer is decorative and must not block the composer. */
-  .chat-main.empty-chat > .messages {
+  .chat-main > .chat-view.empty-chat > .messages {
     pointer-events: none !important;
   }
 }
@@ -291,4 +291,56 @@
     margin-bottom: 0 !important;
   }
   .chat-main > .composer > button[aria-label="Envoyer"] svg { width: 18px !important; height: 18px !important; }
+}
+
+/* Correct mount path: the composer is inside .chat-view, not a direct child of .chat-main. */
+@media (min-width: 901px) {
+  .chat-main > .chat-view > .composer {
+    position: relative !important;
+    z-index: 100 !important;
+    pointer-events: auto !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    height: auto !important;
+    min-height: 48px !important;
+    max-height: 136px !important;
+    padding: 6px 7px 6px 10px !important;
+    border-radius: 16px !important;
+  }
+  .chat-main > .chat-view > .composer .composer-input-stack {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 24px !important;
+    max-height: 120px !important;
+    display: flex !important;
+    align-items: flex-end !important;
+  }
+  .chat-main > .chat-view > .composer .composer-input-stack > textarea {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 24px !important;
+    max-height: 120px !important;
+    padding: 7px 8px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    resize: none !important;
+    pointer-events: auto !important;
+    user-select: text !important;
+    cursor: text !important;
+    overflow-y: hidden !important;
+  }
+  .chat-main > .chat-view > .composer .composer-input-stack > textarea.is-overflowing { overflow-y: auto !important; }
+  .chat-main > .chat-view > .composer .composer-support { pointer-events: auto !important; }
+  .chat-main > .chat-view > .composer > button[aria-label="Envoyer"] {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    flex: 0 0 38px !important;
+    align-self: flex-end !important;
+    margin: 0 !important;
+  }
 }
