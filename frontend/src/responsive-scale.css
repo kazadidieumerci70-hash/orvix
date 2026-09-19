@@ -307,6 +307,8 @@
     padding: 6px 7px 6px 10px !important;
     border-radius: 16px !important;
     gap: 12px !important;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    grid-template-rows: auto !important;
   }
   .chat-main > .chat-view > .composer .composer-tools {
     width: 32px !important;
@@ -314,6 +316,8 @@
     flex: 0 0 32px !important;
     display: grid !important;
     place-items: center !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
   }
   .chat-main > .chat-view > .composer .composer-input-stack {
     flex: 1 1 auto !important;
@@ -323,6 +327,8 @@
     max-height: 120px !important;
     display: flex !important;
     align-items: flex-end !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
   }
   .chat-main > .chat-view > .composer .composer-input-stack > textarea {
     width: 100% !important;
