@@ -344,3 +344,109 @@
     margin: 0 !important;
   }
 }
+
+/* Conversation messages: a quiet, centered reading column. */
+@media (min-width: 901px) {
+  .chat-main > .chat-view > .messages {
+    padding-inline: 0 !important;
+    padding-bottom: 120px !important;
+  }
+  .chat-main > .chat-view > .messages > .message-row {
+    width: min(800px, calc(100% - 48px)) !important;
+    max-width: 800px !important;
+    margin: 14px auto !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+  .chat-main > .chat-view > .messages > .message-row.user {
+    justify-content: flex-end !important;
+    margin-top: 20px !important;
+    margin-bottom: 20px !important;
+  }
+  .chat-main > .chat-view > .messages > .message-row.assistant {
+    margin-top: 20px !important;
+    margin-bottom: 24px !important;
+  }
+  .chat-main > .chat-view > .messages .assistant-avatar {
+    width: 24px !important;
+    height: 24px !important;
+    flex: 0 0 24px !important;
+    margin-top: 2px !important;
+  }
+  .chat-main > .chat-view > .messages .assistant-avatar img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  .chat-main > .chat-view > .messages .message-stack {
+    display: grid !important;
+    justify-items: start !important;
+    gap: 8px !important;
+    max-width: min(720px, calc(100% - 34px)) !important;
+  }
+  .chat-main > .chat-view > .messages .user .message-stack {
+    justify-items: end !important;
+    max-width: min(520px, 70%) !important;
+  }
+  .chat-main > .chat-view > .messages .message {
+    max-width: 100% !important;
+    padding: 10px 14px !important;
+    border-radius: 16px !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    color: #10182f !important;
+  }
+  .chat-main > .chat-view > .messages .user .message {
+    background: rgba(0,155,140,.07) !important;
+    border-bottom-right-radius: 6px !important;
+  }
+  .chat-main > .chat-view > .messages .assistant .message {
+    padding: 0 !important;
+    background: transparent !important;
+  }
+  .chat-main > .chat-view > .messages .formatted-message {
+    display: grid !important;
+    gap: 0 !important;
+  }
+  .chat-main > .chat-view > .messages .formatted-message p {
+    margin: 0 0 10px !important;
+    font-size: 14px !important;
+    line-height: 1.65 !important;
+  }
+  .chat-main > .chat-view > .messages .formatted-message p:last-child { margin-bottom: 0 !important; }
+  .chat-main > .chat-view > .messages .formatted-message h3 {
+    margin: 12px 0 6px !important;
+    font-size: 16px !important;
+    line-height: 1.3 !important;
+  }
+  .chat-main > .chat-view > .messages .formatted-message ul,
+  .chat-main > .chat-view > .messages .formatted-message ol {
+    margin: 8px 0 !important;
+    padding-left: 20px !important;
+  }
+  .chat-main > .chat-view > .messages .formatted-message li { margin-bottom: 4px !important; }
+  .chat-main > .chat-view > .messages .message-time {
+    margin-top: 4px !important;
+    font-size: 10px !important;
+    opacity: .45 !important;
+  }
+  .chat-main > .chat-view > .messages .message-actions {
+    gap: 3px !important;
+    padding-left: 0 !important;
+    margin-top: 0 !important;
+    opacity: .72 !important;
+  }
+  .chat-main > .chat-view > .messages .message-actions button {
+    width: 28px !important;
+    height: 28px !important;
+    border: 0 !important;
+    border-radius: 7px !important;
+    background: transparent !important;
+    color: rgba(15,30,60,.48) !important;
+  }
+  .chat-main > .chat-view > .messages .message-actions button:hover {
+    background: rgba(0,155,140,.055) !important;
+    color: #078d84 !important;
+  }
+}
