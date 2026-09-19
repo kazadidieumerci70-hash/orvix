@@ -106,3 +106,53 @@
   margin: 0 0 0 9px !important;
   flex: 0 0 auto !important;
 }
+
+/* Minimal header refinement only. */
+@media (min-width: 1200px) {
+  .chat-main > .page-actions {
+    height: 66px !important;
+    background: rgba(255,255,255,.96) !important;
+    border-bottom: 1px solid rgba(10,20,50,.06) !important;
+    box-shadow: none !important;
+  }
+  .chat-main > .page-actions .top-document-selector {
+    width: auto !important;
+    min-width: 125px !important;
+    max-width: 135px !important;
+    height: 34px !important;
+    top: 16px !important;
+    padding: 0 11px 0 14px !important;
+    gap: 9px !important;
+    border: 1px solid rgba(0,155,140,.65) !important;
+    border-radius: 9999px !important;
+    background: transparent !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,.02) !important;
+  }
+  .chat-main > .page-actions .top-document-selector select {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    color: #087f76 !important;
+  }
+  .chat-main > .page-actions .top-document-selector:hover {
+    background: rgba(0,155,140,.035) !important;
+    border-color: rgba(0,155,140,.8) !important;
+  }
+  .chat-main > .page-actions .top-actions-right {
+    top: 15px !important;
+    right: 24px !important;
+    gap: 18px !important;
+  }
+  .chat-main > .page-actions .top-actions-right button {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .chat-main > .page-actions .top-actions-right button:hover {
+    background: rgba(0,155,140,.055) !important;
+  }
+  .chat-main > .page-actions .top-new-conversation-button svg { width: 21px !important; height: 21px !important; }
+  .chat-main > .page-actions .top-notification-button svg { width: 20px !important; height: 20px !important; }
+}
