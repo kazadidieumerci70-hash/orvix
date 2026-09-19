@@ -84,6 +84,47 @@ button { cursor: pointer; }
   .chat-view > .composer > button[aria-label="Envoyer"] { width: 40px !important; height: 40px !important; }
 }
 
+/* Final desktop reference lock: 1574 x 960 mockup geometry. */
+@media (min-width: 1200px) {
+  .app-shell { grid-template-columns: 315px minmax(0, 1fr) !important; }
+  .sidebar { width: 315px !important; padding: 38px 20px 20px !important; background: #fff !important; border-right: 1px solid rgba(10,20,60,.08) !important; }
+  .sidebar-brand { margin: 0 15px 39px !important; gap: 13px !important; font-size: 29px !important; }
+  .sidebar-brand .brand-logo { width: 51px !important; height: 51px !important; }
+  .sidebar-menu-button { width: 30px !important; height: 30px !important; }
+  .sidebar nav { gap: 8px !important; }
+  .nav-item { min-height: 49px !important; padding: 12px 20px !important; gap: 16px !important; font-size: 16px !important; color: #080d36 !important; }
+  .nav-item.active { background: rgba(0,170,155,.10) !important; color: #008f82 !important; }
+  .recents { padding: 38px 12px 20px !important; gap: 5px !important; }
+  .recents-head { margin-bottom: 8px !important; }
+  .recents h3 { font-size: 12px !important; color: #737d97 !important; }
+  .recents-head button { width: 37px !important; height: 37px !important; }
+  .conversation-link { min-height: 47px !important; padding: 8px 11px !important; font-size: 15px !important; }
+  .profile-card { min-height: 73px !important; padding: 12px 14px !important; margin-top: 8px !important; border-radius: 14px !important; background: #fafafc !important; }
+  .main-content.chat-main { height: 100dvh !important; overflow: hidden !important; background: #fbfefe !important; isolation: isolate; }
+  .main-content.chat-main::before { content: ""; position: absolute; inset: 88px 0 0; z-index: -2; pointer-events: none; background: radial-gradient(ellipse 64% 48% at 52% 35%, rgba(255,255,255,.98) 0 43%, rgba(238,251,249,.92) 54%, rgba(220,246,243,.45) 68%, transparent 76%), radial-gradient(circle at 7% 13%, rgba(76,207,193,.28) 0 43px, transparent 46px), radial-gradient(circle at 94% 16%, rgba(76,207,193,.21) 0 22px, transparent 25px); }
+  .main-content.chat-main::after { content: ""; position: absolute; inset: 88px 0 0; z-index: -1; pointer-events: none; opacity: .72; background: radial-gradient(ellipse 80% 18% at 18% 91%, rgba(105,219,207,.32), transparent 65%), radial-gradient(ellipse 80% 20% at 84% 86%, rgba(104,217,204,.30), transparent 64%), radial-gradient(ellipse 54% 25% at 50% 45%, transparent 0 62%, rgba(223,247,245,.82) 63% 65%, transparent 66% 72%, rgba(229,249,247,.72) 73% 75%, transparent 76%); }
+  .chat-main > .page-actions { position: absolute !important; inset: 0 0 auto 0 !important; height: 89px !important; padding: 0 !important; display: block !important; background: rgba(255,255,255,.78) !important; border-bottom: 1px solid rgba(10,20,60,.08) !important; z-index: 30 !important; pointer-events: none !important; }
+  .chat-main > .page-actions::after { display: none !important; }
+  .chat-main > .page-actions .mobile-menu { display: none !important; }
+  .chat-main > .page-actions .top-document-selector { position: absolute !important; top: 22px !important; left: 50% !important; width: 218px !important; min-width: 218px !important; max-width: 218px !important; height: 54px !important; transform: translateX(-50%) !important; border: 1.5px solid #00a896 !important; border-radius: 27px !important; background: rgba(255,255,255,.58) !important; pointer-events: auto !important; }
+  .chat-main > .page-actions .top-document-selector select { font-size: 15px !important; font-weight: 700 !important; color: #087f75 !important; text-align: center !important; }
+  .chat-main > .page-actions .top-actions-right { position: absolute !important; top: 22px !important; right: 25px !important; gap: 12px !important; pointer-events: auto !important; }
+  .chat-main > .page-actions .top-actions-right button { width: 62px !important; height: 60px !important; border-radius: 15px !important; color: #080d36 !important; background: transparent !important; box-shadow: none !important; }
+  .chat-main > .page-actions .top-new-conversation-button { background: #e7f8f6 !important; }
+  .chat-main > .page-actions .top-new-conversation-button svg { width: 29px !important; height: 29px !important; }
+  .chat-main > .page-actions .top-notification-button svg { width: 26px !important; height: 26px !important; }
+  .chat-main .messages { position: relative; z-index: 1; height: 100dvh !important; padding: 88px 0 0 !important; overflow: hidden !important; }
+  .chat-main.empty-chat .chat-empty { position: absolute !important; inset: 0 0 auto !important; top: 248px !important; height: auto !important; padding: 0 !important; transform: none !important; }
+  .chat-main.empty-chat .chat-empty-brand { margin: 0 auto 43px !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; }
+  .chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: 91px !important; height: 91px !important; }
+  .chat-main.empty-chat .orvix-introduction h1 { max-width: 720px !important; margin: 0 auto !important; font-size: 46px !important; line-height: 1.08 !important; letter-spacing: -.025em !important; color: #080d45 !important; }
+  .chat-main.empty-chat .orvix-introduction h1 em { color: #008f82 !important; font-style: normal !important; }
+  .chat-main.empty-chat > .composer { position: absolute !important; left: 50% !important; bottom: 116px !important; width: min(1023px, calc(100% - 220px)) !important; height: 86px !important; min-height: 86px !important; transform: translateX(-50%) !important; margin: 0 !important; padding: 10px 18px 10px 20px !important; border: 1px solid rgba(10,20,60,.025) !important; border-radius: 43px !important; background: rgba(255,255,255,.94) !important; box-shadow: 0 8px 30px rgba(10,90,100,.07) !important; z-index: 20 !important; }
+  .chat-main.empty-chat > .composer .composer-support { width: 52px !important; height: 52px !important; background: #e8faf7 !important; color: #009b8d !important; }
+  .chat-main.empty-chat > .composer .composer-input-stack > textarea { height: 64px !important; min-height: 64px !important; max-height: 64px !important; padding: 20px 10px !important; font-size: 16px !important; line-height: 24px !important; color: #686a91 !important; }
+  .chat-main.empty-chat > .composer > button[aria-label="Envoyer"] { width: 60px !important; height: 60px !important; margin-right: 0 !important; background: #009b8d !important; }
+}
+
 /* Finition de l’espace de conversation : lecture calme et naturelle. */
 .chat-view .messages { padding-inline: clamp(16px, 5vw, 72px); padding-bottom: 28px; }
 .chat-view .message-row { width: min(860px, 100%); margin-inline: auto; gap: 12px; }
