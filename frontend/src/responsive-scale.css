@@ -159,6 +159,13 @@
 
 /* Message composer only: compact reference treatment. */
 @media (min-width: 901px) {
+  /* The empty-state messages layer is decorative and must not block the composer. */
+  .chat-main.empty-chat > .messages {
+    pointer-events: none !important;
+  }
+}
+
+@media (min-width: 901px) {
   .chat-main > .composer {
     height: 52px !important;
     min-height: 52px !important;
