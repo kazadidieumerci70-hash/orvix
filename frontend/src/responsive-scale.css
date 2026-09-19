@@ -329,13 +329,14 @@
     align-items: flex-end !important;
     grid-column: auto !important;
     grid-row: auto !important;
+    margin-left: 4px !important;
   }
   .chat-main > .chat-view > .composer .composer-input-stack > textarea {
     width: 100% !important;
     min-width: 0 !important;
     min-height: 24px !important;
     max-height: 120px !important;
-    padding: 7px 8px !important;
+    padding: 7px 8px 7px 10px !important;
     margin: 0 !important;
     border: 0 !important;
     outline: 0 !important;
