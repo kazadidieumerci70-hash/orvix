@@ -83,3 +83,26 @@
   .chat-main.empty-chat .orvix-introduction h1 { font-size: 34px !important; }
   .chat-main.empty-chat > .composer { height: 65px !important; min-height: 65px !important; bottom: 38px !important; }
 }
+
+/* Compact navigation backgrounds only; text, icons, and positioning stay unchanged. */
+.sidebar nav .nav-item,
+.sidebar .conversation-link {
+  width: fit-content !important;
+  min-width: 0 !important;
+  max-width: max-content !important;
+  flex: 0 0 auto !important;
+  align-self: flex-start !important;
+}
+.sidebar nav .nav-item {
+  display: inline-flex !important;
+}
+.sidebar .conversation-link {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+.sidebar .conversation-link.active::after {
+  float: none !important;
+  display: inline-block !important;
+  margin: 0 0 0 9px !important;
+  flex: 0 0 auto !important;
+}
