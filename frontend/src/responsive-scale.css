@@ -172,6 +172,7 @@
   max-height: 110px !important;
   align-items: flex-end !important;
   overflow: visible !important;
+  border-radius: 24px !important;
 }
 .chat-view > .composer.is-typing .composer-input-stack {
   height: auto !important;
