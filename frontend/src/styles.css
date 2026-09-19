@@ -5021,3 +5021,38 @@ select:focus-visible {
   .chat-view > .composer .composer-input-stack > textarea.is-overflowing { overflow-y: auto !important; }
   .chat-view > .composer > button[aria-label="Envoyer"] { width: 40px !important; height: 40px !important; }
 }
+
+/* Pixel-precise home chat composition from the approved reference. */
+@media (min-width: 901px) {
+  .app-shell { grid-template-columns: 322px 1fr !important; }
+  .sidebar { padding: 39px 20px 20px !important; border-right-color: #d8e6e5 !important; }
+  .sidebar-brand { margin: 0 16px 40px !important; gap: 13px !important; font-size: 25px !important; }
+  .sidebar-brand .brand-logo { width: 52px !important; height: 52px !important; }
+  .sidebar-menu-button { width: 32px !important; height: 32px !important; }
+  .sidebar nav { gap: 8px !important; }
+  .nav-item { padding: 14px 21px !important; gap: 18px !important; border-radius: 12px !important; font-size: 16px !important; }
+  .recents { padding: 38px 13px 20px !important; gap: 5px !important; }
+  .recents-head { margin-bottom: 8px !important; }
+  .recents-head button { width: 34px !important; height: 34px !important; }
+  .conversation-link { padding: 10px 12px !important; font-size: 15px !important; }
+  .profile-card { min-height: 72px !important; padding: 12px 14px !important; border-radius: 16px !important; }
+  .main-content.chat-main { background: #f8fcfc !important; position: relative; isolation: isolate; }
+  .main-content.chat-main::before { content: ""; position: absolute; inset: 90px 0 0; z-index: -2; pointer-events: none; background: radial-gradient(ellipse at 50% 31%, rgba(255,255,255,.98) 0 31%, rgba(231,249,247,.74) 46%, transparent 67%), radial-gradient(ellipse at 3% 78%, rgba(111,218,205,.32), transparent 35%), radial-gradient(ellipse at 100% 78%, rgba(97,211,198,.28), transparent 34%); }
+  .main-content.chat-main::after { content: ""; position: absolute; inset: 90px 0 0; z-index: -1; pointer-events: none; opacity: .8; background: radial-gradient(ellipse at 52% 36%, transparent 0 31%, rgba(220,245,243,.86) 31.5% 33%, transparent 33.6% 39%, rgba(227,248,246,.9) 39.5% 41%, transparent 41.6% 47%, rgba(231,249,247,.72) 47.5% 49%, transparent 49.6%); }
+  .chat-main > .page-actions { height: 90px !important; padding: 18px 38px !important; background: rgba(255,255,255,.46) !important; border-bottom: 1px solid #cbdedc !important; }
+  .chat-main > .page-actions::after { display: none !important; }
+  .chat-main > .page-actions .top-document-selector { width: 224px !important; min-width: 224px !important; height: 56px !important; border-width: 1.5px !important; }
+  .chat-main > .page-actions .top-document-selector select { font-size: 16px !important; }
+  .chat-main > .page-actions .top-actions-right { right: 38px !important; gap: 11px !important; }
+  .chat-main > .page-actions .top-actions-right button { width: 58px !important; height: 58px !important; }
+  .chat-main > .page-actions .top-new-conversation-button { background: #e7f8f6 !important; border-radius: 17px !important; }
+  .chat-main .messages { padding-top: 108px !important; padding-bottom: 140px !important; }
+  .chat-main .chat-empty { transform: translateY(-2px) !important; }
+  .chat-main .chat-empty-brand .chat-empty-logo { width: 112px !important; height: 112px !important; }
+  .chat-main .chat-empty .regular-welcome h1 { margin-top: 12px !important; font-size: clamp(43px, 4.2vw, 58px) !important; line-height: 1.12 !important; }
+  .chat-main .chat-empty .regular-welcome h1 em { color: #159b91 !important; font-style: normal !important; }
+  .chat-main > .composer { width: min(1044px, calc(100% - 96px)) !important; min-height: 88px !important; height: 88px !important; padding: 12px 20px 12px 30px !important; border-radius: 999px !important; background: rgba(255,255,255,.94) !important; border-color: #d8e9e6 !important; box-shadow: 0 18px 38px rgba(20,130,122,.14) !important; }
+  .chat-main > .composer .composer-support { width: 52px !important; height: 52px !important; border-radius: 50% !important; background: #e0f5f2 !important; color: #159b91 !important; }
+  .chat-main > .composer .composer-input-stack > textarea { height: 56px !important; min-height: 56px !important; max-height: 56px !important; padding: 17px 8px !important; font-size: 16px !important; color: #536b8b !important; }
+  .chat-main > .composer > button[aria-label="Envoyer"] { width: 62px !important; height: 62px !important; background: #0fa299 !important; }
+}
