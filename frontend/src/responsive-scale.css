@@ -183,6 +183,11 @@
 .chat-view > .composer.is-typing .composer-input-stack > textarea {
   max-height: 94px !important;
 }
+.chat-view > .composer:not(.mobile-flat-input).is-typing {
+  align-self: end !important;
+  transform-origin: bottom center !important;
+  border-radius: 10px !important;
+}
 
 /* Keep the mounted composer on one clean row below the desktop breakpoint too. */
 @media (max-width: 900px) {
