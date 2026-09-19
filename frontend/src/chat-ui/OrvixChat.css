@@ -1,0 +1,544 @@
+/* ORVIX Chat visual layer. Logic remains in App.tsx. */
+:root {
+  --orvix-chat-teal: #08a7a3;
+  --orvix-chat-light: #ddf6f4;
+  --orvix-chat-pale: #effbfa;
+  --orvix-chat-ink: #101d4f;
+  --orvix-chat-bg: #f8fcfc;
+}
+
+.main-content.chat-main { background: var(--orvix-chat-bg) !important; }
+.main-content.chat-main::before {
+  inset: 74px 0 0 !important;
+  background:
+    radial-gradient(ellipse 74% 56% at 52% 29%, rgba(255,255,255,.98) 0 38%, rgba(239,251,250,.82) 64%, transparent 79%),
+    radial-gradient(ellipse 50% 22% at 18% 87%, rgba(221,246,244,.62), transparent 70%),
+    radial-gradient(circle at 8% 18%, rgba(8,167,163,.12) 0 52px, transparent 54px),
+    radial-gradient(circle at 94% 17%, rgba(8,167,163,.09) 0 28px, transparent 30px) !important;
+}
+.chat-main > .page-actions {
+  height: 74px !important;
+  background: rgba(255,255,255,.88) !important;
+  border-bottom: 1px solid rgba(16,29,79,.08) !important;
+  box-shadow: 0 8px 24px rgba(16,29,79,.035) !important;
+}
+.chat-main > .page-actions .top-document-selector {
+  top: 17px !important; height: 40px !important;
+  border: 2px solid var(--orvix-chat-teal) !important;
+  border-radius: 999px !important; background: rgba(255,255,255,.8) !important;
+}
+.chat-main > .page-actions .top-document-selector select { color: #087d79 !important; font-size: 13px !important; font-weight: 700 !important; }
+.chat-main > .page-actions .top-actions-right { top: 15px !important; right: 22px !important; gap: 7px !important; }
+.chat-main > .page-actions .top-actions-right button { width: 42px !important; height: 42px !important; border-radius: 13px !important; color: var(--orvix-chat-ink) !important; }
+.chat-main > .page-actions .top-actions-right button:hover { background: var(--orvix-chat-pale) !important; color: var(--orvix-chat-teal) !important; }
+.chat-main > .page-actions .top-new-conversation-button { background: var(--orvix-chat-pale) !important; color: var(--orvix-chat-teal) !important; }
+.chat-main.empty-chat .chat-empty { top: 177px !important; }
+.chat-main.empty-chat .chat-empty-brand {
+  width: 96px !important; height: 96px !important; margin-bottom: 28px !important; padding: 17px !important;
+  border: 1px solid rgba(8,167,163,.14) !important; border-radius: 29px !important;
+  background: rgba(255,255,255,.78) !important; box-shadow: 0 18px 42px rgba(8,120,115,.1) !important;
+}
+.chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: 62px !important; height: 62px !important; }
+.chat-main.empty-chat .orvix-introduction h1 { color: var(--orvix-chat-ink) !important; font-size: clamp(36px, 3.4vw, 50px) !important; line-height: 1.08 !important; letter-spacing: -.04em !important; }
+.chat-main.empty-chat .orvix-introduction h1 em { color: var(--orvix-chat-teal) !important; }
+.orvix-chat-shell .chat-empty-hint { max-width: 440px; margin: 18px auto 0; color: #6b8581; font-size: 15px; line-height: 1.55; }
+.orvix-chat-shell.empty-chat > .composer { border-color: rgba(8,167,163,.2) !important; box-shadow: 0 18px 42px rgba(8,120,115,.11) !important; }
+
+@media (max-width: 900px) {
+  .chat-main > .page-actions { height: 64px !important; }
+  .chat-main > .page-actions .top-document-selector { top: 12px !important; height: 38px !important; width: min(50vw, 210px) !important; min-width: 0 !important; }
+  .chat-main > .page-actions .top-actions-right { top: 10px !important; right: 10px !important; }
+  .chat-main > .page-actions .top-actions-right button { width: 38px !important; height: 38px !important; }
+  .chat-main.empty-chat .chat-empty { top: 130px !important; }
+  .chat-main.empty-chat .chat-empty-brand { width: 72px !important; height: 72px !important; margin-bottom: 20px !important; padding: 12px !important; border-radius: 22px !important; }
+  .chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: 48px !important; height: 48px !important; }
+  .chat-main.empty-chat .orvix-introduction h1 { font-size: clamp(32px, 8.5vw, 42px) !important; }
+  .orvix-chat-shell .chat-empty-hint { max-width: 290px; margin-top: 14px; padding-inline: 16px; font-size: 13px; }
+}
+
+/* Étape reset : toile blanche uniquement pour l'écran Chat. */
+.app-shell:has(.main-content.chat-main) {
+  display: block !important;
+  background: #fff !important;
+}
+
+.app-shell:has(.main-content.chat-main) > .sidebar,
+.app-shell:has(.main-content.chat-main) > .backdrop,
+.main-content.chat-main > .page-actions,
+.main-content.chat-main > .orvix-chat-shell {
+  display: none !important;
+}
+
+.main-content.chat-main,
+.main-content.chat-main::before,
+.main-content.chat-main::after {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  background: #fff !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+/* Étape 2 : seul le header est visible sur la toile blanche. */
+.app-shell:has(.main-content.chat-main) > .sidebar,
+.app-shell:has(.main-content.chat-main) > .backdrop,
+.main-content.chat-main > .orvix-chat-shell { display: none !important; }
+.main-content.chat-main > .page-actions {
+  display: block !important;
+  position: fixed !important;
+  inset: 0 0 auto 0 !important;
+  z-index: 20 !important;
+  width: 100% !important;
+  height: 88px !important;
+  padding: 0 !important;
+  background: #fff !important;
+  border-bottom: 1px solid rgba(16, 29, 79, .08) !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+.main-content.chat-main > .page-actions::after,
+.main-content.chat-main > .page-actions .mobile-menu,
+.main-content.chat-main > .page-actions .top-profile-button { display: none !important; }
+.main-content.chat-main > .page-actions .top-document-selector {
+  display: block !important;
+  position: absolute !important;
+  top: 18px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  height: 52px !important;
+  border: 1.5px solid #08a7a3 !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  pointer-events: auto !important;
+  box-shadow: none !important;
+}
+.main-content.chat-main > .page-actions .top-document-selector select {
+  color: #087f7b !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+}
+.main-content.chat-main > .page-actions .top-actions-right {
+  display: flex !important;
+  position: absolute !important;
+  top: 12px !important;
+  right: 24px !important;
+  gap: 12px !important;
+  pointer-events: auto !important;
+}
+.main-content.chat-main > .page-actions .top-actions-right button {
+  display: grid !important;
+  width: 64px !important;
+  height: 64px !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  color: #101d4f !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.main-content.chat-main > .page-actions .top-new-conversation-button { background: #effbfa !important; }
+.main-content.chat-main > .page-actions .top-notification-button { position: relative !important; }
+.main-content.chat-main > .page-actions .top-notification-button::after {
+  content: ""; position: absolute; top: 15px; right: 15px; width: 7px; height: 7px;
+  border-radius: 50%; background: #e85d68; border: 2px solid #fff;
+}
+@media (max-width: 600px) {
+  .main-content.chat-main > .page-actions { height: 72px !important; }
+  .main-content.chat-main > .page-actions .top-document-selector { top: 14px !important; width: 172px !important; min-width: 172px !important; height: 44px !important; }
+  .main-content.chat-main > .page-actions .top-actions-right { top: 6px !important; right: 8px !important; gap: 2px !important; }
+  .main-content.chat-main > .page-actions .top-actions-right button { width: 58px !important; height: 58px !important; }
+}
+
+/* Étape 8 : sidebar existante uniquement dans le contexte Chat. */
+.app-shell:has(.main-content.chat-main) {
+  display: grid !important;
+  grid-template-columns: 315px minmax(0, 1fr) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  background: #fff !important;
+}
+.app-shell:has(.main-content.chat-main) > .sidebar {
+  display: flex !important;
+  position: relative !important;
+  z-index: 30 !important;
+  width: 315px !important;
+  min-width: 315px !important;
+  height: 100vh !important;
+  padding: 28px 18px 18px !important;
+  background: #fff !important;
+  border-right: 1px solid rgba(16,29,79,.07) !important;
+  box-shadow: none !important;
+}
+.app-shell:has(.main-content.chat-main) > .sidebar .sidebar-brand { color: #101d4f !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar .sidebar-menu-button { color: #101d4f !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar nav { gap: 5px !important; margin-top: 28px !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar .nav-item {
+  min-height: 46px !important;
+  border-radius: 12px !important;
+  color: #101d4f !important;
+}
+.app-shell:has(.main-content.chat-main) > .sidebar .nav-item.active { background: #effbfa !important; color: #087f7b !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar .recents { margin-top: 30px !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar .recents-head h3 { color: rgba(16,29,79,.55) !important; letter-spacing: .12em !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar .recents-head button { color: #08a7a3 !important; background: #effbfa !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar .conversation-link { border-radius: 10px !important; color: rgba(16,29,79,.7) !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar .conversation-link.active { background: #effbfa !important; color: #087f7b !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar .profile-card { border-radius: 16px !important; background: #effbfa !important; color: #101d4f !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar .avatar { background: #08a7a3 !important; color: #fff !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar .close-nav { display: none !important; }
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main { min-width: 0 !important; width: auto !important; }
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main {
+  left: 315px !important;
+  right: 0 !important;
+  width: auto !important;
+}
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main::before,
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main::after { left: 315px !important; }
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main > .page-actions { left: 315px !important; width: auto !important; }
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main > .orvix-chat-shell { left: 315px !important; right: 0 !important; }
+
+@media (max-width: 900px) {
+  .app-shell:has(.main-content.chat-main) { display: block !important; }
+  .app-shell:has(.main-content.chat-main) > .sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: min(315px, 86vw) !important;
+    min-width: 0 !important;
+    transform: translateX(-105%) !important;
+    transition: transform .2s ease !important;
+  }
+  .app-shell:has(.main-content.chat-main) > .sidebar.open { transform: translateX(0) !important; }
+  .app-shell:has(.main-content.chat-main) > .sidebar .close-nav { display: grid !important; }
+  .app-shell:has(.main-content.chat-main) > .main-content.chat-main { width: 100% !important; }
+  .app-shell:has(.main-content.chat-main) > .main-content.chat-main { left: 0 !important; right: 0 !important; }
+  .app-shell:has(.main-content.chat-main) > .main-content.chat-main::before,
+  .app-shell:has(.main-content.chat-main) > .main-content.chat-main::after { left: 0 !important; }
+  .app-shell:has(.main-content.chat-main) > .main-content.chat-main > .page-actions { left: 0 !important; width: 100% !important; }
+  .app-shell:has(.main-content.chat-main) > .main-content.chat-main > .orvix-chat-shell { left: 0 !important; right: 0 !important; }
+  .app-shell:has(.main-content.chat-main) > .backdrop { display: block !important; z-index: 25 !important; }
+}
+
+/* Étape 7 : messages uniquement lorsque la conversation commence. */
+.main-content.chat-main > .orvix-chat-shell.has-messages > .orvix-chat-messages {
+  display: block !important;
+  position: absolute !important;
+  inset: 24px 0 132px !important;
+  height: auto !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: 20px 7% 28px !important;
+  scroll-behavior: smooth;
+}
+.main-content.chat-main > .orvix-chat-shell.has-messages > .orvix-chat-messages > .orvix-chat-empty { display: none !important; }
+.main-content.chat-main > .orvix-chat-shell.has-messages > .orvix-chat-messages > .orvix-chat-message-row,
+.main-content.chat-main > .orvix-chat-shell.has-messages > .orvix-chat-messages > .orvix-chat-loading { display: flex !important; }
+.main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row {
+  width: min(920px, 100%) !important;
+  margin: 0 auto 20px !important;
+  gap: 12px !important;
+  animation: orvix-chat-message-in .22s ease both !important;
+}
+.main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.user { justify-content: flex-end !important; }
+.main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.user .message-stack { max-width: min(70%, 680px) !important; }
+.main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.user .orvix-chat-message {
+  padding: 14px 18px 11px !important;
+  border-radius: 20px 20px 6px 20px !important;
+  background: #08a7a3 !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.assistant { justify-content: flex-start !important; }
+.main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.assistant .message-stack { max-width: min(74%, 720px) !important; }
+.main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.assistant .orvix-chat-message {
+  padding: 4px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #101d4f !important;
+  box-shadow: none !important;
+}
+.main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-avatar {
+  flex: 0 0 34px !important;
+  width: 34px !important;
+  height: 34px !important;
+  margin-top: 3px !important;
+  border-radius: 50% !important;
+  background: #effbfa !important;
+}
+.main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-avatar img { width: 27px !important; height: 27px !important; object-fit: contain !important; }
+.main-content.chat-main > .orvix-chat-shell.has-messages .message-time { opacity: .55; }
+.main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-loading .reading-state {
+  padding: 12px 16px !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,.8) !important;
+  color: #101d4f !important;
+}
+@keyframes orvix-chat-message-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) {
+  .main-content.chat-main > .orvix-chat-shell.has-messages > .orvix-chat-messages { inset: 12px 0 96px !important; padding: 14px 16px 22px !important; }
+  .main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.user .message-stack { max-width: 85% !important; }
+  .main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.assistant .message-stack { max-width: calc(100% - 46px) !important; }
+  .main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row { margin-bottom: 16px !important; }
+}
+
+/* Étape 6 : composer existant uniquement. */
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer {
+  display: grid !important;
+  position: absolute !important;
+  z-index: 8 !important;
+  left: 50% !important;
+  bottom: 32px !important;
+  transform: translateX(-50%) !important;
+  width: min(72%, 900px) !important;
+  min-height: 82px !important;
+  height: 82px !important;
+  margin: 0 !important;
+  padding: 12px 16px 12px 20px !important;
+  grid-template-columns: 46px minmax(0, 1fr) 50px !important;
+  gap: 12px !important;
+  align-items: center !important;
+  border: 0 !important;
+  border-radius: 42px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 30px rgba(16, 29, 79, .08) !important;
+  pointer-events: auto !important;
+}
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer .orvix-chat-composer-tools,
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer .composer-support {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer .composer-support {
+  display: grid !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: #effbfa !important;
+  color: #08a7a3 !important;
+  box-shadow: none !important;
+}
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer .orvix-chat-input-stack {
+  width: 100% !important;
+  height: 54px !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer textarea {
+  width: 100% !important;
+  height: 50px !important;
+  min-height: 50px !important;
+  max-height: 94px !important;
+  padding: 14px 2px !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  color: #101d4f !important;
+  font-size: 16px !important;
+  line-height: 1.45 !important;
+  resize: none !important;
+}
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer textarea::placeholder { color: rgba(16, 29, 79, .45) !important; opacity: 1 !important; }
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer .orvix-chat-send {
+  display: grid !important;
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: #08a7a3 !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer .orvix-chat-send:disabled { opacity: .42 !important; }
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer .orvix-chat-attachment-menu { bottom: 58px !important; }
+@media (max-width: 600px) {
+  .main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    width: auto !important;
+    min-height: 68px !important;
+    height: 68px !important;
+    padding: 10px 10px 10px 12px !important;
+    grid-template-columns: 40px minmax(0, 1fr) 46px !important;
+    gap: 8px !important;
+    transform: none !important;
+    border-radius: 36px !important;
+  }
+  .main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer .orvix-chat-composer-tools,
+  .main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer .composer-support { width: 40px !important; height: 40px !important; min-width: 40px !important; min-height: 40px !important; }
+  .main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer textarea { height: 42px !important; min-height: 42px !important; padding: 11px 0 !important; font-size: 14px !important; }
+  .main-content.chat-main > .orvix-chat-shell > .orvix-chat-composer .orvix-chat-send { width: 44px !important; height: 44px !important; min-width: 44px !important; min-height: 44px !important; }
+}
+
+/* Étape 4 : logo central uniquement. */
+.main-content.chat-main > .orvix-chat-shell {
+  display: block !important;
+  position: fixed !important;
+  inset: 88px 0 0 !important;
+  z-index: 5 !important;
+  pointer-events: none !important;
+  background: transparent !important;
+}
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-messages {
+  display: block !important;
+  position: static !important;
+  height: 100% !important;
+  padding: 0 !important;
+}
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-messages > * { display: none !important; }
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-messages > .orvix-chat-empty {
+  display: flex !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 100% !important;
+  height: auto !important;
+  transform: translate(-50%, -50%) !important;
+  padding: 0 !important;
+}
+.orvix-chat-empty .orvix-chat-empty-brand {
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.orvix-chat-empty .orvix-chat-logo {
+  display: block !important;
+  width: 105px !important;
+  height: auto !important;
+  max-width: 110px !important;
+  object-fit: contain !important;
+}
+.orvix-chat-empty .orvix-chat-welcome { display: none !important; }
+@media (max-width: 600px) {
+  .main-content.chat-main > .orvix-chat-shell { inset: 72px 0 0 !important; }
+  .orvix-chat-empty .orvix-chat-logo { width: 86px !important; max-width: 90px !important; }
+}
+
+/* Étape 5 : texte central uniquement. */
+.orvix-chat-empty .orvix-chat-welcome {
+  display: block !important;
+  margin: 24px 16px 0 !important;
+  text-align: center !important;
+}
+.orvix-chat-empty .orvix-chat-welcome h1 {
+  margin: 0 !important;
+  color: #101d4f !important;
+  font-size: clamp(34px, 3.15vw, 42px) !important;
+  font-weight: 800 !important;
+  line-height: 1.12 !important;
+  letter-spacing: -.035em !important;
+  text-align: center !important;
+}
+.orvix-chat-empty .orvix-chat-welcome h1 span { color: #101d4f !important; }
+.orvix-chat-empty .orvix-chat-welcome h1 em { color: #08a7a3 !important; font-style: normal !important; }
+@media (max-width: 600px) {
+  .orvix-chat-empty .orvix-chat-welcome { margin-top: 20px !important; }
+  .orvix-chat-empty .orvix-chat-welcome h1 { font-size: clamp(25px, 7.5vw, 30px) !important; }
+}
+
+/* Étape 3 : background décoratif uniquement sous le header. */
+.main-content.chat-main {
+  overflow: hidden !important;
+  background: #fff !important;
+}
+.main-content.chat-main::before {
+  content: "" !important;
+  display: block !important;
+  position: fixed !important;
+  z-index: 0 !important;
+  inset: 88px 0 0 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  pointer-events: none !important;
+  background:
+    radial-gradient(circle at 8% 13%, rgba(8,167,163,.10) 0 54px, transparent 56px),
+    radial-gradient(circle at 93% 15%, rgba(8,167,163,.07) 0 25px, transparent 27px),
+    radial-gradient(ellipse 70% 47% at 50% 34%, rgba(8,167,163,.055), transparent 72%),
+    radial-gradient(ellipse 82% 23% at 50% 96%, rgba(8,167,163,.065), transparent 72%),
+    #fff !important;
+}
+.main-content.chat-main::after {
+  content: "" !important;
+  display: block !important;
+  position: fixed !important;
+  z-index: 1 !important;
+  inset: 88px 0 0 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  pointer-events: none !important;
+  opacity: 1 !important;
+  background:
+    radial-gradient(ellipse 48% 31% at 50% 34%, transparent 0 61%, rgba(8,167,163,.055) 62% 63%, transparent 64% 72%, rgba(8,167,163,.04) 73% 74%, transparent 75%),
+    radial-gradient(ellipse 76% 44% at 50% 38%, transparent 0 67%, rgba(8,167,163,.035) 68% 69%, transparent 70%),
+    radial-gradient(ellipse 62% 18% at 18% 93%, rgba(255,255,255,.1), transparent 72%),
+    radial-gradient(ellipse 62% 18% at 84% 89%, rgba(8,167,163,.04), transparent 72%) !important;
+  filter: blur(.2px);
+}
+@media (max-width: 600px) {
+  .main-content.chat-main::before,
+  .main-content.chat-main::after { inset: 72px 0 0 !important; }
+  .main-content.chat-main::before { background:
+    radial-gradient(circle at 5% 12%, rgba(8,167,163,.08) 0 34px, transparent 36px),
+    radial-gradient(circle at 95% 16%, rgba(8,167,163,.06) 0 19px, transparent 21px),
+    radial-gradient(ellipse 105% 42% at 50% 36%, rgba(8,167,163,.045), transparent 73%), #fff !important; }
+}
+
+/* Clean Chat surface: these rules intentionally target only the Chat shell. */
+.orvix-chat-shell { position: relative; isolation: isolate; color: var(--orvix-chat-ink); }
+.orvix-chat-shell .orvix-chat-messages { position: relative; z-index: 1; }
+.orvix-chat-shell .orvix-chat-empty { display: flex; flex-direction: column; align-items: center; }
+.orvix-chat-shell .orvix-chat-empty-brand { display: grid; place-items: center; }
+.orvix-chat-shell .orvix-chat-welcome h1 { font-weight: 800; }
+.orvix-chat-shell .orvix-chat-composer {
+  width: min(74%, 900px) !important; min-height: 84px !important; height: 84px !important;
+  display: grid !important; grid-template-columns: 48px minmax(0,1fr) 54px !important; gap: 12px !important;
+  padding: 13px 16px 13px 20px !important; border: 1px solid rgba(8,167,163,.2) !important;
+  border-radius: 44px !important; background: rgba(255,255,255,.96) !important;
+  box-shadow: 0 18px 48px rgba(16,29,79,.09) !important;
+}
+.orvix-chat-shell .orvix-chat-composer-tools { width: 42px !important; height: 42px !important; align-self: center !important; }
+.orvix-chat-shell .orvix-chat-composer .composer-support { width: 42px !important; height: 42px !important; background: var(--orvix-chat-light) !important; color: var(--orvix-chat-teal) !important; box-shadow: none !important; }
+.orvix-chat-shell .orvix-chat-input-stack { min-width: 0; height: 54px !important; display: flex; align-items: center; }
+.orvix-chat-shell .orvix-chat-input-stack textarea { height: 50px !important; min-height: 50px !important; max-height: 94px !important; padding: 14px 4px !important; color: var(--orvix-chat-ink) !important; font-size: 16px !important; background: transparent !important; }
+.orvix-chat-shell .orvix-chat-input-stack textarea::placeholder { color: #829492; }
+.orvix-chat-shell .orvix-chat-send { width: 54px !important; height: 54px !important; align-self: center !important; border-radius: 50% !important; color: #fff !important; background: var(--orvix-chat-teal) !important; box-shadow: 0 10px 24px rgba(8,167,163,.24) !important; }
+.orvix-chat-shell .orvix-chat-send:disabled { opacity: .42; box-shadow: none !important; }
+.orvix-chat-shell .orvix-chat-attachment-menu { bottom: 58px !important; top: auto !important; border: 1px solid rgba(8,167,163,.14) !important; border-radius: 18px !important; box-shadow: 0 18px 38px rgba(16,29,79,.13) !important; }
+.orvix-chat-shell .orvix-chat-message-row { animation: orvix-chat-rise .24s ease both; }
+.orvix-chat-shell .orvix-chat-message { border-radius: 22px !important; }
+.orvix-chat-shell .orvix-chat-message-row.user .orvix-chat-message { background: var(--orvix-chat-teal) !important; color: #fff !important; }
+.orvix-chat-shell .orvix-chat-message-row.assistant .orvix-chat-message { background: rgba(255,255,255,.72) !important; color: var(--orvix-chat-ink) !important; border: 1px solid rgba(16,29,79,.06) !important; box-shadow: 0 8px 22px rgba(16,29,79,.04) !important; }
+.orvix-chat-shell .orvix-chat-avatar { background: var(--orvix-chat-light) !important; border: 1px solid rgba(8,167,163,.16) !important; }
+.orvix-chat-shell .orvix-chat-loading .reading-state { background: rgba(255,255,255,.82) !important; color: var(--orvix-chat-ink) !important; border: 1px solid rgba(8,167,163,.12) !important; }
+@keyframes orvix-chat-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 900px) {
+  .orvix-chat-shell .orvix-chat-composer { width: calc(100% - 20px) !important; min-height: 58px !important; height: 58px !important; grid-template-columns: 36px minmax(0,1fr) 42px !important; gap: 6px !important; padding: 7px !important; border-radius: 30px !important; }
+  .orvix-chat-shell .orvix-chat-composer-tools, .orvix-chat-shell .orvix-chat-composer .composer-support { width: 36px !important; height: 36px !important; }
+  .orvix-chat-shell .orvix-chat-input-stack { height: 42px !important; }
+  .orvix-chat-shell .orvix-chat-input-stack textarea { height: 40px !important; min-height: 40px !important; padding: 10px 2px !important; font-size: 14px !important; }
+  .orvix-chat-shell .orvix-chat-send { width: 42px !important; height: 42px !important; }
+}

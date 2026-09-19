@@ -27,7 +27,7 @@ import {
   User,
   ArrowLeft,
   Bell,
-  NotebookPen,
+  LibraryBig,
   ChevronRight,
   CreditCard,
   Crown,
@@ -274,7 +274,7 @@ function App() {
         <div className="page-actions">
           <button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Ouvrir le menu"><Menu /></button>
           {view === "chat" && <label className="top-document-selector"><select aria-label="Mode de réponse et support utilisé" value={activeDocumentId} onChange={(event) => setActiveDocumentId(event.target.value)}><option value="">Question libre</option><option value="__all__">Tous les documents</option>{documents.map((doc) => <option key={doc.id} value={doc.id}>Document {doc.number} · {doc.name}</option>)}</select></label>}
-          <div className="top-actions-right"><button className="top-new-conversation-button" aria-label="Nouvelle discussion" onClick={newChat}><NotebookPen size={26} /></button><button className="top-notification-button" aria-label="Notifications"><Bell size={26} /></button><button className="top-profile-button" aria-label="Profil" onClick={() => setView("account")}><User size={22} /></button></div>
+          <div className="top-actions-right"><button className="top-new-conversation-button" aria-label="Bibliothèque" onClick={newChat}><LibraryBig size={26} /></button><button className="top-notification-button" aria-label="Notifications"><Bell size={26} /></button><button className="top-profile-button" aria-label="Profil" onClick={() => setView("account")}><User size={22} /></button></div>
         </div>
         {view === "chat" && <ChatView language={language} documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} conversationId={activeConversationId} onConversationChange={setActiveConversationId} messages={activeMessages} onMessagesChange={setActiveMessages} onSaved={refreshConversations} />}
         {view === "revision" && <RevisionView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} />}
@@ -800,32 +800,32 @@ function ChatView({
       ? { title: "Che cosa vuoi capire oggi?", hint: "Fai una domanda o scegli un documento dall’area di scrittura.", placeholder: "Scrivi il tuo messaggio…" }
       : language === "Español"
         ? { title: "¿Qué quieres comprender hoy?", hint: "Haz una pregunta o elige un documento desde la zona de entrada.", placeholder: "Escribe tu mensaje…" }
-        : { title: "Que veux-tu comprendre aujourd’hui ?", hint: "Pose une question, ou choisis un support depuis la zone de saisie.", placeholder: "Écrivez votre message…" };
-  return <section className={`chat-view ${messages.length || loading ? "has-messages" : "empty-chat"}`}>
-    <div className="messages" aria-live="polite">
+        : { title: "Que veux-tu comprendre aujourd’hui ?", hint: "Pose une question, ou choisis un support depuis la zone de saisie.", placeholder: "Écrivez votre message..." };
+  return <section className={`orvix-chat-shell chat-view ${messages.length || loading ? "has-messages" : "empty-chat"}`}>
+    <div className="messages orvix-chat-messages" aria-live="polite">
       {!messages.length && !loading && (
-        <div className="chat-empty">
-          <div className="brand chat-empty-brand"><img className="brand-logo chat-empty-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /></div>
-          <div className="orvix-introduction regular-welcome"><h1>{language === "Français" ? <><span>Que veux-tu comprendre</span><br /><em>aujourd’hui ?</em></> : chatText.title}</h1></div>
+        <div className="chat-empty orvix-chat-empty">
+          <div className="brand chat-empty-brand orvix-chat-empty-brand"><img className="brand-logo chat-empty-logo orvix-chat-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /></div>
+          <div className="orvix-introduction regular-welcome orvix-chat-welcome"><h1><span>Que veux-tu comprendre</span><br /><em>aujourd'hui ?</em></h1></div>
         </div>
       )}
       {messages.map((item, index) => <ChatMessageBubble key={index} item={item} />)}
-      {loading && <div className="message-row assistant"><span className="assistant-avatar"><img src="/orvix-logo-transparent.png" alt="Orvix" /></span><div className="message-stack"><div className="message reading-state"><span>{readingDocument ? (activeDocument ? `Lecture du Document ${activeDocument.number}` : "Recherche dans vos supports") : "Orvix vous répond"}</span>{readingDocument && <small>{activeDocument?.name || "Recherche des passages pertinents"}</small>}<div className="typing"><i /><i /><i /></div></div></div></div>}
+      {loading && <div className="message-row assistant orvix-chat-loading"><span className="assistant-avatar"><img src="/orvix-logo-transparent.png" alt="Orvix" /></span><div className="message-stack"><div className="message reading-state"><span>{readingDocument ? (activeDocument ? `Lecture du Document ${activeDocument.number}` : "Recherche dans vos supports") : "Orvix vous répond"}</span>{readingDocument && <small>{activeDocument?.name || "Recherche des passages pertinents"}</small>}<div className="typing"><i /><i /><i /></div></div></div></div>}
       <div ref={bottomRef} />
     </div>
-    <form ref={composerRef} className={`composer ${composerExpanded ? "has-message" : ""} ${message ? "is-typing" : ""} ${mobileComposer ? "mobile-flat-input" : ""}`} onSubmit={submit}>
-      <div className="composer-tools">
+    <form ref={composerRef} className={`composer orvix-chat-composer ${composerExpanded ? "has-message" : ""} ${message ? "is-typing" : ""} ${mobileComposer ? "mobile-flat-input" : ""}`} onSubmit={submit}>
+      <div className="composer-tools orvix-chat-composer-tools">
         <button className="composer-support" type="button" onClick={() => setAttachmentMenu((open) => !open)} aria-expanded={attachmentMenu} aria-label="Ajouter une pièce jointe" title="Ajouter une pièce jointe"><Plus size={18} /></button>
         <input ref={attachmentInputRef} className="composer-file-input" type="file" multiple accept=".pdf,.txt,.md" onChange={(event) => addSupports(event.target.files)} />
-        {attachmentMenu && <div className="attachment-menu">
+        {attachmentMenu && <div className="attachment-menu orvix-chat-attachment-menu">
           <button type="button" onClick={() => attachmentInputRef.current?.click()}><FileText size={17} /><span><strong>Ajouter un document</strong><small>PDF, TXT ou Markdown</small></span></button>
           <div className="attachment-future"><UploadCloud size={17} /><span><strong>Ajouter une image</strong><small>Analyse visuelle dans une prochaine phase</small></span><b>Bientôt</b></div>
         </div>}
       </div>
-      <div className="composer-input-stack">
+      <div className="composer-input-stack orvix-chat-input-stack">
         <textarea className={composerOverflowing ? "is-overflowing" : ""} ref={textareaRef} rows={1} value={message} onChange={(event) => { const value = event.target.value; setMessage(value); const textarea = event.currentTarget; textarea.style.setProperty("height", "auto", "important"); const maxHeight = 94; const nextHeight = Math.min(Math.max(textarea.scrollHeight, 24), maxHeight); setComposerExpanded(nextHeight > 34); textarea.style.setProperty("height", `${nextHeight}px`, "important"); textarea.style.setProperty("overflow-y", textarea.scrollHeight > maxHeight ? "auto" : "hidden", "important"); const composer = composerRef.current; const downwardOffset = Math.max(0, nextHeight - 24); composer?.style.setProperty("height", `${Math.max(48, nextHeight + 12)}px`, "important"); if (composer && !mobileComposer) { if (composer.parentElement?.classList.contains("has-messages")) composer.style.setProperty("transform", `translateY(${downwardOffset}px)`, "important"); else composer.style.setProperty("transform", `translate(-50%, ${downwardOffset}px)`, "important"); } setComposerOverflowing(textarea.scrollHeight > maxHeight + 1); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder={chatText.placeholder} aria-label={chatText.placeholder} />
       </div>
-      <button disabled={!message.trim() || loading} aria-label="Envoyer"><Send size={21} fill="currentColor" strokeWidth={1.5} /></button>
+      <button className="orvix-chat-send" disabled={!message.trim() || loading} aria-label="Envoyer"><Send size={21} fill="currentColor" strokeWidth={1.5} /></button>
     </form>
   </section>;
 }
@@ -838,10 +838,10 @@ function needsDocumentContext(value: string) {
 function ChatMessageBubble({ item }: { item: ChatMessage }) {
   const time = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const assistant = item.role === "assistant";
-  return <div className={`message-row ${item.role}`}>
-    {assistant && <span className="assistant-avatar"><img src="/orvix-logo-transparent.png" alt="Orvix" /></span>}
+  return <div className={`message-row ${item.role} orvix-chat-message-row`}>
+    {assistant && <span className="assistant-avatar orvix-chat-avatar"><img src="/orvix-logo-transparent.png" alt="Orvix" /></span>}
     <div className="message-stack">
-      <div className="message">
+      <div className="message orvix-chat-message">
         <FormattedMessage content={item.content} />
         <span className="message-time">{time}{!assistant && <Check size={11} />}</span>
       </div>
