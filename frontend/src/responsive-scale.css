@@ -165,6 +165,24 @@
   }
 }
 
+/* Let the real composer shell follow the textarea while the user is typing. */
+.chat-view > .composer.is-typing {
+  height: auto !important;
+  min-height: 48px !important;
+  max-height: 110px !important;
+  align-items: flex-end !important;
+  overflow: visible !important;
+}
+.chat-view > .composer.is-typing .composer-input-stack {
+  height: auto !important;
+  min-height: 24px !important;
+  max-height: 94px !important;
+  align-self: flex-end !important;
+}
+.chat-view > .composer.is-typing .composer-input-stack > textarea {
+  max-height: 94px !important;
+}
+
 /* Keep the mounted composer on one clean row below the desktop breakpoint too. */
 @media (max-width: 900px) {
   .chat-view > .composer {
