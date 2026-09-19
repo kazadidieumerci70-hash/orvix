@@ -361,6 +361,55 @@
   }
 }
 
+/* Final desktop composer geometry: override the legacy grid layout on the mounted form. */
+@media (min-width: 901px) {
+  .chat-view > .composer {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 16px !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    border-radius: 9999px !important;
+    min-height: 48px !important;
+    height: auto !important;
+    padding: 6px 8px 6px 12px !important;
+  }
+  .chat-view > .composer .composer-tools {
+    display: grid !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    flex: 0 0 34px !important;
+    margin: 0 !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+  .chat-view > .composer .composer-input-stack {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+  .chat-view > .composer .composer-input-stack > textarea {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 7px 4px !important;
+    margin: 0 !important;
+  }
+  .chat-view > .composer > button[aria-label="Envoyer"] {
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    margin: 0 !important;
+    align-self: center !important;
+  }
+}
+
 /* Conversation messages: a quiet, centered reading column. */
 @media (min-width: 901px) {
   .chat-main > .chat-view > .messages {
