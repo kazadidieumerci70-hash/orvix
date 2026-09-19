@@ -84,6 +84,83 @@ button { cursor: pointer; }
   .chat-view > .composer > button[aria-label="Envoyer"] { width: 40px !important; height: 40px !important; }
 }
 
+/* End-of-file responsive calibration: wins over the legacy desktop overrides above. */
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .app-shell { grid-template-columns: clamp(250px, 20vw, 320px) minmax(0, 1fr) !important; }
+  .sidebar { width: clamp(250px, 20vw, 320px) !important; }
+  .sidebar-brand { font-size: clamp(22px, 1.8vw, 29px) !important; margin-bottom: clamp(22px, 2.45vw, 39px) !important; }
+  .sidebar-brand .brand-logo { width: clamp(38px, 3vw, 50px) !important; height: clamp(38px, 3vw, 50px) !important; }
+  .sidebar-menu-button { width: clamp(20px, 1.5vw, 24px) !important; height: clamp(20px, 1.5vw, 24px) !important; }
+  .nav-item { min-height: clamp(48px, 5.7vh, 56px) !important; padding-block: clamp(8px, 1vw, 14px) !important; font-size: clamp(14px, 1vw, 16px) !important; }
+  .nav-item svg { width: clamp(20px, 1.5vw, 24px) !important; height: clamp(20px, 1.5vw, 24px) !important; }
+  .chat-main > .page-actions { height: clamp(72px, 9vh, 90px) !important; }
+  .chat-main > .page-actions .top-document-selector { width: clamp(175px, 13.75vw, 220px) !important; min-width: clamp(175px, 13.75vw, 220px) !important; max-width: clamp(175px, 13.75vw, 220px) !important; height: clamp(46px, 5.5vh, 54px) !important; top: clamp(18px, 2.15vh, 22px) !important; }
+  .chat-main > .page-actions .top-document-selector select { font-size: clamp(13px, 1vw, 16px) !important; }
+  .chat-main.empty-chat .chat-empty { top: clamp(150px, 22vh, 205px) !important; }
+  .chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: clamp(66px, 5.6vw, 90px) !important; height: clamp(66px, 5.6vw, 90px) !important; }
+  .chat-main.empty-chat .orvix-introduction h1 { max-width: min(90%, 760px) !important; font-size: clamp(38px, 3vw, 48px) !important; }
+  .chat-main.empty-chat > .composer { width: min(82%, 1040px) !important; height: clamp(70px, 8.8vh, 86px) !important; min-height: clamp(70px, 8.8vh, 86px) !important; bottom: clamp(45px, 12vh, 120px) !important; border-radius: 9999px !important; }
+  .chat-main.empty-chat > .composer .composer-support { width: clamp(42px, 3.25vw, 52px) !important; height: clamp(42px, 3.25vw, 52px) !important; }
+  .chat-main.empty-chat > .composer > button[aria-label="Envoyer"] { width: clamp(48px, 3.75vw, 60px) !important; height: clamp(48px, 3.75vw, 60px) !important; }
+  .chat-main.empty-chat > .composer .composer-input-stack > textarea { height: 100% !important; min-height: 0 !important; max-height: 100% !important; overflow-y: hidden !important; }
+}
+@media (min-width: 1200px) and (max-height: 760px) {
+  .chat-main > .page-actions { height: 74px !important; }
+  .sidebar { padding-top: 22px !important; padding-bottom: 12px !important; }
+  .sidebar-brand { margin-bottom: 22px !important; }
+  .sidebar nav { gap: 3px !important; }
+  .nav-item { min-height: 48px !important; padding-block: 8px !important; }
+  .recents { padding-top: 20px !important; }
+  .profile-card { height: 60px !important; min-height: 60px !important; }
+  .chat-main.empty-chat .chat-empty { top: clamp(132px, 20vh, 160px) !important; }
+  .chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: clamp(66px, 5.6vw, 76px) !important; height: clamp(66px, 5.6vw, 76px) !important; }
+  .chat-main.empty-chat .orvix-introduction h1 { font-size: clamp(38px, 3vw, 42px) !important; }
+  .chat-main.empty-chat > .composer { bottom: clamp(45px, 8vh, 60px) !important; height: clamp(70px, 8.8vh, 74px) !important; min-height: clamp(70px, 8.8vh, 74px) !important; }
+}
+
+/* Final responsive scale override. The existing desktop artwork remains unchanged at 1600px. */
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .app-shell { grid-template-columns: clamp(250px, 20vw, 320px) minmax(0, 1fr) !important; }
+  .sidebar { width: clamp(250px, 20vw, 320px) !important; padding: clamp(22px, 2.4vw, 38px) clamp(14px, 1.25vw, 20px) 14px !important; }
+  .sidebar-brand { margin-bottom: clamp(22px, 2.45vw, 39px) !important; font-size: clamp(22px, 1.8vw, 29px) !important; }
+  .sidebar-brand .brand-logo { width: clamp(38px, 3vw, 50px) !important; height: clamp(38px, 3vw, 50px) !important; }
+  .sidebar-menu-button { width: clamp(20px, 1.5vw, 24px) !important; height: clamp(20px, 1.5vw, 24px) !important; }
+  .nav-item { min-height: clamp(48px, 5.7vh, 56px) !important; padding-block: clamp(8px, 1vw, 14px) !important; padding-inline: clamp(14px, 1.25vw, 20px) !important; font-size: clamp(14px, 1vw, 16px) !important; }
+  .nav-item svg { width: clamp(20px, 1.5vw, 24px) !important; height: clamp(20px, 1.5vw, 24px) !important; }
+  .sidebar nav { gap: clamp(3px, .55vw, 8px) !important; }
+  .recents { padding-top: clamp(20px, 2.4vw, 38px) !important; }
+  .recents-head button { width: clamp(32px, 2.3vw, 37px) !important; height: clamp(32px, 2.3vw, 37px) !important; }
+  .conversation-link { min-height: clamp(44px, 5.2vh, 47px) !important; font-size: clamp(13px, .92vw, 15px) !important; }
+  .profile-card { height: clamp(60px, 7.3vh, 72px) !important; min-height: clamp(60px, 7.3vh, 72px) !important; }
+  .profile-card .avatar { width: clamp(36px, 2.8vw, 45px) !important; height: clamp(36px, 2.8vw, 45px) !important; }
+  .chat-main > .page-actions { height: clamp(72px, 9vh, 90px) !important; }
+  .chat-main > .page-actions .top-document-selector { width: clamp(175px, 13.75vw, 220px) !important; min-width: clamp(175px, 13.75vw, 220px) !important; max-width: clamp(175px, 13.75vw, 220px) !important; height: clamp(46px, 5.5vh, 54px) !important; top: clamp(18px, 2.15vh, 22px) !important; }
+  .chat-main > .page-actions .top-document-selector select { font-size: clamp(13px, 1vw, 16px) !important; }
+  .chat-main > .page-actions .top-actions-right { top: clamp(16px, 2.25vh, 22px) !important; right: clamp(18px, 1.6vw, 25px) !important; }
+  .chat-main > .page-actions .top-actions-right button { width: clamp(48px, 3.9vw, 62px) !important; height: clamp(48px, 3.8vw, 60px) !important; }
+  .chat-main.empty-chat .chat-empty { top: clamp(150px, 22vh, 205px) !important; }
+  .chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: clamp(66px, 5.6vw, 90px) !important; height: clamp(66px, 5.6vw, 90px) !important; }
+  .chat-main.empty-chat .orvix-introduction h1 { max-width: min(90%, 760px) !important; font-size: clamp(38px, 3vw, 48px) !important; }
+  .chat-main.empty-chat > .composer { width: min(82%, 1040px) !important; height: clamp(70px, 8.8vh, 86px) !important; min-height: clamp(70px, 8.8vh, 86px) !important; bottom: clamp(45px, 12vh, 120px) !important; border-radius: 9999px !important; }
+  .chat-main.empty-chat > .composer .composer-support { width: clamp(42px, 3.25vw, 52px) !important; height: clamp(42px, 3.25vw, 52px) !important; }
+  .chat-main.empty-chat > .composer > button[aria-label="Envoyer"] { width: clamp(48px, 3.75vw, 60px) !important; height: clamp(48px, 3.75vw, 60px) !important; }
+  .chat-main.empty-chat > .composer .composer-input-stack > textarea { height: 100% !important; min-height: 0 !important; max-height: 100% !important; overflow-y: hidden !important; }
+}
+
+@media (min-width: 1200px) and (max-height: 760px) {
+  .chat-main > .page-actions { height: 74px !important; }
+  .sidebar { padding-top: 22px !important; padding-bottom: 12px !important; }
+  .sidebar-brand { margin-bottom: 22px !important; }
+  .sidebar nav { gap: 3px !important; }
+  .nav-item { min-height: 48px !important; padding-block: 8px !important; }
+  .recents { padding-top: 20px !important; }
+  .profile-card { height: 60px !important; min-height: 60px !important; }
+  .chat-main.empty-chat .chat-empty { top: clamp(132px, 20vh, 160px) !important; }
+  .chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: clamp(66px, 5.6vw, 76px) !important; height: clamp(66px, 5.6vw, 76px) !important; }
+  .chat-main.empty-chat .orvix-introduction h1 { font-size: clamp(38px, 3vw, 42px) !important; }
+  .chat-main.empty-chat > .composer { bottom: clamp(45px, 8vh, 60px) !important; height: clamp(70px, 8.8vh, 74px) !important; min-height: clamp(70px, 8.8vh, 74px) !important; }
+}
+
 /* Final desktop reference lock: 1574 x 960 mockup geometry. */
 @media (min-width: 1200px) {
   .app-shell { grid-template-columns: 315px minmax(0, 1fr) !important; }
@@ -123,6 +200,57 @@ button { cursor: pointer; }
   .chat-main.empty-chat > .composer .composer-support { width: 52px !important; height: 52px !important; background: #e8faf7 !important; color: #009b8d !important; }
   .chat-main.empty-chat > .composer .composer-input-stack > textarea { height: 64px !important; min-height: 64px !important; max-height: 64px !important; padding: 20px 10px !important; font-size: 16px !important; line-height: 24px !important; color: #686a91 !important; }
   .chat-main.empty-chat > .composer > button[aria-label="Envoyer"] { width: 60px !important; height: 60px !important; margin-right: 0 !important; background: #009b8d !important; }
+}
+
+/* Responsive scale only: preserve the current desktop direction while fitting smaller desktops. */
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .app-shell { grid-template-columns: clamp(250px, 20vw, 320px) minmax(0, 1fr) !important; }
+  .sidebar { width: clamp(250px, 20vw, 320px) !important; padding: clamp(26px, 2.4vw, 38px) clamp(14px, 1.25vw, 20px) 16px !important; }
+  .sidebar-brand { margin: 0 clamp(10px, 1vw, 15px) clamp(24px, 2.45vw, 39px) !important; gap: clamp(9px, .8vw, 13px) !important; font-size: clamp(22px, 1.8vw, 29px) !important; }
+  .sidebar-brand .brand-logo { width: clamp(38px, 3vw, 50px) !important; height: clamp(38px, 3vw, 50px) !important; }
+  .sidebar-menu-button { width: clamp(20px, 1.5vw, 24px) !important; height: clamp(20px, 1.5vw, 24px) !important; }
+  .sidebar nav { gap: clamp(5px, .55vw, 8px) !important; }
+  .nav-item { min-height: clamp(48px, 5.7vh, 56px) !important; padding: clamp(10px, 1vw, 14px) clamp(14px, 1.25vw, 20px) !important; gap: clamp(12px, 1vw, 16px) !important; font-size: clamp(14px, 1vw, 16px) !important; }
+  .nav-item svg { width: clamp(20px, 1.5vw, 24px) !important; height: clamp(20px, 1.5vw, 24px) !important; }
+  .recents { padding: clamp(24px, 2.4vw, 38px) clamp(8px, .75vw, 12px) 14px !important; gap: clamp(3px, .35vw, 5px) !important; }
+  .recents-head button { width: clamp(32px, 2.3vw, 37px) !important; height: clamp(32px, 2.3vw, 37px) !important; }
+  .conversation-link { min-height: clamp(44px, 5.2vh, 47px) !important; padding: 7px clamp(8px, .7vw, 11px) !important; font-size: clamp(13px, .92vw, 15px) !important; }
+  .profile-card { height: clamp(60px, 7.3vh, 72px) !important; min-height: clamp(60px, 7.3vh, 72px) !important; padding: 9px clamp(10px, .9vw, 14px) !important; }
+  .profile-card .avatar { width: clamp(36px, 2.8vw, 45px) !important; height: clamp(36px, 2.8vw, 45px) !important; }
+  .profile-card strong { font-size: clamp(12px, .85vw, 14px) !important; }
+  .profile-card small { font-size: clamp(11px, .8vw, 13px) !important; }
+  .chat-main > .page-actions { height: clamp(72px, 9vh, 90px) !important; }
+  .chat-main > .page-actions .top-document-selector { width: clamp(175px, 13.75vw, 220px) !important; min-width: clamp(175px, 13.75vw, 220px) !important; max-width: clamp(175px, 13.75vw, 220px) !important; height: clamp(46px, 5.5vh, 54px) !important; top: clamp(18px, 2.15vh, 22px) !important; border-radius: 999px !important; }
+  .chat-main > .page-actions .top-document-selector select { font-size: clamp(13px, 1vw, 16px) !important; }
+  .chat-main > .page-actions .top-actions-right { top: clamp(16px, 2.25vh, 22px) !important; right: clamp(18px, 1.6vw, 25px) !important; gap: clamp(10px, 1.4vw, 22px) !important; }
+  .chat-main > .page-actions .top-actions-right button { width: clamp(48px, 3.9vw, 62px) !important; height: clamp(48px, 3.8vw, 60px) !important; }
+  .chat-main > .page-actions .top-new-conversation-button svg { width: clamp(24px, 1.8vw, 29px) !important; height: clamp(24px, 1.8vw, 29px) !important; }
+  .chat-main > .page-actions .top-notification-button svg { width: clamp(22px, 1.6vw, 26px) !important; height: clamp(22px, 1.6vw, 26px) !important; }
+  .chat-main.empty-chat .chat-empty { top: clamp(150px, 22vh, 205px) !important; }
+  .chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: clamp(66px, 5.6vw, 90px) !important; height: clamp(66px, 5.6vw, 90px) !important; }
+  .chat-main.empty-chat .chat-empty-brand { margin-bottom: clamp(26px, 3.4vh, 43px) !important; }
+  .chat-main.empty-chat .orvix-introduction h1 { width: min(90%, 760px) !important; max-width: clamp(650px, 47.5vw, 760px) !important; font-size: clamp(38px, 3vw, 48px) !important; line-height: 1.08 !important; }
+  .chat-main.empty-chat > .composer { width: min(82%, 1040px) !important; height: clamp(70px, 8.8vh, 86px) !important; min-height: clamp(70px, 8.8vh, 86px) !important; bottom: clamp(45px, 12vh, 120px) !important; border-radius: 9999px !important; }
+  .chat-main.empty-chat > .composer .composer-support { width: clamp(42px, 3.25vw, 52px) !important; height: clamp(42px, 3.25vw, 52px) !important; }
+  .chat-main.empty-chat > .composer .composer-support svg { width: clamp(20px, 1.6vw, 25px) !important; height: clamp(20px, 1.6vw, 25px) !important; }
+  .chat-main.empty-chat > .composer > button[aria-label="Envoyer"] { width: clamp(48px, 3.75vw, 60px) !important; height: clamp(48px, 3.75vw, 60px) !important; }
+  .chat-main.empty-chat > .composer > button[aria-label="Envoyer"] svg { width: clamp(21px, 1.6vw, 25px) !important; height: clamp(21px, 1.6vw, 25px) !important; }
+  .chat-main.empty-chat > .composer .composer-input-stack > textarea { height: 100% !important; min-height: 0 !important; max-height: 100% !important; overflow-y: hidden !important; }
+}
+
+/* Short desktop screens: reduce vertical scale without changing the design language. */
+@media (min-width: 1200px) and (max-height: 760px) {
+  .chat-main > .page-actions { height: 74px !important; }
+  .sidebar { padding-top: 22px !important; padding-bottom: 12px !important; }
+  .sidebar-brand { margin-bottom: 22px !important; }
+  .sidebar nav { gap: 3px !important; }
+  .nav-item { min-height: 48px !important; padding-block: 8px !important; }
+  .recents { padding-top: 20px !important; }
+  .profile-card { height: 60px !important; min-height: 60px !important; }
+  .chat-main.empty-chat .chat-empty { top: clamp(132px, 20vh, 160px) !important; }
+  .chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: clamp(66px, 5.6vw, 76px) !important; height: clamp(66px, 5.6vw, 76px) !important; }
+  .chat-main.empty-chat .orvix-introduction h1 { font-size: clamp(38px, 3vw, 42px) !important; }
+  .chat-main.empty-chat > .composer { bottom: clamp(45px, 8vh, 60px) !important; height: clamp(70px, 8.8vh, 74px) !important; min-height: clamp(70px, 8.8vh, 74px) !important; }
 }
 
 /* Finition de l’espace de conversation : lecture calme et naturelle. */
