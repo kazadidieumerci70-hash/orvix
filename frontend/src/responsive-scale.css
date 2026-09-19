@@ -31,3 +31,55 @@
   .chat-main.empty-chat .orvix-introduction h1 { font-size: clamp(38px, 3vw, 42px) !important; }
   .chat-main.empty-chat > .composer { bottom: clamp(45px, 8vh, 60px) !important; height: clamp(70px, 8.8vh, 74px) !important; min-height: clamp(70px, 8.8vh, 74px) !important; }
 }
+
+/* Compact desktop calibration requested for 1200–1399px displays. */
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .app-shell { grid-template-columns: 240px minmax(0, 1fr) !important; }
+  .sidebar { width: 240px !important; padding: 18px 12px 12px !important; }
+  .sidebar-brand { margin: 0 10px 24px !important; gap: 9px !important; font-size: 23px !important; }
+  .sidebar-brand .brand-logo { width: 32px !important; height: 32px !important; }
+  .sidebar-menu-button { width: 20px !important; height: 20px !important; }
+  .sidebar nav { gap: 3px !important; }
+  .nav-item { min-height: 48px !important; padding: 8px 14px !important; gap: 11px !important; font-size: 14px !important; }
+  .nav-item svg { width: 20px !important; height: 20px !important; }
+  .recents { padding: 20px 7px 10px !important; gap: 3px !important; }
+  .recents h3 { font-size: 11px !important; }
+  .recents-head button { width: 33px !important; height: 33px !important; }
+  .conversation-link { min-height: 43px !important; padding: 6px 8px !important; font-size: 13px !important; }
+  .profile-card { height: 60px !important; min-height: 60px !important; padding: 8px 10px !important; margin-top: 6px !important; }
+  .profile-card .avatar { width: 36px !important; height: 36px !important; }
+  .profile-card strong { font-size: 12px !important; }
+  .profile-card small { font-size: 10px !important; margin-top: 3px !important; }
+  .chat-main > .page-actions { height: 70px !important; }
+  .chat-main > .page-actions .top-document-selector { width: 180px !important; min-width: 180px !important; max-width: 180px !important; height: 45px !important; top: 13px !important; }
+  .chat-main > .page-actions .top-document-selector select { font-size: 13px !important; }
+  .chat-main > .page-actions .top-actions-right { top: 11px !important; right: 16px !important; gap: 8px !important; }
+  .chat-main > .page-actions .top-actions-right button { width: 46px !important; height: 46px !important; }
+  .chat-main > .page-actions .top-new-conversation-button svg { width: 23px !important; height: 23px !important; }
+  .chat-main > .page-actions .top-notification-button svg { width: 21px !important; height: 21px !important; }
+  .chat-main.empty-chat .chat-empty { top: 31vh !important; }
+  .chat-main.empty-chat .chat-empty-brand { margin-bottom: 34px !important; }
+  .chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: 58px !important; height: 58px !important; }
+  .chat-main.empty-chat .orvix-introduction h1 { width: 620px !important; max-width: 620px !important; font-size: 35px !important; line-height: 1.05 !important; }
+  .chat-main.empty-chat > .composer { width: min(76%, 800px) !important; height: 66px !important; min-height: 66px !important; bottom: 7vh !important; padding: 8px 12px !important; }
+  .chat-main.empty-chat > .composer .composer-support { width: 40px !important; height: 40px !important; }
+  .chat-main.empty-chat > .composer .composer-support svg { width: 19px !important; height: 19px !important; }
+  .chat-main.empty-chat > .composer > button[aria-label="Envoyer"] { width: 47px !important; height: 47px !important; }
+  .chat-main.empty-chat > .composer > button[aria-label="Envoyer"] svg { width: 21px !important; height: 21px !important; }
+  .chat-main.empty-chat > .composer .composer-input-stack > textarea { font-size: 14px !important; padding-inline: 4px !important; }
+}
+
+@media (min-width: 1200px) and (max-height: 750px) {
+  .chat-main > .page-actions { height: 68px !important; }
+  .sidebar { padding-top: 14px !important; padding-bottom: 8px !important; }
+  .sidebar-brand { margin-bottom: 14px !important; }
+  .nav-item { min-height: 46px !important; }
+  .recents { padding-top: 12px !important; }
+  .profile-card { height: 58px !important; min-height: 58px !important; }
+  .chat-main.empty-chat { height: 100% !important; }
+  .chat-main.empty-chat .chat-empty { top: 30vh !important; }
+  .chat-main.empty-chat .chat-empty-brand { margin-bottom: 30px !important; }
+  .chat-main.empty-chat .chat-empty-brand .chat-empty-logo { width: 56px !important; height: 56px !important; }
+  .chat-main.empty-chat .orvix-introduction h1 { font-size: 34px !important; }
+  .chat-main.empty-chat > .composer { height: 65px !important; min-height: 65px !important; bottom: 38px !important; }
+}
