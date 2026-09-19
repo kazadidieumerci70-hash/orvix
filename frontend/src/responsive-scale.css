@@ -154,5 +154,78 @@
     background: rgba(0,155,140,.055) !important;
   }
   .chat-main > .page-actions .top-new-conversation-button svg { width: 21px !important; height: 21px !important; }
-  .chat-main > .page-actions .top-notification-button svg { width: 20px !important; height: 20px !important; }
+.chat-main > .page-actions .top-notification-button svg { width: 20px !important; height: 20px !important; }
+}
+
+/* Message composer only: compact reference treatment. */
+@media (min-width: 901px) {
+  .chat-main > .composer {
+    height: 52px !important;
+    min-height: 52px !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 5px 6px 5px 13px !important;
+    border-radius: 9999px !important;
+    background: rgba(255,255,255,.97) !important;
+    border: 1px solid rgba(0,145,135,.08) !important;
+    box-shadow: 0 6px 20px rgba(20,100,100,.05) !important;
+    gap: 12px !important;
+  }
+  .chat-main > .composer .composer-tools {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    flex: 0 0 34px !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+  .chat-main > .composer .composer-support {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: rgba(0,165,150,.07) !important;
+    color: #159b91 !important;
+    box-shadow: none !important;
+  }
+  .chat-main > .composer .composer-support svg { width: 18px !important; height: 18px !important; }
+  .chat-main > .composer .composer-input-stack {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .chat-main > .composer .composer-input-stack > textarea {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    padding: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .chat-main > .composer .composer-input-stack > textarea::-webkit-scrollbar { display: none !important; width: 0 !important; }
+  .chat-main > .composer > button[aria-label="Envoyer"] {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    flex: 0 0 42px !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg,#12b8aa 0%,#00998e 55%,#00877d 100%) !important;
+    box-shadow: 0 3px 10px rgba(0,150,140,.18) !important;
+  }
+  .chat-main > .composer > button[aria-label="Envoyer"] svg { width: 18px !important; height: 18px !important; color: #fff !important; }
+  .chat-main > .composer > button[aria-label="Envoyer"]:hover { filter: brightness(.97) !important; transform: none !important; }
 }
