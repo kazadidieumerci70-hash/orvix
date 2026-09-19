@@ -236,6 +236,9 @@
     height: auto !important;
     min-height: 48px !important;
     max-height: 136px !important;
+    position: relative !important;
+    z-index: 20 !important;
+    pointer-events: auto !important;
     align-items: flex-end !important;
     padding: 6px 7px 6px 10px !important;
     border-radius: 16px !important;
@@ -260,6 +263,9 @@
     line-height: 20px !important;
     font-size: 13px !important;
     resize: none !important;
+    pointer-events: auto !important;
+    user-select: text !important;
+    cursor: text !important;
     overflow-y: hidden !important;
     scrollbar-width: thin !important;
     scrollbar-color: rgba(20,80,80,.22) transparent !important;
