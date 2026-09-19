@@ -397,7 +397,7 @@
     display: block !important;
     width: 100% !important;
     min-width: 0 !important;
-    padding: 7px 4px !important;
+    padding: 7px 4px 7px 24px !important;
     margin: 0 !important;
   }
   .chat-view > .composer > button[aria-label="Envoyer"] {
