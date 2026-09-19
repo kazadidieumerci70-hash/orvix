@@ -306,6 +306,14 @@
     max-height: 136px !important;
     padding: 6px 7px 6px 10px !important;
     border-radius: 16px !important;
+    gap: 12px !important;
+  }
+  .chat-main > .chat-view > .composer .composer-tools {
+    width: 32px !important;
+    min-width: 32px !important;
+    flex: 0 0 32px !important;
+    display: grid !important;
+    place-items: center !important;
   }
   .chat-main > .chat-view > .composer .composer-input-stack {
     flex: 1 1 auto !important;
