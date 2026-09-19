@@ -726,19 +726,9 @@ function ChatView({
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    if (!mobileComposer) {
-      setComposerOverflowing(false);
-      textarea.style.removeProperty("height");
-      textarea.style.removeProperty("overflow-y");
-      return;
-    }
+    const maxHeight = 120;
     textarea.style.setProperty("height", "auto", "important");
-    const styles = window.getComputedStyle(textarea);
-    const lineHeight = Number.parseFloat(styles.lineHeight) || 18;
-    const paddingTop = Number.parseFloat(styles.paddingTop) || 0;
-    const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
-    const maxHeight = Math.ceil(lineHeight * 4 + paddingTop + paddingBottom);
-    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 28), maxHeight);
+    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 24), maxHeight);
     setComposerOverflowing(textarea.scrollHeight > maxHeight + 1);
     textarea.style.setProperty("height", `${nextHeight}px`, "important");
     textarea.style.setProperty("overflow-y", textarea.scrollHeight > maxHeight ? "auto" : "hidden", "important");

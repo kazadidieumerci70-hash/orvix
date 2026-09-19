@@ -229,3 +229,53 @@
   .chat-main > .composer > button[aria-label="Envoyer"] svg { width: 18px !important; height: 18px !important; color: #fff !important; }
   .chat-main > .composer > button[aria-label="Envoyer"]:hover { filter: brightness(.97) !important; transform: none !important; }
 }
+
+/* Functional composer sizing: one line is compact, multiline grows naturally. */
+@media (min-width: 901px) {
+  .chat-main > .composer {
+    height: auto !important;
+    min-height: 48px !important;
+    max-height: 136px !important;
+    align-items: flex-end !important;
+    padding: 6px 7px 6px 10px !important;
+    border-radius: 16px !important;
+  }
+  .chat-main > .composer .composer-tools {
+    align-self: flex-end !important;
+    margin-bottom: 2px !important;
+  }
+  .chat-main > .composer .composer-input-stack {
+    height: auto !important;
+    min-height: 24px !important;
+    max-height: 120px !important;
+    align-self: flex-end !important;
+    display: flex !important;
+    align-items: flex-end !important;
+  }
+  .chat-main > .composer .composer-input-stack > textarea {
+    min-height: 24px !important;
+    max-height: 120px !important;
+    height: 24px !important;
+    padding: 7px 8px !important;
+    line-height: 20px !important;
+    font-size: 13px !important;
+    resize: none !important;
+    overflow-y: hidden !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(20,80,80,.22) transparent !important;
+  }
+  .chat-main > .composer .composer-input-stack > textarea.is-overflowing { overflow-y: auto !important; }
+  .chat-main > .composer .composer-input-stack > textarea::-webkit-scrollbar { width: 4px !important; }
+  .chat-main > .composer .composer-input-stack > textarea::-webkit-scrollbar-track { background: transparent !important; }
+  .chat-main > .composer .composer-input-stack > textarea::-webkit-scrollbar-thumb { background: rgba(20,80,80,.22) !important; border-radius: 999px !important; }
+  .chat-main > .composer > button[aria-label="Envoyer"] {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    flex-basis: 38px !important;
+    align-self: flex-end !important;
+    margin-bottom: 0 !important;
+  }
+  .chat-main > .composer > button[aria-label="Envoyer"] svg { width: 18px !important; height: 18px !important; }
+}
