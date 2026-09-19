@@ -733,9 +733,12 @@ function ChatView({
     textarea.style.setProperty("height", `${nextHeight}px`, "important");
     textarea.style.setProperty("overflow-y", textarea.scrollHeight > maxHeight ? "auto" : "hidden", "important");
     const composer = composerRef.current;
+    const downwardOffset = Math.max(0, nextHeight - 24);
     composer?.style.setProperty("height", `${Math.max(48, nextHeight + 12)}px`, "important");
-    if (composer?.parentElement?.classList.contains("has-messages")) composer.style.setProperty("transform", `translateY(-${Math.max(0, nextHeight - 36)}px)`, "important");
-    else composer?.style.removeProperty("transform");
+    if (!mobileComposer && composer) {
+      if (composer.parentElement?.classList.contains("has-messages")) composer.style.setProperty("transform", `translateY(${downwardOffset}px)`, "important");
+      else composer.style.setProperty("transform", `translate(-50%, ${downwardOffset}px)`, "important");
+    } else composer?.style.removeProperty("transform");
   }, [message, mobileComposer]);
   useEffect(() => {
     if (!attachmentMenu) return;
@@ -820,7 +823,7 @@ function ChatView({
         </div>}
       </div>
       <div className="composer-input-stack">
-        <textarea className={composerOverflowing ? "is-overflowing" : ""} ref={textareaRef} rows={1} value={message} onChange={(event) => { const value = event.target.value; setMessage(value); const textarea = event.currentTarget; textarea.style.setProperty("height", "auto", "important"); const maxHeight = 94; const nextHeight = Math.min(Math.max(textarea.scrollHeight, 24), maxHeight); setComposerExpanded(nextHeight > 24); textarea.style.setProperty("height", `${nextHeight}px`, "important"); textarea.style.setProperty("overflow-y", textarea.scrollHeight > maxHeight ? "auto" : "hidden", "important"); const composer = composerRef.current; composer?.style.setProperty("height", `${Math.max(48, nextHeight + 12)}px`, "important"); if (composer?.parentElement?.classList.contains("has-messages")) composer.style.setProperty("transform", `translateY(-${Math.max(0, nextHeight - 36)}px)`, "important"); setComposerOverflowing(textarea.scrollHeight > maxHeight + 1); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder={chatText.placeholder} aria-label={chatText.placeholder} />
+        <textarea className={composerOverflowing ? "is-overflowing" : ""} ref={textareaRef} rows={1} value={message} onChange={(event) => { const value = event.target.value; setMessage(value); const textarea = event.currentTarget; textarea.style.setProperty("height", "auto", "important"); const maxHeight = 94; const nextHeight = Math.min(Math.max(textarea.scrollHeight, 24), maxHeight); setComposerExpanded(nextHeight > 24); textarea.style.setProperty("height", `${nextHeight}px`, "important"); textarea.style.setProperty("overflow-y", textarea.scrollHeight > maxHeight ? "auto" : "hidden", "important"); const composer = composerRef.current; const downwardOffset = Math.max(0, nextHeight - 24); composer?.style.setProperty("height", `${Math.max(48, nextHeight + 12)}px`, "important"); if (composer && !mobileComposer) { if (composer.parentElement?.classList.contains("has-messages")) composer.style.setProperty("transform", `translateY(${downwardOffset}px)`, "important"); else composer.style.setProperty("transform", `translate(-50%, ${downwardOffset}px)`, "important"); } setComposerOverflowing(textarea.scrollHeight > maxHeight + 1); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder={chatText.placeholder} aria-label={chatText.placeholder} />
       </div>
       <button disabled={!message.trim() || loading} aria-label="Envoyer"><Send size={21} fill="currentColor" strokeWidth={1.5} /></button>
     </form>

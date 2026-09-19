@@ -191,6 +191,9 @@
 .chat-view > .composer.has-message {
   border-radius: 10px !important;
 }
+.chat-view > .composer:not(.mobile-flat-input).is-typing.has-message {
+  border-radius: 10px !important;
+}
 
 /* Keep the mounted composer on one clean row below the desktop breakpoint too. */
 @media (max-width: 900px) {
