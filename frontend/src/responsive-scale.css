@@ -195,6 +195,15 @@
   border-radius: 10px !important;
 }
 
+/* Keep the empty-state composer anchored to its existing bottom position. */
+@media (min-width: 901px) {
+  .chat-main > .chat-view.empty-chat > .composer:not(.mobile-flat-input) {
+    position: absolute !important;
+    left: 50% !important;
+    align-self: auto !important;
+  }
+}
+
 /* Keep the mounted composer on one clean row below the desktop breakpoint too. */
 @media (max-width: 900px) {
   .chat-view > .composer {
