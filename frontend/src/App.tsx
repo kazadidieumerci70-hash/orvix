@@ -14,6 +14,7 @@ import {
   Mail,
   Menu,
   MessageCircle,
+  MessageCirclePlus,
   Moon,
   Plus,
   Send,
@@ -274,7 +275,7 @@ function App() {
         <div className="page-actions">
           <button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Ouvrir le menu"><Menu /></button>
           {view === "chat" && <label className="top-document-selector"><select aria-label="Mode de réponse et support utilisé" value={activeDocumentId} onChange={(event) => setActiveDocumentId(event.target.value)}><option value="">Question libre</option><option value="__all__">Tous les documents</option>{documents.map((doc) => <option key={doc.id} value={doc.id}>Document {doc.number} · {doc.name}</option>)}</select></label>}
-          <div className="top-actions-right"><button className="top-new-conversation-button" aria-label="Bibliothèque" onClick={newChat}><LibraryBig size={26} /></button><button className="top-notification-button" aria-label="Notifications"><Bell size={26} /></button><button className="top-profile-button" aria-label="Profil" onClick={() => setView("account")}><User size={22} /></button></div>
+          <div className="top-actions-right"><button className="top-new-conversation-button" aria-label="Nouvelle discussion" onClick={newChat}><MessageCirclePlus size={22} /></button></div>
         </div>
         {view === "chat" && <ChatView language={language} documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} conversationId={activeConversationId} onConversationChange={setActiveConversationId} messages={activeMessages} onMessagesChange={setActiveMessages} onSaved={refreshConversations} />}
         {view === "revision" && <RevisionView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} />}

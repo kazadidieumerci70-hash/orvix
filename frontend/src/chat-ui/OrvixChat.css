@@ -180,7 +180,7 @@
 }
 .app-shell:has(.main-content.chat-main) > .sidebar .sidebar-brand { color: #101d4f !important; }
 .app-shell:has(.main-content.chat-main) > .sidebar .sidebar-menu-button { color: #101d4f !important; }
-.app-shell:has(.main-content.chat-main) > .sidebar nav { gap: 5px !important; margin-top: 28px !important; }
+.app-shell:has(.main-content.chat-main) > .sidebar nav { gap: 5px !important; margin-top: 12px !important; }
 .app-shell:has(.main-content.chat-main) > .sidebar .nav-item {
   min-height: 46px !important;
   border-radius: 12px !important;
