@@ -17,32 +17,18 @@ from .schemas import ChatMessage, ExamModeResponse, QuizResponse, UserProfile, M
 os.environ.setdefault("SSL_CERT_FILE", certifi.where())
 os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
 
-ORVIX_PRESENTATION = """Je suis **ORVIX**, un assistant intelligent conçu pour vous aider à **comprendre, rechercher, organiser, analyser et exploiter l’information** de manière simple et efficace.
+ORVIX_PRESENTATION = """Je suis **Orvix**, ton assistant pédagogique.
 
-Je peux vous accompagner dans vos études, votre travail, vos projets et vos recherches en m’adaptant à votre besoin.
+Je peux expliquer une notion, analyser tes supports, créer des révisions et des quiz, ou t'aider à structurer un projet.
 
-📚 **Pour les études**, je peux expliquer des notions complexes, résumer des documents, vous aider à réviser, construire des plans et répondre à vos questions.
-
-📄 **Pour vos documents**, je peux analyser les fichiers que vous êtes autorisé à utiliser, retrouver les informations pertinentes et vous aider à les exploiter.
-
-💼 **Pour le travail et les affaires**, je peux vous aider à analyser des informations, préparer des documents, organiser des projets, réfléchir à des stratégies et prendre de meilleures décisions.
-
-💡 **Pour vos projets**, je peux transformer une idée en plan concret, vous accompagner étape par étape et vous aider à construire des solutions.
-
-🔎 **Pour la recherche**, je peux rechercher et synthétiser des informations provenant des sources disponibles afin de vous donner une réponse claire et structurée.
-
-Mon objectif est simple :
-
-> **Vous faire gagner du temps, vous aider à mieux comprendre l’information et transformer cette information en actions concrètes.**
-
-Je ne suis pas seulement là pour répondre à une question.
-
-**Je suis là pour vous aider à avancer.**
-
-Bienvenue sur **ORVIX**. 🚀"""
+Dis-moi simplement ce que tu veux comprendre ou accomplir."""
 
 SYSTEM_PROMPT = """Tu es Orvix, un assistant pédagogique exigeant, clair, patient et fiable.
 Réponds en français sauf demande contraire. Adapte le niveau à l'étudiant.
+STYLE DE RÉPONSE : réponds d'abord à la demande, sans préambule ni autopromotion. Pour une question simple, réponds en 1 à 3 phrases. Développe uniquement lorsque la complexité l'exige ou lorsque l'utilisateur le demande.
+Ne répète pas la question. Ne commence pas par « Bonjour » à chaque réponse. Ne dis pas « En tant qu'Orvix ». Ne cite jamais ton créateur, ton identité ou tes capacités sans question explicite sur ce sujet.
+Si une information indispensable manque, pose une seule question de clarification précise. Sinon, fais une hypothèse raisonnable et signale-la brièvement.
+Utilise des titres et des listes seulement lorsqu'ils améliorent réellement la compréhension. Évite les conclusions génériques et les invitations répétitives du type « N'hésite pas ».
 MISSION : ORVIX aide à comprendre, rechercher, organiser, analyser et exploiter l'information pour les études, les documents, le travail, les affaires, les projets et la recherche.
 Si l'utilisateur demande de te présenter, qui tu es, ce que tu peux faire ou à quoi sert ORVIX, présente ORVIX selon cette mission. Ne dis jamais que tu es dédié au calendrier, aux listes de courses ou uniquement aux tâches quotidiennes.
 IDENTITÉ : ORVIX a été créé par DIEU MERCI KAZADI. Si l'utilisateur demande qui t'a créé, qui a créé ORVIX, qui est ton créateur ou qui t'a développé, réponds clairement : « ORVIX a été créé par DIEU MERCI KAZADI. »
@@ -168,6 +154,19 @@ class OrvixAI:
         return normalized not in social_messages
 
     @staticmethod
+    def _social_response(message: str) -> str | None:
+        normalized = " ".join(re.findall(r"[a-zA-ZÀ-ÿ0-9']+", message.lower())).strip()
+        if normalized in {"bonjour", "bonsoir", "salut", "coucou", "hello", "hey"}:
+            return "Bonjour ! Que veux-tu comprendre aujourd'hui ?"
+        if normalized in {"merci", "merci beaucoup"}:
+            return "Avec plaisir."
+        if normalized in {"comment vas tu", "comment allez vous", "ça va", "ca va"}:
+            return "Je vais bien, merci. Sur quoi veux-tu avancer ?"
+        if normalized in {"au revoir", "à bientôt", "a bientot"}:
+            return "À bientôt !"
+        return None
+
+    @staticmethod
     def _asks_about_creator(message: str) -> bool:
         normalized = " ".join(re.findall(r"[a-zA-ZÀ-ÿ0-9']+", message.lower())).strip()
         creator_terms = ("créé", "cree", "créateur", "createur", "développé", "developpe", "fondateur")
@@ -213,6 +212,9 @@ class OrvixAI:
         return "connaissances générales" in previous or "connaissances generales" in previous or "hors document" in previous
 
     async def chat(self, message: str, history: list[ChatMessage], user: UserProfile, document_ids: list[str]) -> str:
+        social_response = self._social_response(message)
+        if social_response:
+            return social_response
         if self._asks_about_creator(message):
             return "ORVIX a été créé par DIEU MERCI KAZADI."
         if self._asks_for_presentation(message):
