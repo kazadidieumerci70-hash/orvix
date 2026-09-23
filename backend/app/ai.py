@@ -11,7 +11,7 @@ from google import genai
 from google.genai import types
 
 from .config import get_settings
-from .documents import document_context
+from .documents import document_context, document_context_with_sources
 from .schemas import ChatMessage, ExamModeResponse, QuizResponse, UserProfile, MAX_CONTEXT_MESSAGES
 
 os.environ.setdefault("SSL_CERT_FILE", certifi.where())
@@ -46,6 +46,10 @@ Quand plusieurs documents sont utilisés, indique lesquels. Distingue clairement
 Quand tu expliques un document, découpe la réponse en parties claires avec des titres courts.
 Évite le Markdown décoratif inutile. N'utilise le gras que pour des mots vraiment importants.
 Structure les explications pour qu'elles soient faciles à réviser et à restituer lors d'un examen.
+RÈGLE « MONTRER D'OÙ VIENT LA RÉPONSE » : pour toute réponse importante fondée sur un support, justifie les affirmations avec les marqueurs SOURCE fournis. Termine la partie factuelle par « 📖 Source dans vos documents » puis indique le nom du document et la page ou le passage. Ne cite que les sources réellement présentes dans le contexte.
+RÈGLE « DOCUMENT = ENVIRONNEMENT D'APPRENTISSAGE » : considère chaque document comme un cours exploitable. Selon la demande, transforme-le en conversation guidée, résumé, fiche de révision, questions d'examen, quiz, flashcards, suivi de progression, révision personnalisée ou explication des notions difficiles.
+Lorsqu'un nouveau support est évoqué sans objectif précis, propose brièvement les actions les plus utiles : comprendre le cours, résumer, réviser, générer un quiz, créer des flashcards ou préparer un examen.
+RÈGLE D'UTILITÉ : préfère être utile plutôt que simplement répondre. Après une réponse pédagogique, propose au maximum une prochaine action courte et pertinente, uniquement si elle apporte une vraie valeur dans le contexte. Exemple : proposer 5 questions lorsque l'étudiant est manifestement en train de réviser. N'ajoute pas systématiquement cette proposition aux salutations, remerciements ou réponses très courtes.
 Tiens compte des 30 derniers messages pour conserver les définitions, les objectifs et les questions déjà traitées sans te répéter inutilement."""
 
 logger = logging.getLogger(__name__)
@@ -128,6 +132,21 @@ class OrvixAI:
     def _context(user_id: str, document_ids: list[str], query: str, max_chars: int = 16_000) -> str:
         context = document_context(user_id, document_ids, query=query, max_chars=max_chars)
         return f"\n\nSUPPORTS DE L'ÉTUDIANT :\n{context}" if context else ""
+
+    @staticmethod
+    def _context_with_sources(user_id: str, document_ids: list[str], query: str, max_chars: int = 16_000) -> tuple[str, list[dict]]:
+        context, sources = document_context_with_sources(user_id, document_ids, query=query, max_chars=max_chars)
+        return (f"\n\nSUPPORTS DE L'ÉTUDIANT :\n{context}" if context else "", sources)
+
+    @staticmethod
+    def _attach_sources(answer: str, sources: list[dict]) -> str:
+        if not sources:
+            return answer
+        markers = "\n".join(
+            f"[[ORVIX_SOURCE]]{json.dumps(source, ensure_ascii=False)}[[/ORVIX_SOURCE]]"
+            for source in sources[:3]
+        )
+        return f"{answer.rstrip()}\n\n{markers}"
 
     @staticmethod
     def _student_profile(user: UserProfile) -> str:
@@ -223,7 +242,7 @@ class OrvixAI:
         allow_general = self._general_knowledge_authorized(message, history)
         needs_document = self._needs_document_context(message)
         requested_support = bool(document_ids)
-        context = self._context(user.id, document_ids, message) if needs_document and requested_support and not allow_general else ""
+        context, sources = self._context_with_sources(user.id, document_ids, message) if needs_document and requested_support and not allow_general else ("", [])
         if allow_general:
             mode = "CONNAISSANCES GENERALES AUTORISEES PAR L'ETUDIANT : réponds hors documents et signale-le clairement."
         elif context:
@@ -235,7 +254,8 @@ class OrvixAI:
         else:
             mode = "ECHANGE SOCIAL : ne prétends pas lire un document."
         prompt = f"MODE : {mode}\n\nHISTORIQUE DE CETTE DISCUSSION (30 DERNIERS ÉCHANGES, 60 MESSAGES MAXIMUM) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
-        return await self._generate(prompt)
+        answer = await self._generate(prompt)
+        return self._attach_sources(answer, sources) if context else answer
 
     async def revision(self, topic: str, user: UserProfile, document_ids: list[str]) -> str:
         prompt = f"Crée une fiche de révision complète mais concise sur : {topic}. Inclus les notions clés, un résumé, les erreurs fréquentes et 3 questions d'auto-évaluation.{self._student_profile(user)}{self._context(user.id, document_ids, topic, 14_000)}"

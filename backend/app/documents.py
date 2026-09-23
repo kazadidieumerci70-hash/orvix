@@ -165,6 +165,31 @@ def _relevant_excerpts(text: str, query: str, limit: int) -> list[str]:
     return [chunk for _, chunk in selected]
 
 
+def _ranked_passages(text: str, query: str, limit: int) -> list[tuple[int, str]]:
+    """Return relevant passages with their zero-based character offsets."""
+    chunk_size = 2_200
+    overlap = 260
+    passages = [(start, text[start:start + chunk_size]) for start in range(0, len(text), chunk_size - overlap)]
+    if not passages:
+        return []
+    query_terms = _terms(query)
+    ranked = sorted(
+        passages,
+        key=lambda item: (sum(item[1].lower().count(term) for term in query_terms), -item[0]),
+        reverse=True,
+    ) if query_terms else passages
+    selected: list[tuple[int, str]] = []
+    used = 0
+    for offset, passage in ranked:
+        if used + len(passage) > limit and selected:
+            continue
+        selected.append((offset, passage.strip()))
+        used += len(passage)
+        if used >= limit:
+            break
+    return selected
+
+
 @lru_cache(maxsize=32)
 def _extract_document_text(path_value: str, modified_ns: int) -> str:
     path = Path(path_value)
@@ -176,8 +201,19 @@ def _extract_document_text(path_value: str, modified_ns: int) -> str:
 
 
 def document_context(user_id: str, document_ids: list[str] | None = None, max_chars: int = 24_000, query: str = "") -> str:
+    context, _ = document_context_with_sources(user_id, document_ids, max_chars=max_chars, query=query)
+    return context
+
+
+def document_context_with_sources(
+    user_id: str,
+    document_ids: list[str] | None = None,
+    max_chars: int = 24_000,
+    query: str = "",
+) -> tuple[str, list[dict]]:
     settings = get_settings()
     chunks: list[str] = []
+    sources: list[dict] = []
     remaining = max_chars
     selected = set(document_ids or [])
     documents = [info for info in list_documents(user_id) if info.id in selected]
@@ -187,12 +223,43 @@ def document_context(user_id: str, document_ids: list[str] | None = None, max_ch
             break
         path = settings.upload_dir / info.name
         try:
-            text = _extract_document_text(str(path), path.stat().st_mtime_ns)
+            if path.suffix.lower() == ".pdf":
+                with path.open("rb") as pdf_file:
+                    pages = [(page_number, (page.extract_text() or "").strip()) for page_number, page in enumerate(PdfReader(pdf_file).pages, start=1)]
+            else:
+                pages = [(None, path.read_text(encoding="utf-8", errors="ignore").strip())]
         except Exception:
             continue
-        excerpts = _relevant_excerpts(text.strip(), query, min(remaining, per_document_limit))
-        excerpt = "\n[…]\n".join(excerpts).strip()
-        if excerpt:
-            chunks.append(f"--- Document {info.number}: {info.name} ---\n{excerpt}")
+        candidates: list[tuple[int, int | None, int, str]] = []
+        query_terms = _terms(query)
+        for page_number, text in pages:
+            for offset, passage in _ranked_passages(text, query, per_document_limit):
+                score = sum(passage.lower().count(term) for term in query_terms) if query_terms else 1
+                candidates.append((score, page_number, offset, passage))
+        candidates.sort(key=lambda item: (item[0], -(item[1] or 0), -item[2]), reverse=True)
+        used_for_document = 0
+        for score, page_number, offset, passage in candidates:
+            if query_terms and score == 0 and sources:
+                continue
+            if not passage or remaining <= 0 or used_for_document >= per_document_limit:
+                break
+            excerpt = passage[: min(len(passage), remaining, per_document_limit - used_for_document)]
+            location = f"page {page_number}" if page_number else f"passage {offset // 1940 + 1}"
+            source_id = f"{info.id}:{page_number or 0}:{offset}"
+            chunks.append(f"--- SOURCE {source_id} | Document {info.number}: {info.name} | {location} ---\n{excerpt}")
+            sources.append({
+                "id": source_id,
+                "document_id": info.id,
+                "document_number": info.number,
+                "document_name": info.name,
+                "page": page_number,
+                "location": location,
+                "excerpt": excerpt[:900].strip(),
+            })
             remaining -= len(excerpt)
-    return "\n\n".join(chunks)
+            used_for_document += len(excerpt)
+            if len(sources) >= 5:
+                break
+        if len(sources) >= 5:
+            break
+    return "\n\n".join(chunks), sources
