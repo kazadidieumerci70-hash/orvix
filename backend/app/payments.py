@@ -1,7 +1,7 @@
-import hashlib
-import hmac
 import json
 import secrets
+import hashlib
+import hmac
 from datetime import datetime, timezone
 
 import httpx
@@ -10,9 +10,6 @@ from fastapi import HTTPException
 from .config import get_settings
 from .json_store import atomic_write_json
 from .subscriptions import activate_subscription, plans_config
-
-INIT_URL = "https://api-checkout.cinetpay.com/v2/payment"
-CHECK_URL = "https://api-checkout.cinetpay.com/v2/payment/check"
 
 
 def _read_payments() -> dict:
@@ -28,7 +25,17 @@ def _write_payments(data: dict) -> None:
 
 def _configured() -> bool:
     s = get_settings()
-    return bool(s.cinetpay_api_key and s.cinetpay_site_id and s.cinetpay_secret_key)
+    return bool(s.geniuspay_api_key)
+
+
+def valid_geniuspay_signature(raw_body: bytes, signature: str | None, timestamp: str | None) -> bool:
+    secret = get_settings().geniuspay_webhook_secret
+    if not secret:
+        return False
+    if not signature or not timestamp:
+        return False
+    expected = hmac.new(secret.encode(), f"{timestamp}.".encode() + raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(signature, expected)
 
 
 async def create_checkout(user, plan_id: str, billing_cycle: str) -> dict:
@@ -46,51 +53,48 @@ async def create_checkout(user, plan_id: str, billing_cycle: str) -> dict:
         activate_subscription(user.id, plan_id, billing_cycle, transaction_id)
         return {"transaction_id": transaction_id, "payment_url": "", "simulation": True}
     if not _configured():
-        raise HTTPException(503, "Le compte marchand CinetPay doit encore être configuré par ORVIX.")
+        raise HTTPException(503, "Le paiement n'est pas encore configuré.")
     payload = {
-        "apikey": settings.cinetpay_api_key, "site_id": settings.cinetpay_site_id,
-        "transaction_id": transaction_id, "amount": amount, "currency": config["currency"],
-        "description": f"Abonnement ORVIX {plan['name']} {billing_cycle}",
-        "notify_url": f"{settings.public_api_url}/api/v1/payments/cinetpay/notify",
-        "return_url": f"{settings.public_frontend_url}/?payment=return",
-        "channels": "ALL", "metadata": transaction_id, "lang": "FR",
-        "customer_id": user.id, "customer_name": user.name, "customer_surname": "ORVIX",
-        "customer_phone_number": user.phone, "customer_country": "CD",
+        "customer_phone": user.phone, "customer_name": user.name,
+        "customer_email": f"{user.id}@orvix.local",
+        "plan_name": f"ORVIX {plan['name']}", "amount": amount,
+        "currency": config["currency"], "billing_cycle": billing_cycle,
+        "payment_method": "stripe_checkout",
+        "success_url": f"{settings.public_frontend_url}/?payment=success&transaction_id={transaction_id}",
+        "cancel_url": f"{settings.public_frontend_url}/?payment=cancelled&transaction_id={transaction_id}",
+        "metadata": {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle},
     }
     try:
         async with httpx.AsyncClient(timeout=25) as client:
-            response = await client.post(INIT_URL, json=payload)
+            response = await client.post(f"{settings.geniuspay_base_url}/v1/merchant/subscriptions", json=payload, headers={"Authorization": f"Bearer {settings.geniuspay_api_key}", "Content-Type": "application/json", "Idempotency-Key": transaction_id})
             result = response.json()
-        if str(result.get("code")) != "201" or not result.get("data", {}).get("payment_url"):
-            raise HTTPException(502, result.get("description") or "CinetPay n'a pas pu créer le paiement.")
-        return {"transaction_id": transaction_id, "payment_url": result["data"]["payment_url"], "simulation": False}
+        payment_url = (result.get("data") or {}).get("redirect_url") or (result.get("data") or {}).get("checkout_url")
+        if not result.get("success") or not payment_url:
+            raise HTTPException(502, result.get("message") or "Le paiement n'a pas pu être créé.")
+        return {"transaction_id": transaction_id, "payment_url": payment_url, "simulation": False}
     except HTTPException:
         raise
     except Exception as error:
         raise HTTPException(502, "Connexion au service de paiement impossible.") from error
 
 
-def valid_hmac(form: dict, received: str | None) -> bool:
-    if not received or not get_settings().cinetpay_secret_key:
-        return False
-    fields = ["cpm_site_id", "cpm_trans_id", "cpm_trans_date", "cpm_amount", "cpm_currency", "signature", "payment_method", "cel_phone_num", "cpm_phone_prefixe", "cpm_language", "cpm_version", "cpm_payment_config", "cpm_page_action", "cpm_custom", "cpm_designation", "cpm_error_message"]
-    raw = "".join(str(form.get(field, "")) for field in fields)
-    expected = hmac.new(get_settings().cinetpay_secret_key.encode(), raw.encode(), hashlib.sha256).hexdigest()
-    return hmac.compare_digest(received.lower(), expected.lower())
-
-
-async def verify_and_apply(transaction_id: str) -> dict:
+async def apply_geniuspay_webhook(payload: dict) -> dict:
+    data = payload.get("data") or {}
+    metadata = data.get("metadata") or {}
+    subscription = data.get("subscription") or {}
+    invoice = data.get("invoice") or {}
+    transaction_id = metadata.get("transaction_id") or subscription.get("metadata", {}).get("transaction_id") or invoice.get("metadata", {}).get("transaction_id")
+    if not transaction_id:
+        raise HTTPException(400, "Transaction absente du webhook.")
     settings = get_settings(); payments = _read_payments(); record = payments["payments"].get(transaction_id)
     if not record:
         raise HTTPException(404, "Transaction inconnue.")
-    async with httpx.AsyncClient(timeout=25) as client:
-        response = await client.post(CHECK_URL, json={"apikey": settings.cinetpay_api_key, "site_id": settings.cinetpay_site_id, "transaction_id": transaction_id})
-        result = response.json()
-    data = result.get("data") or {}
-    accepted = str(result.get("code")) == "00" and data.get("status") == "ACCEPTED"
-    same_amount = abs(float(data.get("amount", -1)) - float(record["amount"])) < 0.001
-    same_currency = data.get("currency") == record["currency"]
-    record["status"] = "ACCEPTED" if accepted and same_amount and same_currency else data.get("status", "PENDING")
+    accepted = payload.get("event") in {"payment.success", "payment.completed", "subscription.payment_succeeded"} and data.get("status", invoice.get("status")) in {"completed", "paid", "succeeded", "active"}
+    received_amount = data.get("amount", invoice.get("amount", -1))
+    received_currency = data.get("currency", invoice.get("currency", record["currency"]))
+    same_amount = abs(float(received_amount) - float(record["amount"])) < 0.001
+    same_currency = received_currency == record["currency"]
+    record["status"] = "ACCEPTED" if accepted and same_amount and same_currency else "FAILED"
     record["verified_at"] = datetime.now(timezone.utc).isoformat(); payments["payments"][transaction_id] = record; _write_payments(payments)
     if record["status"] == "ACCEPTED":
         activate_subscription(record["user_id"], record["plan_id"], record["billing_cycle"], transaction_id)
