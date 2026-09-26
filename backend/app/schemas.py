@@ -124,6 +124,10 @@ class AuthRequest(BaseModel):
     phone: str = Field(min_length=6, max_length=30)
     password: str = Field(min_length=6, max_length=120)
 
+class AdminLoginRequest(BaseModel):
+    phone: str = Field(min_length=3, max_length=160)
+    password: str = Field(min_length=1, max_length=200)
+
 class GoogleAuthRequest(BaseModel):
     credential: str = Field(min_length=20, max_length=5000)
 
@@ -159,6 +163,10 @@ class AuthResponse(BaseModel):
 class CheckoutRequest(BaseModel):
     plan_id: Literal["student", "pro"]
     billing_cycle: Literal["monthly", "annual"]
+
+
+class WaitlistRequest(BaseModel):
+    plan_id: Literal["student", "pro"]
 
 
 class CheckoutResponse(BaseModel):

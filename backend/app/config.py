@@ -46,12 +46,15 @@ class Settings:
     subscriptions_file = BACKEND_DIR / "data" / "subscriptions.json"
     usage_file = BACKEND_DIR / "data" / "usage.json"
     payments_file = BACKEND_DIR / "data" / "payments.json"
-    cinetpay_api_key = os.getenv("CINETPAY_API_KEY", "").strip()
-    cinetpay_site_id = os.getenv("CINETPAY_SITE_ID", "").strip()
-    cinetpay_secret_key = os.getenv("CINETPAY_SECRET_KEY", "").strip()
+    waitlist_file = BACKEND_DIR / "data" / "subscription_waitlist.json"
+    geniuspay_api_key = os.getenv("GENIUSPAY_API_KEY", "").strip()
+    geniuspay_webhook_secret = os.getenv("GENIUSPAY_WEBHOOK_SECRET", "").strip()
+    geniuspay_base_url = os.getenv("GENIUSPAY_BASE_URL", "https://api.geniuspay.ci").rstrip("/")
     payment_simulation = os.getenv("PAYMENT_SIMULATION", "true").strip().lower() == "true"
     public_api_url = os.getenv("PUBLIC_API_URL", "http://127.0.0.1:8010").rstrip("/")
     public_frontend_url = os.getenv("PUBLIC_FRONTEND_URL", "http://127.0.0.1:5173").rstrip("/")
+    superadmin_phone = os.getenv("SUPERADMIN_PHONE", "").strip()
+    superadmin_password = os.getenv("SUPERADMIN_PASSWORD", "")
     max_upload_bytes = int(os.getenv("MAX_UPLOAD_MB", "10")) * 1024 * 1024
 
 

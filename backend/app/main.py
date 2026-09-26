@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import json
 import logging
 import time
 from uuid import uuid4
@@ -14,6 +15,7 @@ from .config import get_settings
 from .conversations import append_exchange, get_conversation, list_conversations
 from .documents import delete_document, list_documents, save_document
 from .schemas import (
+    AdminLoginRequest,
     AuthRequest,
     GoogleAuthRequest,
     AuthResponse,
@@ -35,14 +37,16 @@ from .schemas import (
     TextResponse,
     TopicRequest,
     UserProfile,
+    WaitlistRequest,
     MAX_CONTEXT_MESSAGES,
 )
 from .quiz_word import build_quiz_docx
-from .subscriptions import ensure_ai_quota, ensure_document_quota, plans_config, record_ai_request, subscription_status
-from .payments import create_checkout, valid_hmac, verify_and_apply
+from .subscriptions import credit_cost, ensure_ai_quota, ensure_document_quota, join_waitlist, plans_config, record_ai_request, subscription_status
+from .payments import create_checkout, apply_geniuspay_webhook, valid_geniuspay_signature
 from .core_engine import OrvixCoreEngine
 from .model_gateway import ModelGateway, create_model_provider
 from .memory import remember, relevant
+from .admin import admin_login, dashboard, require_superadmin
 
 settings = get_settings()
 logger = logging.getLogger("orvix.http")
@@ -72,6 +76,14 @@ app.add_middleware(
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Orvix-Language", "X-Request-ID"],
 )
+
+@app.post(f"{settings.api_prefix}/admin/login")
+async def superadmin_login(payload: AdminLoginRequest):
+    return {"token": admin_login(payload.phone, payload.password)}
+
+@app.get(f"{settings.api_prefix}/admin/dashboard")
+async def superadmin_dashboard(_: str = Depends(require_superadmin)):
+    return dashboard()
 
 
 @app.post("/core/process")
@@ -187,7 +199,9 @@ async def logout(authorization: str | None = Header(default=None), user: UserPro
 
 @app.post(f"{settings.api_prefix}/chat", response_model=ChatResponse)
 async def chat(payload: ChatRequest, language: str = Header("Français", alias="X-Orvix-Language"), user: UserProfile = Depends(current_user)):
-    ensure_ai_quota(user.id)
+    action = "chat_with_documents" if payload.document_ids else "chat"
+    cost = credit_cost(action)
+    ensure_ai_quota(user.id, cost)
     history = payload.history[-MAX_CONTEXT_MESSAGES:]
     if payload.conversation_id:
         history = get_conversation(user.id, payload.conversation_id).messages[-MAX_CONTEXT_MESSAGES:]
@@ -199,7 +213,7 @@ async def chat(payload: ChatRequest, language: str = Header("Français", alias="
         user,
         payload.document_ids,
     )
-    record_ai_request(user.id)
+    record_ai_request(user.id, cost, action)
     conversation = append_exchange(user.id, payload.conversation_id, payload.message, answer, payload.document_ids)
     return ChatResponse(conversation_id=conversation.id, answer=answer)
 
@@ -216,30 +230,34 @@ async def conversation(conversation_id: str, user: UserProfile = Depends(current
 
 @app.post(f"{settings.api_prefix}/revision", response_model=TextResponse)
 async def revision(payload: TopicRequest, user: UserProfile = Depends(current_user)):
-    ensure_ai_quota(user.id)
+    cost = credit_cost("revision")
+    ensure_ai_quota(user.id, cost)
     content = await get_ai().revision(payload.topic, user, payload.document_ids)
-    record_ai_request(user.id)
+    record_ai_request(user.id, cost, "revision")
     return TextResponse(content=content)
 
 
 @app.post(f"{settings.api_prefix}/quiz", response_model=QuizResponse)
 async def quiz(payload: QuizRequest, user: UserProfile = Depends(current_user)):
-    ensure_ai_quota(user.id)
+    action = "quiz_short" if payload.count <= 5 else "quiz_long"
+    cost = credit_cost(action)
+    ensure_ai_quota(user.id, cost)
     result = await get_ai().quiz(payload.topic, payload.count, payload.quiz_type, user, payload.document_ids)
-    record_ai_request(user.id)
+    record_ai_request(user.id, cost, action)
     return result
 
 
 @app.post(f"{settings.api_prefix}/exam-mode", response_model=ExamModeResponse)
 async def exam_mode(payload: ExamModeRequest, user: UserProfile = Depends(current_user)):
-    ensure_ai_quota(user.id)
+    cost = credit_cost("exam_plan")
+    ensure_ai_quota(user.id, cost)
     result = await get_ai().exam_mode(payload.exam_date, payload.minutes_per_day, payload.confidence, payload.subject, user, payload.document_ids)
-    record_ai_request(user.id)
+    record_ai_request(user.id, cost, "exam_plan")
     return result
 
 
 @app.get(f"{settings.api_prefix}/subscription/plans")
-async def subscription_plans(user: UserProfile = Depends(current_user)):
+async def subscription_plans():
     return plans_config()
 
 
@@ -248,23 +266,28 @@ async def my_subscription(user: UserProfile = Depends(current_user)):
     return subscription_status(user.id)
 
 
+@app.post(f"{settings.api_prefix}/subscription/waitlist")
+async def subscription_waitlist(payload: WaitlistRequest, user: UserProfile = Depends(current_user)):
+    return join_waitlist(user.id, payload.plan_id)
+
+
 @app.post(f"{settings.api_prefix}/subscription/checkout", response_model=CheckoutResponse)
 async def subscription_checkout(payload: CheckoutRequest, user: UserProfile = Depends(current_user)):
     return await create_checkout(user, payload.plan_id, payload.billing_cycle)
 
 
-@app.get(f"{settings.api_prefix}/payments/cinetpay/notify")
-async def cinetpay_notify_ping():
+@app.get(f"{settings.api_prefix}/payments/geniuspay/webhook")
+async def geniuspay_webhook_ping():
     return {"status": "ok"}
 
 
-@app.post(f"{settings.api_prefix}/payments/cinetpay/notify")
-async def cinetpay_notify(request: Request, x_token: str | None = Header(default=None)):
-    form = dict(await request.form())
-    if not valid_hmac(form, x_token):
+@app.post(f"{settings.api_prefix}/payments/geniuspay/webhook")
+async def geniuspay_webhook(request: Request):
+    raw_body = await request.body()
+    if not valid_geniuspay_signature(raw_body, request.headers.get("X-Webhook-Signature"), request.headers.get("X-Webhook-Timestamp")):
         raise HTTPException(401, "Notification de paiement invalide.")
-    transaction_id = str(form.get("cpm_trans_id", ""))
-    await verify_and_apply(transaction_id)
+    payload = json.loads(raw_body)
+    await apply_geniuspay_webhook(payload)
     return {"status": "ok"}
 
 
