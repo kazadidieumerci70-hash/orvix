@@ -34,7 +34,7 @@ class Settings:
             "FRONTEND_ORIGINS",
             "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://192.168.170.33:5173",
         ).split(",") if origin.strip()]
-        + ["https://orvix-ai.pages.dev", "https://orvix-super-admin.pages.dev", "https://orvix-super-admin.nexikarmotor.chatgpt.site"]
+        + ["https://orvix-ai.pages.dev", "https://orvix-vitrine.pages.dev", "https://orvix-super-admin.pages.dev", "https://orvix-super-admin.nexikarmotor.chatgpt.site"]
     ))
     upload_dir = BACKEND_DIR / "data" / "uploads"
     data_dir = BACKEND_DIR / "data"
