@@ -28,7 +28,7 @@ def _email_address(value: str) -> bool:
     return "@" in value and "." in value.rsplit("@", 1)[-1]
 
 
-async def send_email(*, to: str, subject: str, html: str, text: str) -> bool:
+async def send_email(*, to: str, subject: str, html: str, text: str, idempotency_key: str = "") -> bool:
     """Send a transactional email through Resend without breaking the main request."""
     settings = get_settings()
     if not settings.resend_api_key:
@@ -51,7 +51,7 @@ async def send_email(*, to: str, subject: str, html: str, text: str) -> bool:
             response = await client.post(
                 "https://api.resend.com/emails",
                 json=payload,
-                headers={"Authorization": f"Bearer {settings.resend_api_key}", "Content-Type": "application/json"},
+                headers={"Authorization": f"Bearer {settings.resend_api_key}", "Content-Type": "application/json", **({"Idempotency-Key": idempotency_key} if idempotency_key else {})},
             )
         if response.status_code >= 400:
             logger.error("Resend rejected email: status=%s body=%s", response.status_code, response.text[:500])
@@ -95,14 +95,16 @@ async def send_password_reset_email(*, email: str, reset_url: str) -> bool:
     )
 
 
-async def send_payment_email(*, email: str, name: str, plan_name: str, amount: float, currency: str, transaction_id: str, paid: bool) -> bool:
+async def send_payment_email(*, email: str, name: str, plan_name: str, amount: float, currency: str, transaction_id: str, paid: bool, billing_cycle: str = "monthly") -> bool:
     status = "confirmé" if paid else "créé"
     subject = f"Orvix — paiement {status} ({transaction_id})"
     text = f"Bonjour {name or 'Etudiant'}, ton paiement Orvix est {status}. Forfait : {plan_name}. Montant : {amount} {currency}. Référence : {transaction_id}."
-    html = (
-        "<div style='font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#17202a'>"
-        f"<h1>Paiement {status}</h1><p>Bonjour {name or 'Etudiant'},</p>"
-        f"<p>Forfait : <strong>{plan_name}</strong><br>Montant : <strong>{amount} {currency}</strong><br>Référence : <strong>{transaction_id}</strong></p>"
-        "<p>Merci pour ta confiance,<br>L'équipe Orvix</p></div>"
+    duration = "Annuel (365 jours)" if billing_cycle == "annual" else "Mensuel (30 jours)"
+    app_url = get_settings().public_app_url
+    text += f" Durée : {duration}. Ouvrir mon espace : {app_url}"
+    html = _template(
+        title="Félicitations, ton abonnement est actif !" if paid else "Abonnement de test créé",
+        intro=f"Bonjour {escape(name or 'Étudiant')}, " + ("ton paiement a été confirmé. Merci pour ta confiance !" if paid else "ceci est une simulation, aucun paiement réel n’a été effectué."),
+        content=f"<p style='font-size:16px;line-height:1.8'>Forfait : <strong>{escape(plan_name)}</strong><br>Durée : {duration}<br>Montant : <strong>{amount:.2f} {escape(currency)}</strong><br>Référence : {escape(transaction_id)}</p><a href='{escape(app_url, quote=True)}' style='display:inline-block;padding:16px 24px;background:#078d84;color:#fff;text-decoration:none;border-radius:12px;font-weight:700'>Accéder à mon dashboard</a>",
     )
-    return await send_email(to=email, subject=subject, html=html, text=text)
+    return await send_email(to=email, subject=subject, html=html, text=text, idempotency_key=f"payment-{'confirmed' if paid else 'simulation'}-{transaction_id}")

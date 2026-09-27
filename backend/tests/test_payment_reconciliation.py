@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 from app import payments
 
@@ -34,10 +34,27 @@ class PaymentReconciliationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_webhook_activates_only_verified_payment(self):
         payload = {"event": "payment.success", "data": self.confirmation}
-        with patch.object(payments, "_read_payments", return_value={"payments": {"ORVIX-test": self.record}}), patch.object(payments, "_accept_payment", return_value={**self.record, "status": "ACCEPTED"}) as accept:
+        with patch.object(payments, "_read_payments", return_value={"payments": {"ORVIX-test": self.record}}), patch.object(payments, "_accept_payment", return_value={**self.record, "status": "ACCEPTED"}) as accept, patch.object(payments, "_send_confirmation", new_callable=AsyncMock) as email:
             result = await payments.apply_geniuspay_webhook(payload)
             self.assertEqual(result["status"], "ACCEPTED")
             accept.assert_called_once()
+            email.assert_awaited_once()
+
+    async def test_confirmation_retries_failure_and_skips_sent(self):
+        record = {**self.record, "status": "ACCEPTED", "customer_email": "test@example.com"}
+        with patch.object(payments, "plans_config", return_value={"plans": []}), patch.object(payments, "_write_payments") as write, patch.object(payments, "send_payment_email", new_callable=AsyncMock, side_effect=[False, True]) as email:
+            await payments._send_confirmation(record)
+            self.assertNotIn("confirmation_sent_at", record)
+            write.assert_not_called()
+            await payments._send_confirmation(record)
+            self.assertIn("confirmation_sent_at", record)
+            await payments._send_confirmation(record)
+            self.assertEqual(email.await_count, 2)
+
+    async def test_pending_payment_does_not_send_confirmation(self):
+        with patch.object(payments, "send_payment_email", new_callable=AsyncMock) as email:
+            await payments._send_confirmation(self.record)
+            email.assert_not_awaited()
 
 
 if __name__ == "__main__":

@@ -112,8 +112,8 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
         "currency": config["currency"],
         "description": f"ORVIX {plan['name']} - {billing_cycle}",
         "customer": customer,
-        "success_url": f"{settings.public_frontend_url}/?payment=success&transaction_id={transaction_id}",
-        "error_url": f"{settings.public_frontend_url}/?payment=cancelled&transaction_id={transaction_id}",
+        "success_url": f"{settings.public_app_url}/?payment=success&transaction_id={transaction_id}",
+        "error_url": f"{settings.public_app_url}/?payment=cancelled&transaction_id={transaction_id}",
         "metadata": {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle},
     }
     try:
@@ -147,6 +147,21 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
         raise HTTPException(502, "Connexion au service de paiement impossible.") from error
 
 
+async def _send_confirmation(record: dict) -> None:
+    if record.get("status") != "ACCEPTED" or record.get("confirmation_sent_at"):
+        return
+    plan = next((p for p in plans_config()["plans"] if p["id"] == record["plan_id"]), {})
+    sent = await send_payment_email(
+        email=record.get("customer_email", ""), name=record.get("customer_name", ""),
+        plan_name=plan.get("name", record["plan_id"]), amount=record["amount"],
+        currency=record["currency"], transaction_id=record["transaction_id"], paid=True,
+        billing_cycle=record["billing_cycle"],
+    )
+    if sent:
+        record["confirmation_sent_at"] = datetime.now(timezone.utc).isoformat()
+        _write_payments({"payments": {record["transaction_id"]: record}})
+
+
 async def apply_geniuspay_webhook(payload: dict) -> dict:
     data = payload.get("data") or {}
     metadata = data.get("metadata") or {}
@@ -157,13 +172,14 @@ async def apply_geniuspay_webhook(payload: dict) -> dict:
     if not record:
         raise HTTPException(404, "Transaction inconnue.")
     if record["status"] == "ACCEPTED":
+        await _send_confirmation(record)
         return record
     if payload.get("event") == "payment.success" and data.get("status") == "completed":
         if not _payment_matches(record, data):
             logger.error("Payment confirmation did not match order %s", transaction_id)
             raise HTTPException(409, "Confirmation de paiement incohérente.")
         accepted = _accept_payment(record)
-        await send_payment_email(email=record.get("customer_email", ""), name=record.get("customer_name", ""), plan_name=record["plan_id"], amount=record["amount"], currency=record["currency"], transaction_id=record["transaction_id"], paid=True)
+        await _send_confirmation(accepted)
         return accepted
     if payload.get("event") in {"payment.failed", "payment.cancelled", "payment.expired"}:
         record["status"] = "FAILED"
@@ -174,6 +190,9 @@ async def apply_geniuspay_webhook(payload: dict) -> dict:
 
 async def reconcile_user_payments(user_id: str) -> None:
     settings = get_settings()
+    for record in _read_payments()["payments"].values():
+        if record.get("user_id") == user_id and record.get("status") == "ACCEPTED" and not record.get("confirmation_sent_at"):
+            await _send_confirmation(record)
     pending = [record for record in _read_payments()["payments"].values()
                if record.get("user_id") == user_id and record.get("status") in {"PENDING", "FAILED"} and record.get("provider_reference")]
     for record in sorted(pending, key=lambda item: item.get("created_at", ""), reverse=True)[:3]:
@@ -190,7 +209,7 @@ async def reconcile_user_payments(user_id: str) -> None:
             data = result.get("data") or {}
             if result.get("success") and data.get("status") == "completed":
                 if _payment_matches(record, data):
-                    _accept_payment(record)
+                    await _send_confirmation(_accept_payment(record))
                 else:
                     logger.error("Completed payment did not match order %s", record["transaction_id"])
         except (httpx.HTTPError, ValueError, KeyError) as error:
