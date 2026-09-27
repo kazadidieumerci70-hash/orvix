@@ -77,6 +77,7 @@ import {
   saveToken,
   sendChat,
   uploadDocuments,
+  verifyEmailRegistration,
 } from "./api";
 
 type View = "chat" | "revision" | "quiz" | "exam" | "support" | "account";
@@ -643,6 +644,8 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [resetToken, setResetToken] = useState(() => new URLSearchParams(window.location.search).get("reset_token") || "");
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
   const [googleAccountUsed, setGoogleAccountUsed] = useState(() => localStorage.getItem("orvix_google_account_used") === "true");
   function completeAuthentication(profile: UserProfile) {
     localStorage.setItem("orvix_user", JSON.stringify(profile));
@@ -699,6 +702,16 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (verificationEmail) {
+      if (loading || !/^\d{6}$/.test(verificationCode)) return;
+      setLoading(true); setError("");
+      try {
+        const result = await verifyEmailRegistration(verificationEmail, verificationCode);
+        saveToken(result.token); completeAuthentication(result.user);
+      } catch (e) { setError(e instanceof Error ? e.message : "Code invalide."); }
+      finally { setLoading(false); }
+      return;
+    }
     if (resetToken) {
       if (loading || password.length < 8 || password !== passwordConfirmation) {
         if (password !== passwordConfirmation) setError("Les mots de passe ne correspondent pas.");
@@ -728,6 +741,10 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
     setError("");
     try {
       const result = mode === "register" ? await register(phone, password) : await login(phone, password);
+      if ("verification_required" in result) {
+        setVerificationEmail(result.email); setNotice(result.message); setPassword(""); setPasswordConfirmation("");
+        return;
+      }
       saveToken(result.token);
       completeAuthentication(result.user);
     } catch (e) {
@@ -754,10 +771,10 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
   return (
     <main className="auth-page">
       <section className={`auth-panel auth-reference ${mode}`}>
-        {(mode === "register" || resetToken) && <div className="auth-topline"><button type="button" aria-label="Retour à la connexion" onClick={() => { window.history.replaceState({}, "", window.location.pathname); setResetToken(""); setMode("login"); setRegisterStep("email"); setError(""); }}><ArrowLeft /></button><strong>{resetToken ? "Nouveau mot de passe" : "Créer un compte"}</strong><span /></div>}
+        {(mode === "register" || resetToken || verificationEmail) && <div className="auth-topline"><button type="button" aria-label="Retour à la connexion" onClick={() => { window.history.replaceState({}, "", window.location.pathname); setResetToken(""); setVerificationEmail(""); setVerificationCode(""); setMode("login"); setRegisterStep("email"); setError(""); }}><ArrowLeft /></button><strong>{verificationEmail ? "Vérifie ton e-mail" : resetToken ? "Nouveau mot de passe" : "Créer un compte"}</strong><span /></div>}
         <div className="auth-logo"><img className="auth-logo-image" src="/orvix-logo-transparent.png" alt="Logo Orvix" /><strong>ORVIX</strong><small>{mode === "login" ? "Votre IA. Vos documents. Nos réponses." : <>Commencez votre expérience avec <b>Orvix.</b></>}</small></div>
         {mode === "login" && !resetToken && <header className="auth-welcome"><h1>Bienvenue !</h1><p>Connectez-vous pour continuer<br />avec <b>Orvix.</b></p></header>}
-        {!resetToken && <>
+        {!resetToken && !verificationEmail && <>
           <div className="google-account-block">
             {googleAccountUsed && <p className="google-account-label">Compte récemment utilisé</p>}
             <div ref={googleButtonRef} className="google-primary" aria-label="Continuer avec Google" />
@@ -765,16 +782,17 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
           <div className="auth-divider auth-divider-compact"><span />ou avec ton e-mail<span /></div>
         </>}
         <form onSubmit={submit} className="auth-form auth-reference-form">
-          {!resetToken && <div className="auth-input"><Mail size={20} /><input id="phone" aria-label="Adresse e-mail ou numéro de téléphone" type="text" inputMode="email" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Adresse e-mail ou numéro de téléphone" autoComplete="username" /></div>}
-          {(resetToken || mode === "login" || registerStep === "password") && <div className="auth-input"><LockKeyhole size={20} /><input id="password" aria-label={resetToken ? "Nouveau mot de passe" : "Mot de passe"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={resetToken ? "Nouveau mot de passe" : "Mot de passe"} type={showPassword ? "text" : "password"} autoComplete={mode === "register" || resetToken ? "new-password" : "current-password"} /><button type="button" className="password-visibility" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div>}
-          {(resetToken || (mode === "register" && registerStep === "password")) && <div className="auth-input"><LockKeyhole size={20} /><input aria-label="Confirmer le mot de passe" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} placeholder="Confirmer le mot de passe" type={showPassword ? "text" : "password"} autoComplete="new-password" /></div>}
+          {verificationEmail && <><p className="verification-copy">Nous avons envoyé un code à <strong>{verificationEmail}</strong></p><div className="auth-input verification-code"><ShieldCheck size={20} /><input aria-label="Code de vérification" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={verificationCode} onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000 000" /></div></>}
+          {!resetToken && !verificationEmail && <div className="auth-input"><Mail size={20} /><input id="phone" aria-label="Adresse e-mail ou numéro de téléphone" type="text" inputMode="email" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Adresse e-mail ou numéro de téléphone" autoComplete="username" /></div>}
+          {!verificationEmail && (resetToken || mode === "login" || registerStep === "password") && <div className="auth-input"><LockKeyhole size={20} /><input id="password" aria-label={resetToken ? "Nouveau mot de passe" : "Mot de passe"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={resetToken ? "Nouveau mot de passe" : "Mot de passe"} type={showPassword ? "text" : "password"} autoComplete={mode === "register" || resetToken ? "new-password" : "current-password"} /><button type="button" className="password-visibility" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div>}
+          {!verificationEmail && (resetToken || (mode === "register" && registerStep === "password")) && <div className="auth-input"><LockKeyhole size={20} /><input aria-label="Confirmer le mot de passe" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} placeholder="Confirmer le mot de passe" type={showPassword ? "text" : "password"} autoComplete="new-password" /></div>}
           {mode === "login" && !resetToken && <button type="button" className="forgot-password" onClick={forgotPassword}>Mot de passe oublié ?</button>}
-          {mode === "register" && registerStep === "password" && <label className="terms-check"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} /><span>J’accepte les <b>Conditions d’utilisation</b><br />et la <b>Politique de confidentialité.</b></span></label>}
+          {!verificationEmail && mode === "register" && registerStep === "password" && <label className="terms-check"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} /><span>J’accepte les <b>Conditions d’utilisation</b><br />et la <b>Politique de confidentialité.</b></span></label>}
           {error && <p className="error-banner">{error}</p>}
           {notice && <p className="auth-notice">{notice}</p>}
-          <button className="auth-submit" disabled={loading || (resetToken ? password.length < 8 || password !== passwordConfirmation : !phone.trim() || (mode === "login" && password.length < 6) || (mode === "register" && registerStep === "password" && (password.length < 6 || !acceptedTerms || password !== passwordConfirmation)))}>{loading ? "Patientez…" : resetToken ? "Modifier le mot de passe" : mode === "register" ? registerStep === "email" ? "Suivant" : "Créer le compte" : "Se connecter"}<span>→</span></button>
+          <button className="auth-submit" disabled={loading || (verificationEmail ? !/^\d{6}$/.test(verificationCode) : resetToken ? password.length < 8 || password !== passwordConfirmation : !phone.trim() || (mode === "login" && password.length < 6) || (mode === "register" && registerStep === "password" && (password.length < 6 || !acceptedTerms || password !== passwordConfirmation)))}>{loading ? "Patientez…" : verificationEmail ? "Vérifier et continuer" : resetToken ? "Modifier le mot de passe" : mode === "register" ? registerStep === "email" ? "Suivant" : "Créer le compte" : "Se connecter"}<span>→</span></button>
         </form>
-        {!resetToken && <p className="auth-switch">{mode === "register" ? "Déjà un compte ?" : "Pas encore de compte ?"}<button type="button" onClick={() => { setMode(mode === "register" ? "login" : "register"); setRegisterStep("email"); setError(""); setNotice(""); }}>{mode === "register" ? "Se connecter" : "S’inscrire"}</button></p>}
+        {!resetToken && !verificationEmail && <p className="auth-switch">{mode === "register" ? "Déjà un compte ?" : "Pas encore de compte ?"}<button type="button" onClick={() => { setMode(mode === "register" ? "login" : "register"); setRegisterStep("email"); setError(""); setNotice(""); }}>{mode === "register" ? "Se connecter" : "S’inscrire"}</button></p>}
       </section>
     </main>
   );

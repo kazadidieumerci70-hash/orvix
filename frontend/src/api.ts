@@ -15,6 +15,7 @@ export type UserProfile = {
   welcome_seen: boolean;
 };
 export type AuthResponse = { token: string; user: UserProfile; existing_account?: boolean };
+export type RegistrationResponse = AuthResponse | { verification_required: true; email: string; message: string };
 export type OnboardingPayload = {
   name: string;
   level: string;
@@ -85,7 +86,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export function register(phone: string, password: string) {
-  return request<AuthResponse>("/api/v1/auth/register", {
+  return request<RegistrationResponse>("/api/v1/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone, password }),
@@ -97,6 +98,14 @@ export function login(phone: string, password: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone, password }),
+  });
+}
+
+export function verifyEmailRegistration(email: string, code: string) {
+  return request<AuthResponse>("/api/v1/auth/register/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, code }),
   });
 }
 

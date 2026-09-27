@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 
-from .auth import complete_onboarding, create_password_reset_token, current_user, google_login_user, init_auth_database, login_user, mark_welcome_seen, register_user, reset_password, revoke_token
+from .auth import begin_email_registration, complete_onboarding, create_password_reset_token, current_user, google_login_user, init_auth_database, login_user, mark_welcome_seen, register_user, reset_password, revoke_token, verify_email_registration
 from .ai import OrvixAI
 from .config import get_settings
 from .conversations import append_exchange, get_conversation, list_conversations
@@ -20,6 +20,7 @@ from .schemas import (
     GoogleAuthRequest,
     PasswordResetConfirmRequest,
     PasswordResetRequest,
+    EmailVerificationRequest,
     AuthResponse,
     CheckoutRequest,
     CheckoutResponse,
@@ -49,7 +50,7 @@ from .core_engine import OrvixCoreEngine
 from .model_gateway import ModelGateway, create_model_provider
 from .memory import remember, relevant
 from .admin import admin_login, dashboard, require_superadmin
-from .email_service import send_password_reset_email, send_welcome_email
+from .email_service import send_password_reset_email, send_verification_email, send_welcome_email
 
 settings = get_settings()
 logger = logging.getLogger("orvix.http")
@@ -162,11 +163,22 @@ async def status(user: UserProfile = Depends(current_user)):
     }
 
 
-@app.post(f"{settings.api_prefix}/auth/register", response_model=AuthResponse)
+@app.post(f"{settings.api_prefix}/auth/register")
 async def register(payload: AuthRequest):
+    if "@" in payload.phone:
+        code = begin_email_registration(payload.phone, payload.password)
+        sent = await send_verification_email(email=payload.phone.strip().lower(), code=code)
+        if not sent:
+            raise HTTPException(503, "L’e-mail de vérification n’a pas pu être envoyé. Réessaie dans quelques instants.")
+        return {"verification_required": True, "email": payload.phone.strip().lower(), "message": "Un code de vérification vient de t’être envoyé."}
     token, user = register_user(payload.phone, payload.password)
-    if "@" in user.phone:
-        await send_welcome_email(email=user.phone, name=user.name)
+    return AuthResponse(token=token, user=user)
+
+
+@app.post(f"{settings.api_prefix}/auth/register/verify", response_model=AuthResponse)
+async def verify_registration(payload: EmailVerificationRequest):
+    token, user = verify_email_registration(payload.email, payload.code)
+    await send_welcome_email(email=user.phone, name=user.name)
     return AuthResponse(token=token, user=user)
 
 
@@ -193,6 +205,8 @@ async def confirm_password_reset(payload: PasswordResetConfirmRequest):
 @app.post(f"{settings.api_prefix}/auth/google", response_model=AuthResponse)
 async def google_auth(payload: GoogleAuthRequest):
     token, user, existing_account = google_login_user(payload.credential)
+    if not existing_account:
+        await send_welcome_email(email=user.phone, name=user.name)
     return AuthResponse(token=token, user=user, existing_account=existing_account)
 
 

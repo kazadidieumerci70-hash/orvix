@@ -141,6 +141,15 @@ class PasswordResetConfirmRequest(BaseModel):
     password: str = Field(min_length=8, max_length=120)
 
 
+class EmailVerificationRequest(BaseModel):
+    email: str = Field(min_length=6, max_length=160)
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class EmailVerificationResendRequest(BaseModel):
+    email: str = Field(min_length=6, max_length=160)
+
+
 class UserProfile(BaseModel):
     id: str
     phone: str

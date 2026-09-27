@@ -4130,6 +4130,9 @@ html[data-theme="dark"] .quiz-radio-group label { color: #a8b5b3; }
 .password-visibility { display: grid; place-items: center; flex: 0 0 auto; padding: 5px; border: 0; color: #6c7b88; background: transparent; }
 .forgot-password { justify-self: end; margin: 0 0 8px; padding: 1px; border: 0; color: #079b92; background: transparent; font-size: 12px; }
 .auth-notice { margin: 2px 0; padding: 11px 13px; border: 1px solid #9ddbd5; border-radius: 11px; color: #076f68; background: #effbf9; font-size: 12px; line-height: 1.45; }
+.verification-copy { margin: 4px 0 10px; color: #536575; text-align: center; font-size: 14px; line-height: 1.55; }
+.verification-copy strong { display: block; color: #101722; }
+.auth-reference-form .verification-code input { text-align: center; font-size: 24px; font-weight: 800; letter-spacing: .32em; }
 .terms-check { display: flex; align-items: flex-start; gap: 12px; margin: 10px 4px 7px !important; color: #53606c !important; font-size: 12px !important; font-weight: 400 !important; line-height: 1.55; cursor: pointer; }
 .terms-check input { width: 20px; height: 20px; flex: 0 0 auto; margin: 1px 0 0; accent-color: #0ba49a; }
 .auth-reference .auth-submit { min-height: 58px; margin-top: 8px; border-radius: 999px; font-size: 15px; }

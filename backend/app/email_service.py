@@ -1,10 +1,27 @@
 import logging
+from html import escape
 
 import httpx
 
 from .config import get_settings
 
 logger = logging.getLogger(__name__)
+LOGO_URL = "https://app.orvix.work/orvix-logo-transparent.png"
+
+
+def _template(*, title: str, intro: str, content: str, note: str = "") -> str:
+    note_html = f"<tr><td style='padding:26px 48px 34px;color:#536575;font-size:14px;line-height:1.65;border-top:1px solid #dcebea'>{note}</td></tr>" if note else ""
+    return (
+        "<!doctype html><html lang='fr'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width'>"
+        f"<title>{escape(title)}</title></head><body style='margin:0;padding:32px 12px;background:#f4f7f7;font-family:Arial,sans-serif;color:#101722'>"
+        "<table role='presentation' width='100%' cellspacing='0' cellpadding='0'><tr><td align='center'>"
+        "<table role='presentation' width='600' cellspacing='0' cellpadding='0' style='width:100%;max-width:600px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 12px 38px rgba(16,23,34,.09)'>"
+        f"<tr><td align='center' style='padding:34px 24px 28px;background:#effbf9'><img src='{LOGO_URL}' width='68' height='68' alt='Orvix' style='display:block;object-fit:contain'><div style='margin-top:10px;font-size:25px;font-weight:700;letter-spacing:8px'>ORVIX</div></td></tr>"
+        f"<tr><td align='center' style='padding:44px 48px 20px'><h1 style='margin:0 0 16px;font-size:30px;line-height:1.2;color:#101722'>{title}</h1><p style='margin:0;color:#536575;font-size:17px;line-height:1.6'>{intro}</p></td></tr>"
+        f"<tr><td align='center' style='padding:12px 48px 34px'>{content}</td></tr>{note_html}"
+        "<tr><td align='center' style='padding:22px;background:#effbf9;color:#637481;font-size:13px'>© 2026 Orvix &nbsp;|&nbsp; orvix.work</td></tr>"
+        "</table></td></tr></table></body></html>"
+    )
 
 
 def _email_address(value: str) -> bool:
@@ -46,16 +63,25 @@ async def send_email(*, to: str, subject: str, html: str, text: str) -> bool:
 
 
 async def send_welcome_email(*, email: str, name: str) -> bool:
-    safe_name = name or "Etudiant"
+    safe_name = escape(name or "Étudiant")
     return await send_email(
         to=email,
         subject="Bienvenue sur Orvix",
         text=f"Bonjour {safe_name}, bienvenue sur Orvix. Ton espace d'apprentissage est prêt.",
-        html=(
-            "<div style='font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#17202a'>"
-            f"<h1>Bienvenue sur Orvix, {safe_name} !</h1>"
-            "<p>Ton espace d'apprentissage est prêt. Tu peux maintenant organiser tes documents, réviser et poser tes questions.</p>"
-            "<p>À bientôt,<br>L'équipe Orvix</p></div>"
+        html=_template(title=f"Bienvenue sur Orvix, {safe_name} !", intro="Ton espace d’apprentissage est prêt.", content="<p style='margin:0;color:#263746;font-size:16px;line-height:1.7'>Tu peux maintenant organiser tes documents, réviser, créer des quiz et poser toutes tes questions à Orvix.</p><p style='margin:28px 0 0;color:#101722;font-weight:700'>À bientôt,<br>L’équipe Orvix</p>"),
+    )
+
+
+async def send_verification_email(*, email: str, code: str) -> bool:
+    return await send_email(
+        to=email,
+        subject="Ton code de vérification Orvix",
+        text=f"Ton code de vérification Orvix est {code}. Il expire dans 10 minutes.",
+        html=_template(
+            title="Vérifie ton adresse e-mail",
+            intro="Merci de t’être inscrit sur Orvix.<br>Utilise ce code pour terminer ton inscription :",
+            content=f"<div style='padding:22px 20px;border:2px solid #41c7b8;border-radius:14px;background:#effbf9;color:#101722;font-size:42px;font-weight:800;letter-spacing:10px'>{escape(code[:3])}&nbsp;{escape(code[3:])}</div><p style='margin:22px 0 0;color:#536575;font-size:15px'>◷&nbsp; Ce code est valable pendant 10 minutes.</p>",
+            note="Si tu n’es pas à l’origine de cette inscription, tu peux ignorer cet e-mail. Aucun compte actif ne sera créé sans validation du code.",
         ),
     )
 
@@ -65,14 +91,7 @@ async def send_password_reset_email(*, email: str, reset_url: str) -> bool:
         to=email,
         subject="Réinitialise ton mot de passe Orvix",
         text=f"Utilise ce lien pour choisir un nouveau mot de passe : {reset_url}\nCe lien expire dans 60 minutes. Si tu n'as rien demandé, ignore cet e-mail.",
-        html=(
-            "<div style='font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#17202a'>"
-            "<h1>Réinitialisation du mot de passe</h1>"
-            "<p>Tu as demandé à modifier ton mot de passe Orvix.</p>"
-            f"<p><a href='{reset_url}' style='display:inline-block;padding:14px 22px;background:#078d84;color:#fff;text-decoration:none;border-radius:10px'>Choisir un nouveau mot de passe</a></p>"
-            "<p>Ce lien expire dans 60 minutes et ne fonctionnera plus après son utilisation.</p>"
-            "<p>Si tu n’as rien demandé, ignore simplement cet e-mail.</p></div>"
-        ),
+        html=_template(title="Réinitialise ton mot de passe", intro="Tu as demandé à modifier ton mot de passe Orvix.", content=f"<a href='{escape(reset_url)}' style='display:inline-block;box-sizing:border-box;padding:15px 24px;background:#078d84;color:#fff;text-decoration:none;border-radius:12px;font-size:16px;font-weight:700'>Choisir un nouveau mot de passe</a><p style='margin:22px 0 0;color:#536575;font-size:15px'>Ce lien expire dans 60 minutes.</p>", note="Si tu n’as rien demandé, ignore simplement cet e-mail. Ton mot de passe actuel restera inchangé."),
     )
 
 

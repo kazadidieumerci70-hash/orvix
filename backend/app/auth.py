@@ -16,6 +16,7 @@ from .schemas import OnboardingRequest, UserProfile
 
 TOKEN_TTL_HOURS = 24 * 14
 PASSWORD_RESET_TTL_MINUTES = 60
+EMAIL_CODE_TTL_MINUTES = 10
 _revoked_tokens: set[str] = set()
 
 def _database_url() -> str:
@@ -35,6 +36,7 @@ def init_auth_database() -> None:
     with _db_connect() as connection:
         connection.execute(migration.read_text(encoding="utf-8"))
         connection.execute("ALTER TABLE users ALTER COLUMN phone TYPE VARCHAR(160)")
+        connection.execute("CREATE TABLE IF NOT EXISTS pending_registrations (email VARCHAR(160) PRIMARY KEY, password_hash TEXT NOT NULL, code_hash TEXT NOT NULL, expires_at TIMESTAMPTZ NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, sent_at TIMESTAMPTZ NOT NULL)")
         connection.commit()
 
 def revoke_token(token: str) -> None:
@@ -51,6 +53,23 @@ def _read_users() -> dict:
 
 def _write_users(data: dict) -> None:
     atomic_write_json(get_settings().users_file, data, ensure_ascii=True)
+
+
+def _pending_path() -> Path:
+    return get_settings().data_dir / "pending_registrations.json"
+
+
+def _read_pending() -> dict:
+    path = _pending_path()
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"registrations": {}}
+
+
+def _write_pending(data: dict) -> None:
+    atomic_write_json(_pending_path(), data, ensure_ascii=True)
+
+
+def _code_hash(email: str, code: str) -> str:
+    return hmac.new(_token_secret(), f"email-code:{email}:{code}".encode("utf-8"), sha256).hexdigest()
 
 
 def _normalize_phone(phone: str) -> str:
@@ -189,6 +208,50 @@ def register_user(phone: str, password: str) -> tuple[str, UserProfile]:
     }
     data["users"].append(user)
     _write_users(data)
+    return _make_token(user["id"], normalized), _profile(user)
+
+
+def begin_email_registration(email: str, password: str) -> str:
+    normalized = _normalize_phone(email)
+    if "@" not in normalized:
+        raise HTTPException(422, "Une adresse e-mail est nécessaire pour cette vérification.")
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(minutes=EMAIL_CODE_TTL_MINUTES)
+    if _db_ready():
+        with _db_connect() as connection:
+            if _user_select(connection, normalized):
+                raise HTTPException(409, "Cette adresse e-mail possède déjà un compte.")
+            connection.execute("INSERT INTO pending_registrations(email,password_hash,code_hash,expires_at,attempts,sent_at) VALUES(%s,%s,%s,%s,0,%s) ON CONFLICT(email) DO UPDATE SET password_hash=EXCLUDED.password_hash,code_hash=EXCLUDED.code_hash,expires_at=EXCLUDED.expires_at,attempts=0,sent_at=EXCLUDED.sent_at", (normalized, _hash_password(password), _code_hash(normalized, code), expires, now))
+            connection.commit()
+    else:
+        data = _read_pending()
+        data["registrations"][normalized] = {"password_hash": _hash_password(password), "code_hash": _code_hash(normalized, code), "expires_at": expires.isoformat(), "attempts": 0, "sent_at": now.isoformat()}
+        _write_pending(data)
+    return code
+
+
+def verify_email_registration(email: str, code: str) -> tuple[str, UserProfile]:
+    normalized = _normalize_phone(email)
+    now = datetime.now(timezone.utc)
+    if _db_ready():
+        with _db_connect() as connection:
+            row = connection.execute("SELECT password_hash,code_hash,expires_at,attempts FROM pending_registrations WHERE email=%s", (normalized,)).fetchone()
+            if not row or row[2] < now or row[3] >= 5 or not hmac.compare_digest(row[1], _code_hash(normalized, code)):
+                if row: connection.execute("UPDATE pending_registrations SET attempts=attempts+1 WHERE email=%s", (normalized,))
+                connection.commit()
+                raise HTTPException(400, "Ce code est invalide ou a expiré.")
+            user_id = sha256(f"user:{normalized}".encode()).hexdigest()[:16]
+            connection.execute("INSERT INTO users(id,phone,name,password_hash,created_at,subjects) VALUES(%s,%s,%s,%s,now(),'[]'::jsonb)", (user_id, normalized, "Etudiant", row[0]))
+            connection.execute("DELETE FROM pending_registrations WHERE email=%s", (normalized,))
+            user = _db_user(_user_by_id(connection, user_id)); connection.commit()
+        return _make_token(user_id, normalized), _profile(user)
+    data = _read_pending(); pending = data["registrations"].get(normalized)
+    if not pending or datetime.fromisoformat(pending["expires_at"]) < now or pending.get("attempts", 0) >= 5 or not hmac.compare_digest(pending["code_hash"], _code_hash(normalized, code)):
+        if pending: pending["attempts"] = pending.get("attempts", 0) + 1; _write_pending(data)
+        raise HTTPException(400, "Ce code est invalide ou a expiré.")
+    users = _read_users(); user = {"id": sha256(f"user:{normalized}".encode()).hexdigest()[:16], "phone": normalized, "name": "Etudiant", "password_hash": pending["password_hash"], "created_at": now.isoformat()}
+    users["users"].append(user); _write_users(users); del data["registrations"][normalized]; _write_pending(data)
     return _make_token(user["id"], normalized), _profile(user)
 
 
