@@ -17,3 +17,9 @@ documents/*.pdf
 .pytest_cache/
 backend/data/uploads/*
 !backend/data/uploads/.gitkeep
+.backend-deploy/
+.tmp-admin-deploy/
+admin/
+.railway-runtime/
+.wrangler/
+.openai/*.tar.gz
