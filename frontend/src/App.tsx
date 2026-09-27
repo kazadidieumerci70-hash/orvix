@@ -461,6 +461,10 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
 
   async function startCheckout(planId: "student" | "pro") {
     if (paymentLoading) return;
+    if (planId === "student" && subscription?.plan.id === "pro") {
+      setError("Ton forfait Pro est encore actif. Le forfait Étudiant sera disponible après son expiration.");
+      return;
+    }
     const accountEmail = user.phone.includes("@") ? user.phone : "";
     const customerEmail = accountEmail || window.prompt("Quelle adresse e-mail utiliser pour le reçu de paiement ?")?.trim() || "";
     if (!customerEmail && !accountEmail) return;
@@ -538,11 +542,13 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
       {!plansLoading && (plansError || subscriptionError) && <div className="subscription-load-error" role="alert"><p>{plansError || subscriptionError}</p><button type="button" onClick={() => void loadSubscriptionData()}>Réessayer</button></div>}
       <div className="plans-grid">{plans.map((plan) => {
         const active = subscription?.plan.id === plan.id;
+        const downgradeBlocked = subscription?.plan.id === "pro" && plan.id === "student";
         const price = billingCycle === "annual" ? plan.annual_price : plan.monthly_price;
         return <article key={plan.id} className={`plan-card ${active ? "current" : ""} ${plan.id === "student" ? "recommended" : ""}`}>
           {plan.id === "student" && <em>RECOMMANDÉ</em>}<h3>{plan.name}</h3><p className="plan-tagline">{plan.tagline}</p><p className="plan-price"><strong>{price === 0 ? "Gratuit" : `${price.toFixed(2).replace(".", ",")} $`}</strong><small>{price > 0 ? (billingCycle === "annual" ? "/an" : "/mois") : ""}</small></p>{billingCycle === "annual" && price > 0 && <p className="annual-comparison"><s>{(plan.monthly_price * 12).toFixed(2).replace(".", ",")} $</s><span>2 mois offerts</span></p>}
           <ul><li><Check size={17} />{plan.id === "free" ? `Environ ${plan.daily_credits} crédits/jour` : plan.id === "student" ? "Environ 1 500–2 000 crédits/mois" : "Environ 4 000–6 000 crédits/mois"}</li><li><Check size={17} />{plan.documents} document{plan.documents > 1 ? "s" : ""}</li>{plan.features.map((feature) => <li key={feature}><Check size={17} />{feature}</li>)}</ul>
-          <button type="button" disabled={plansLoading || !!subscriptionError || !subscription || active || plan.id === "free" || !!paymentLoading} onClick={() => !active && plan.id !== "free" && startCheckout(plan.id as "student" | "pro")}>{active ? "Forfait actuel" : plan.id === "free" ? "Gratuit pour toujours" : paymentLoading === plan.id ? "Ouverture du paiement…" : "Payer maintenant"}</button>
+          {downgradeBlocked && <p role="note">Tu conserves tes avantages Pro{subscription?.subscription.expires_at ? ` jusqu’au ${new Date(subscription.subscription.expires_at).toLocaleDateString("fr-FR")}` : ""}. Tu pourras choisir Étudiant après son expiration.</p>}
+          <button type="button" disabled={plansLoading || !!subscriptionError || !subscription || active || downgradeBlocked || plan.id === "free" || !!paymentLoading} onClick={() => !active && !downgradeBlocked && plan.id !== "free" && startCheckout(plan.id as "student" | "pro")}>{active ? "Forfait actuel" : downgradeBlocked ? "Disponible après Pro" : plan.id === "free" ? "Gratuit pour toujours" : paymentLoading === plan.id ? "Ouverture du paiement…" : "Payer maintenant"}</button>
         </article>;
       })}</div>
     </section>}

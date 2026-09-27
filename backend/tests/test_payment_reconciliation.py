@@ -1,10 +1,27 @@
 import unittest
+from types import SimpleNamespace
+from fastapi import HTTPException
 from unittest.mock import patch, AsyncMock
 
 from app import payments
 
 
 class PaymentReconciliationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_pro_cannot_create_student_checkout(self):
+        current = {"plan": {"id": "pro"}, "subscription": {"expires_at": "2099-10-27T00:00:00+00:00"}}
+        with patch.object(payments, "subscription_status", return_value=current), patch.object(payments, "_write_payments") as write, patch.object(payments.httpx, "AsyncClient") as client:
+            with self.assertRaises(HTTPException) as error:
+                await payments.create_checkout(SimpleNamespace(id="user-1"), "student", "annual", "test@example.com")
+            self.assertEqual(error.exception.status_code, 409)
+            self.assertIn("27/10/2099", error.exception.detail)
+            write.assert_not_called()
+            client.assert_not_called()
+
+    def test_other_plan_choices_remain_allowed(self):
+        for current, target in (("free", "student"), ("student", "pro"), ("pro", "pro")):
+            with self.subTest(current=current, target=target), patch.object(payments, "subscription_status", return_value={"plan": {"id": current}}):
+                payments.ensure_checkout_allowed("user-1", target)
+
     def setUp(self):
         self.record = {
             "transaction_id": "ORVIX-test",

@@ -11,7 +11,7 @@ from fastapi import HTTPException
 
 from .config import get_settings
 from .json_store import atomic_write_json
-from .subscriptions import activate_subscription, plans_config
+from .subscriptions import activate_subscription, plans_config, subscription_status
 from .email_service import send_payment_email
 
 logger = logging.getLogger(__name__)
@@ -84,7 +84,16 @@ def valid_geniuspay_signature(raw_body: bytes, signature: str | None, timestamp:
     return hmac.compare_digest(signature, expected)
 
 
+def ensure_checkout_allowed(user_id: str, plan_id: str) -> None:
+    current = subscription_status(user_id)
+    if plan_id == "student" and current["plan"]["id"] == "pro":
+        expiry = current["subscription"].get("expires_at")
+        until = f" jusqu’au {datetime.fromisoformat(expiry).strftime('%d/%m/%Y')}" if expiry else ""
+        raise HTTPException(409, f"Ton forfait Pro est encore actif{until}. Tu pourras choisir le forfait Étudiant après son expiration. Aucun paiement n’a été lancé.")
+
+
 async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email: str) -> dict:
+    ensure_checkout_allowed(user.id, plan_id)
     customer_email = customer_email.strip().lower()
     if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", customer_email):
         raise HTTPException(422, "Indiquez une adresse e-mail valide pour recevoir votre confirmation de paiement.")
