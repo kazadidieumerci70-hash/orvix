@@ -54,6 +54,7 @@ class Settings:
     payment_simulation = os.getenv("PAYMENT_SIMULATION", "true").strip().lower() == "true"
     public_api_url = os.getenv("PUBLIC_API_URL", "http://127.0.0.1:8010").rstrip("/")
     public_frontend_url = os.getenv("PUBLIC_FRONTEND_URL", "http://127.0.0.1:5173").rstrip("/")
+    public_app_url = os.getenv("PUBLIC_APP_URL", "https://app.orvix.work").rstrip("/")
     superadmin_phone = os.getenv("SUPERADMIN_PHONE", "").strip()
     superadmin_password = os.getenv("SUPERADMIN_PASSWORD", "")
     max_upload_bytes = int(os.getenv("MAX_UPLOAD_MB", "10")) * 1024 * 1024

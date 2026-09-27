@@ -192,7 +192,7 @@ async def login(payload: AuthRequest):
 async def request_password_reset(payload: PasswordResetRequest):
     token = create_password_reset_token(payload.email)
     if token:
-        reset_url = f"{settings.public_frontend_url}/?reset_token={token}"
+        reset_url = f"{settings.public_app_url}/?reset_token={token}"
         await send_password_reset_email(email=payload.email.strip().lower(), reset_url=reset_url)
     return {"message": "Si cette adresse correspond à un compte, un lien de réinitialisation vient d’être envoyé."}
 
