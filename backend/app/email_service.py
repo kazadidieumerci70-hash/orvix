@@ -60,6 +60,22 @@ async def send_welcome_email(*, email: str, name: str) -> bool:
     )
 
 
+async def send_password_reset_email(*, email: str, reset_url: str) -> bool:
+    return await send_email(
+        to=email,
+        subject="Réinitialise ton mot de passe Orvix",
+        text=f"Utilise ce lien pour choisir un nouveau mot de passe : {reset_url}\nCe lien expire dans 60 minutes. Si tu n'as rien demandé, ignore cet e-mail.",
+        html=(
+            "<div style='font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#17202a'>"
+            "<h1>Réinitialisation du mot de passe</h1>"
+            "<p>Tu as demandé à modifier ton mot de passe Orvix.</p>"
+            f"<p><a href='{reset_url}' style='display:inline-block;padding:14px 22px;background:#078d84;color:#fff;text-decoration:none;border-radius:10px'>Choisir un nouveau mot de passe</a></p>"
+            "<p>Ce lien expire dans 60 minutes et ne fonctionnera plus après son utilisation.</p>"
+            "<p>Si tu n’as rien demandé, ignore simplement cet e-mail.</p></div>"
+        ),
+    )
+
+
 async def send_payment_email(*, email: str, name: str, plan_name: str, amount: float, currency: str, transaction_id: str, paid: bool) -> bool:
     status = "confirmé" if paid else "créé"
     subject = f"Orvix — paiement {status} ({transaction_id})"

@@ -121,7 +121,7 @@ class DocumentsResponse(BaseModel):
 
 
 class AuthRequest(BaseModel):
-    phone: str = Field(min_length=6, max_length=30)
+    phone: str = Field(min_length=6, max_length=160)
     password: str = Field(min_length=6, max_length=120)
 
 class AdminLoginRequest(BaseModel):
@@ -130,6 +130,15 @@ class AdminLoginRequest(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     credential: str = Field(min_length=20, max_length=5000)
+
+
+class PasswordResetRequest(BaseModel):
+    email: str = Field(min_length=6, max_length=160)
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=5000)
+    password: str = Field(min_length=8, max_length=120)
 
 
 class UserProfile(BaseModel):

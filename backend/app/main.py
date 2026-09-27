@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 
-from .auth import complete_onboarding, current_user, google_login_user, init_auth_database, login_user, mark_welcome_seen, register_user, revoke_token
+from .auth import complete_onboarding, create_password_reset_token, current_user, google_login_user, init_auth_database, login_user, mark_welcome_seen, register_user, reset_password, revoke_token
 from .ai import OrvixAI
 from .config import get_settings
 from .conversations import append_exchange, get_conversation, list_conversations
@@ -18,6 +18,8 @@ from .schemas import (
     AdminLoginRequest,
     AuthRequest,
     GoogleAuthRequest,
+    PasswordResetConfirmRequest,
+    PasswordResetRequest,
     AuthResponse,
     CheckoutRequest,
     CheckoutResponse,
@@ -47,7 +49,7 @@ from .core_engine import OrvixCoreEngine
 from .model_gateway import ModelGateway, create_model_provider
 from .memory import remember, relevant
 from .admin import admin_login, dashboard, require_superadmin
-from .email_service import send_welcome_email
+from .email_service import send_password_reset_email, send_welcome_email
 
 settings = get_settings()
 logger = logging.getLogger("orvix.http")
@@ -172,6 +174,21 @@ async def register(payload: AuthRequest):
 async def login(payload: AuthRequest):
     token, user = login_user(payload.phone, payload.password)
     return AuthResponse(token=token, user=user)
+
+
+@app.post(f"{settings.api_prefix}/auth/password-reset/request")
+async def request_password_reset(payload: PasswordResetRequest):
+    token = create_password_reset_token(payload.email)
+    if token:
+        reset_url = f"{settings.public_frontend_url}/?reset_token={token}"
+        await send_password_reset_email(email=payload.email.strip().lower(), reset_url=reset_url)
+    return {"message": "Si cette adresse correspond à un compte, un lien de réinitialisation vient d’être envoyé."}
+
+
+@app.post(f"{settings.api_prefix}/auth/password-reset/confirm")
+async def confirm_password_reset(payload: PasswordResetConfirmRequest):
+    reset_password(payload.token, payload.password)
+    return {"message": "Ton mot de passe a été modifié. Tu peux maintenant te connecter."}
 
 @app.post(f"{settings.api_prefix}/auth/google", response_model=AuthResponse)
 async def google_auth(payload: GoogleAuthRequest):

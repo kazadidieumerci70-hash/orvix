@@ -15,6 +15,7 @@ from .json_store import atomic_write_json
 from .schemas import OnboardingRequest, UserProfile
 
 TOKEN_TTL_HOURS = 24 * 14
+PASSWORD_RESET_TTL_MINUTES = 60
 _revoked_tokens: set[str] = set()
 
 def _database_url() -> str:
@@ -33,6 +34,7 @@ def init_auth_database() -> None:
     migration = Path(__file__).resolve().parents[1] / "migrations" / "001_initial.sql"
     with _db_connect() as connection:
         connection.execute(migration.read_text(encoding="utf-8"))
+        connection.execute("ALTER TABLE users ALTER COLUMN phone TYPE VARCHAR(160)")
         connection.commit()
 
 def revoke_token(token: str) -> None:
@@ -204,6 +206,60 @@ def login_user(phone: str, password: str) -> tuple[str, UserProfile]:
         if user["phone"] == normalized and _verify_password(password, user["password_hash"]):
             return _make_token(user["id"], normalized), _profile(user)
     raise HTTPException(401, "Numero ou mot de passe incorrect.")
+
+
+def create_password_reset_token(email: str) -> str | None:
+    try:
+        normalized = _normalize_phone(email)
+    except HTTPException:
+        return None
+    if "@" not in normalized:
+        return None
+    user = None
+    if _db_ready():
+        with _db_connect() as connection:
+            row = _user_select(connection, normalized)
+        if row:
+            user = _db_user(row)
+    else:
+        user = next((item for item in _read_users()["users"] if item.get("phone") == normalized), None)
+    if not user:
+        return None
+    expires_at = int((datetime.now(timezone.utc) + timedelta(minutes=PASSWORD_RESET_TTL_MINUTES)).timestamp())
+    fingerprint = sha256(user["password_hash"].encode("utf-8")).hexdigest()[:24]
+    payload = f"{_identity_segment(normalized)}.{expires_at}.{fingerprint}"
+    signature = hmac.new(_token_secret(), f"password-reset.{payload}".encode("utf-8"), sha256).hexdigest()
+    return base64.urlsafe_b64encode(f"{payload}.{signature}".encode("utf-8")).decode("ascii")
+
+
+def reset_password(token: str, password: str) -> None:
+    try:
+        raw = base64.urlsafe_b64decode(token.encode("ascii")).decode("utf-8")
+        email_segment, expires_at, fingerprint, signature = raw.rsplit(".", 3)
+        payload = f"{email_segment}.{expires_at}.{fingerprint}"
+        expected = hmac.new(_token_secret(), f"password-reset.{payload}".encode("utf-8"), sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            raise ValueError("signature")
+        if int(expires_at) < int(datetime.now(timezone.utc).timestamp()):
+            raise ValueError("expired")
+        email = _identity_from_segment(email_segment)
+    except Exception as exc:
+        raise HTTPException(400, "Ce lien de réinitialisation est invalide ou a expiré.") from exc
+    if _db_ready():
+        with _db_connect() as connection:
+            row = _user_select(connection, email)
+            if not row or sha256(row[3].encode("utf-8")).hexdigest()[:24] != fingerprint:
+                raise HTTPException(400, "Ce lien de réinitialisation est invalide ou a déjà été utilisé.")
+            connection.execute("UPDATE users SET password_hash=%s, updated_at=now() WHERE phone=%s", (_hash_password(password), email))
+            connection.commit()
+        return
+    data = _read_users()
+    user = next((item for item in data["users"] if item.get("phone") == email), None)
+    if not user or sha256(user["password_hash"].encode("utf-8")).hexdigest()[:24] != fingerprint:
+        raise HTTPException(400, "Ce lien de réinitialisation est invalide ou a déjà été utilisé.")
+    user["password_hash"] = _hash_password(password)
+    user["updated_at"] = datetime.now(timezone.utc).isoformat()
+    _write_users(data)
 
 def google_login_user(credential: str) -> tuple[str, UserProfile, bool]:
     from google.oauth2 import id_token

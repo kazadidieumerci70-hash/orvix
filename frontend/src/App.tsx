@@ -54,6 +54,7 @@ import {
   SubscriptionStatus,
   UserProfile,
   clearToken,
+  confirmPasswordReset,
   completeOnboarding,
   createQuiz,
   createExamPlan,
@@ -72,6 +73,7 @@ import {
   listDocuments,
   me,
   register,
+  requestPasswordReset,
   saveToken,
   sendChat,
   uploadDocuments,
@@ -639,6 +641,8 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [resetToken, setResetToken] = useState(() => new URLSearchParams(window.location.search).get("reset_token") || "");
   const [googleAccountUsed, setGoogleAccountUsed] = useState(() => localStorage.getItem("orvix_google_account_used") === "true");
   function completeAuthentication(profile: UserProfile) {
     localStorage.setItem("orvix_user", JSON.stringify(profile));
@@ -670,7 +674,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
     else {
       const script = document.createElement("script"); script.src = "https://accounts.google.com/gsi/client"; script.async = true; script.onload = render; script.onerror = () => setError("Google est momentanément indisponible."); document.head.appendChild(script);
     }
-  }, [mode, onAuthenticated]);
+  }, [mode, onAuthenticated, resetToken]);
 
   async function continueWithGoogle() {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim();
@@ -695,6 +699,20 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (resetToken) {
+      if (loading || password.length < 8 || password !== passwordConfirmation) {
+        if (password !== passwordConfirmation) setError("Les mots de passe ne correspondent pas.");
+        return;
+      }
+      setLoading(true); setError(""); setNotice("");
+      try {
+        const result = await confirmPasswordReset(resetToken, password);
+        window.history.replaceState({}, "", window.location.pathname);
+        setResetToken(""); setPassword(""); setPasswordConfirmation(""); setMode("login"); setNotice(result.message);
+      } catch (e) { setError(e instanceof Error ? e.message : "Réinitialisation impossible."); }
+      finally { setLoading(false); }
+      return;
+    }
     if (!phone.trim() || loading) return;
     if (mode === "register" && registerStep === "email") {
       setRegisterStep("password");
@@ -719,29 +737,44 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
     }
   }
 
+  async function forgotPassword() {
+    const email = phone.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Saisis d’abord l’adresse e-mail de ton compte.");
+      return;
+    }
+    setLoading(true); setError(""); setNotice("");
+    try {
+      const result = await requestPasswordReset(email);
+      setNotice(result.message);
+    } catch (e) { setError(e instanceof Error ? e.message : "Envoi du lien impossible."); }
+    finally { setLoading(false); }
+  }
+
   return (
     <main className="auth-page">
       <section className={`auth-panel auth-reference ${mode}`}>
-        {mode === "register" && <div className="auth-topline"><button type="button" aria-label="Retour à la connexion" onClick={() => { setMode("login"); setRegisterStep("email"); setError(""); }}><ArrowLeft /></button><strong>Créer un compte</strong><span /></div>}
+        {(mode === "register" || resetToken) && <div className="auth-topline"><button type="button" aria-label="Retour à la connexion" onClick={() => { window.history.replaceState({}, "", window.location.pathname); setResetToken(""); setMode("login"); setRegisterStep("email"); setError(""); }}><ArrowLeft /></button><strong>{resetToken ? "Nouveau mot de passe" : "Créer un compte"}</strong><span /></div>}
         <div className="auth-logo"><img className="auth-logo-image" src="/orvix-logo-transparent.png" alt="Logo Orvix" /><strong>ORVIX</strong><small>{mode === "login" ? "Votre IA. Vos documents. Nos réponses." : <>Commencez votre expérience avec <b>Orvix.</b></>}</small></div>
-        {mode === "login" && <header className="auth-welcome"><h1>Bienvenue !</h1><p>Connectez-vous pour continuer<br />avec <b>Orvix.</b></p></header>}
-        <>
+        {mode === "login" && !resetToken && <header className="auth-welcome"><h1>Bienvenue !</h1><p>Connectez-vous pour continuer<br />avec <b>Orvix.</b></p></header>}
+        {!resetToken && <>
           <div className="google-account-block">
             {googleAccountUsed && <p className="google-account-label">Compte récemment utilisé</p>}
             <div ref={googleButtonRef} className="google-primary" aria-label="Continuer avec Google" />
           </div>
           <div className="auth-divider auth-divider-compact"><span />ou avec ton e-mail<span /></div>
-        </>
+        </>}
         <form onSubmit={submit} className="auth-form auth-reference-form">
-          <div className="auth-input"><Mail size={20} /><input id="phone" aria-label="Adresse e-mail ou numéro de téléphone" type="text" inputMode="email" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Adresse e-mail ou numéro de téléphone" autoComplete="username" /></div>
-          {(mode === "login" || registerStep === "password") && <div className="auth-input"><LockKeyhole size={20} /><input id="password" aria-label="Mot de passe" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mot de passe" type={showPassword ? "text" : "password"} autoComplete={mode === "register" ? "new-password" : "current-password"} /><button type="button" className="password-visibility" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div>}
-          {mode === "register" && registerStep === "password" && <div className="auth-input"><LockKeyhole size={20} /><input aria-label="Confirmer le mot de passe" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} placeholder="Confirmer le mot de passe" type={showPassword ? "text" : "password"} autoComplete="new-password" /></div>}
-          {mode === "login" && <button type="button" className="forgot-password">Mot de passe oublié ?</button>}
+          {!resetToken && <div className="auth-input"><Mail size={20} /><input id="phone" aria-label="Adresse e-mail ou numéro de téléphone" type="text" inputMode="email" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Adresse e-mail ou numéro de téléphone" autoComplete="username" /></div>}
+          {(resetToken || mode === "login" || registerStep === "password") && <div className="auth-input"><LockKeyhole size={20} /><input id="password" aria-label={resetToken ? "Nouveau mot de passe" : "Mot de passe"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={resetToken ? "Nouveau mot de passe" : "Mot de passe"} type={showPassword ? "text" : "password"} autoComplete={mode === "register" || resetToken ? "new-password" : "current-password"} /><button type="button" className="password-visibility" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div>}
+          {(resetToken || (mode === "register" && registerStep === "password")) && <div className="auth-input"><LockKeyhole size={20} /><input aria-label="Confirmer le mot de passe" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} placeholder="Confirmer le mot de passe" type={showPassword ? "text" : "password"} autoComplete="new-password" /></div>}
+          {mode === "login" && !resetToken && <button type="button" className="forgot-password" onClick={forgotPassword}>Mot de passe oublié ?</button>}
           {mode === "register" && registerStep === "password" && <label className="terms-check"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} /><span>J’accepte les <b>Conditions d’utilisation</b><br />et la <b>Politique de confidentialité.</b></span></label>}
           {error && <p className="error-banner">{error}</p>}
-          <button className="auth-submit" disabled={!phone.trim() || loading || (mode === "login" && password.length < 6) || (mode === "register" && registerStep === "password" && (password.length < 6 || !acceptedTerms || password !== passwordConfirmation))}>{loading ? "Patientez…" : mode === "register" ? registerStep === "email" ? "Suivant" : "Créer le compte" : "Se connecter"}<span>→</span></button>
+          {notice && <p className="auth-notice">{notice}</p>}
+          <button className="auth-submit" disabled={loading || (resetToken ? password.length < 8 || password !== passwordConfirmation : !phone.trim() || (mode === "login" && password.length < 6) || (mode === "register" && registerStep === "password" && (password.length < 6 || !acceptedTerms || password !== passwordConfirmation)))}>{loading ? "Patientez…" : resetToken ? "Modifier le mot de passe" : mode === "register" ? registerStep === "email" ? "Suivant" : "Créer le compte" : "Se connecter"}<span>→</span></button>
         </form>
-        <p className="auth-switch">{mode === "register" ? "Déjà un compte ?" : "Pas encore de compte ?"}<button type="button" onClick={() => { setMode(mode === "register" ? "login" : "register"); setRegisterStep("email"); setError(""); }}>{mode === "register" ? "Se connecter" : "S’inscrire"}</button></p>
+        {!resetToken && <p className="auth-switch">{mode === "register" ? "Déjà un compte ?" : "Pas encore de compte ?"}<button type="button" onClick={() => { setMode(mode === "register" ? "login" : "register"); setRegisterStep("email"); setError(""); setNotice(""); }}>{mode === "register" ? "Se connecter" : "S’inscrire"}</button></p>}
       </section>
     </main>
   );

@@ -100,6 +100,22 @@ export function login(phone: string, password: string) {
   });
 }
 
+export function requestPasswordReset(email: string) {
+  return request<{ message: string }>("/api/v1/auth/password-reset/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function confirmPasswordReset(token: string, password: string) {
+  return request<{ message: string }>("/api/v1/auth/password-reset/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password }),
+  });
+}
+
 export function loginWithGoogle(credential: string) {
   return request<AuthResponse>("/api/v1/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ credential }) });
 }
