@@ -1,0 +1,3 @@
+# Allow crawlers to read the noindex directive; account data requires authentication.
+User-agent: *
+Allow: /

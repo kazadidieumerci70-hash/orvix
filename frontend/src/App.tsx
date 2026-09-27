@@ -12,12 +12,14 @@ import {
   EyeOff,
   LockKeyhole,
   Mail,
+  Mic,
   Menu,
   MessageCircle,
   MessageCirclePlus,
   Moon,
   Plus,
   Send,
+  Square,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -55,13 +57,14 @@ import {
   completeOnboarding,
   createQuiz,
   createExamPlan,
-  createRevision,
   createSubscriptionCheckout,
+  createRevision,
   deleteDocument,
   exportQuizWord,
   getConversation,
   getSubscription,
   getSubscriptionPlans,
+  joinSubscriptionWaitlist,
   login,
   loginWithGoogle,
   markWelcomeSeen,
@@ -107,10 +110,12 @@ function App() {
   const openedFreshChat = useRef(false);
 
   useEffect(() => {
+    const authTimeout = window.setTimeout(() => setAuthChecked(true), 8000);
     me().then((profile) => { localStorage.setItem("orvix_user", JSON.stringify(profile)); setUser(profile); }).catch(() => undefined).finally(() => setAuthChecked(true));
     document.documentElement.dataset.textSize = localStorage.getItem("orvix_text_size") || "normal";
     document.documentElement.dataset.density = localStorage.getItem("orvix_density") || "comfortable";
     document.documentElement.dataset.animations = localStorage.getItem("orvix_animations") === "off" ? "off" : "on";
+    return () => window.clearTimeout(authTimeout);
   }, []);
 
   useEffect(() => {
@@ -123,6 +128,32 @@ function App() {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("orvix_theme", theme);
   }, [theme]);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const root = document.documentElement;
+    const syncMobileViewport = () => {
+      if (!window.matchMedia("(max-width: 900px)").matches) {
+        root.removeAttribute("data-mobile-keyboard");
+        return;
+      }
+      const top = viewport?.offsetTop || 0;
+      const height = viewport?.height || window.innerHeight;
+      const keyboardOpen = window.innerHeight - height > 120;
+      root.style.setProperty("--orvix-visual-top", `${top}px`);
+      root.style.setProperty("--orvix-visual-height", `${height}px`);
+      root.style.setProperty("--orvix-welcome-top", `${top + Math.max(118, height * 0.34)}px`);
+      root.dataset.mobileKeyboard = keyboardOpen ? "open" : "closed";
+    };
+    syncMobileViewport();
+    viewport?.addEventListener("resize", syncMobileViewport);
+    viewport?.addEventListener("scroll", syncMobileViewport);
+    window.addEventListener("resize", syncMobileViewport);
+    return () => {
+      viewport?.removeEventListener("resize", syncMobileViewport);
+      viewport?.removeEventListener("scroll", syncMobileViewport);
+      window.removeEventListener("resize", syncMobileViewport);
+    };
+  }, []);
   useEffect(() => {
     localStorage.setItem("orvix_language", language);
     document.documentElement.lang = language === "English" ? "en" : language === "Italiano" ? "it" : language === "Español" ? "es" : "fr";
@@ -248,33 +279,43 @@ function App() {
     if (user) localStorage.setItem(`orvix_conversations_${encodeURIComponent(user.phone || user.name)}`, JSON.stringify(result.conversations));
   }
 
+  function selectView(nextView: View) {
+    setView(nextView);
+    setMobileNav(false);
+  }
+
   return (
-    <div className="app-shell">
-      <aside className={`sidebar ${mobileNav ? "open" : ""}`}>
+    <div className={`app-shell theme-${theme}`}>
+      <aside className={`sidebar menu-v2 ${mobileNav ? "open" : ""}`}>
         <div className="brand sidebar-brand"><img className="brand-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /><span>ORVIX</span><button className="sidebar-menu-button" onClick={() => setMobileNav((open) => !open)} aria-label="Ouvrir le menu"><Menu size={17} /></button></div>
         <button className="close-nav" onClick={() => setMobileNav(false)} aria-label="Fermer le menu"><X /></button>
         <nav>
           {nav.map(({ id, label, icon: Icon }) => (
-            <button key={id} className={view === id ? "nav-item active" : "nav-item"} onClick={() => { setView(id); setMobileNav(false); }}>
+            <button key={id} className={view === id ? "nav-item active" : "nav-item"} onClick={() => selectView(id)}>
               <Icon size={21} /><span>{navLabels[language]?.[id] || label}</span>
             </button>
           ))}
         </nav>
         <section className="recents">
           <div className="recents-head"><h3>DISCUSSIONS</h3><button onClick={newChat}>+</button></div>
-          <button className={!activeConversationId ? "conversation-link active" : "conversation-link"} onClick={newChat}>Nouvelle discussion</button>
-          {conversations.map((item) => <button key={item.id} className={activeConversationId === item.id ? "conversation-link active" : "conversation-link"} onClick={() => openConversation(item.id)}>{item.title}</button>)}
+          <div className="recents-list">
+            <button className={!activeConversationId ? "conversation-link active" : "conversation-link"} onClick={newChat}>Nouvelle discussion</button>
+            {conversations.map((item) => <button key={item.id} className={activeConversationId === item.id ? "conversation-link active" : "conversation-link"} onClick={() => openConversation(item.id)}>{item.title}</button>)}
+          </div>
         </section>
         <div className="sidebar-bottom">
-          <button className={`profile-card account-button ${view === "account" ? "active" : ""}`} onClick={() => { setView("account"); setMobileNav(false); }} aria-label="Ouvrir mon compte"><span className="avatar">{user.name.slice(0, 1).toUpperCase()}</span><span><strong>{user.name}</strong><small>Forfait {accountPlanName}</small></span><span className="profile-caret">⌃</span></button>
+          <button className={`profile-card account-button ${view === "account" ? "active" : ""}`} onClick={() => selectView("account")} aria-label="Ouvrir mon compte"><span className="avatar">{user.name.slice(0, 1).toUpperCase()}</span><span><strong>{user.name}</strong><small>Forfait {accountPlanName}</small></span><span className="profile-caret">⌃</span></button>
         </div>
       </aside>
 
       {mobileNav && <button className="backdrop" onClick={() => setMobileNav(false)} aria-label="Fermer le menu" />}
-      <main className={`main-content ${view === "account" ? "account-scroll" : ""} ${view === "chat" ? "chat-main" : ""}`}>
+      <main className={`main-content ${view === "account" ? "account-scroll" : ""} ${view === "chat" ? "chat-main" : ""} ${view === "revision" ? "revision-main" : ""} ${view === "quiz" ? "quiz-main" : ""} ${view === "support" ? "support-main" : ""}`}>
         <div className="page-actions">
           <button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Ouvrir le menu"><Menu /></button>
           {view === "chat" && <label className="top-document-selector"><select aria-label="Mode de réponse et support utilisé" value={activeDocumentId} onChange={(event) => setActiveDocumentId(event.target.value)}><option value="">Question libre</option><option value="__all__">Tous les documents</option>{documents.map((doc) => <option key={doc.id} value={doc.id}>Document {doc.number} · {doc.name}</option>)}</select></label>}
+          {view === "revision" && <div className="top-view-label" aria-label="Page Révision de cours">Révision de cours</div>}
+          {view === "quiz" && <div className="top-view-label" aria-label="Page Quiz de cours">Quiz de cours</div>}
+          {view === "support" && <div className="top-view-label" aria-label="Page Supports de cours">Supports de cours</div>}
           <div className="top-actions-right"><button className="top-new-conversation-button" aria-label="Nouvelle discussion" onClick={newChat}><MessageCirclePlus size={22} /></button></div>
         </div>
         {view === "chat" && <ChatView language={language} documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} conversationId={activeConversationId} onConversationChange={setActiveConversationId} messages={activeMessages} onMessagesChange={setActiveMessages} onSaved={refreshConversations} />}
@@ -346,19 +387,34 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [plansError, setPlansError] = useState("");
+  const [subscriptionError, setSubscriptionError] = useState("");
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
-  const [paymentLoading, setPaymentLoading] = useState("");
   const [settingsSection, setSettingsSection] = useState<"overview" | "profile" | "subscription" | "appearance" | "security" | "notifications" | "language" | "help" | "about">("overview");
-  const [paymentError, setPaymentError] = useState("");
-  const [paymentMessage, setPaymentMessage] = useState("");
   const [securityAlerts, setSecurityAlerts] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [waitlistedPlans, setWaitlistedPlans] = useState<Set<string>>(new Set());
+  const [paymentLoading, setPaymentLoading] = useState("");
 
   useEffect(() => {
-    getSubscriptionPlans().then((result) => setPlans(result.plans)).catch(() => undefined);
-    getSubscription().then(setSubscription).catch(() => undefined);
+    void loadSubscriptionData();
   }, []);
+
+  async function loadSubscriptionData() {
+    setPlansLoading(true);
+    setPlansError("");
+    setSubscriptionError("");
+    await Promise.all([
+      getSubscriptionPlans().then((result) => {
+        setPlans(result.plans);
+        if (!result.plans.length) setPlansError("Aucun forfait n’est disponible pour le moment. Réessaie dans quelques instants.");
+      }).catch(() => setPlansError("Impossible de charger les forfaits pour le moment. Réessaie dans quelques instants.")),
+      getSubscription().then(setSubscription).catch(() => setSubscriptionError("Impossible de vérifier ton abonnement actuel. Réessaie avant de choisir un forfait.")),
+    ]);
+    setPlansLoading(false);
+  }
 
   function update<K extends keyof OnboardingPayload>(key: K, value: OnboardingPayload[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -389,20 +445,43 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     }
   }
 
-  async function startPayment(planId: "student") {
-    setPaymentLoading(planId); setPaymentError(""); setPaymentMessage("");
+  async function joinWaitlist(planId: "student" | "pro") {
+    setError("");
     try {
-      const checkout = await createSubscriptionCheckout(planId, billingCycle);
-      if (checkout.simulation) {
-        const updated = await getSubscription();
-        setSubscription(updated);
-        setPaymentMessage(`Simulation réussie : le forfait ${updated.plan.name} est activé pour les tests. Aucun paiement réel n’a été effectué.`);
-        setPaymentLoading("");
-        return;
-      }
-      window.location.assign(checkout.payment_url);
+      await joinSubscriptionWaitlist(planId);
+      setWaitlistedPlans((current) => new Set(current).add(planId));
+      setMessage(`Vous serez prévenu dès que le forfait ${planId === "student" ? "Étudiant" : "Pro"} sera disponible.`);
     } catch (e) {
-      setPaymentError(e instanceof Error ? e.message : "Impossible de démarrer le paiement.");
+      setError(e instanceof Error ? e.message : "Impossible de rejoindre la liste d’attente.");
+    }
+  }
+
+  async function startCheckout(planId: "student" | "pro") {
+    if (paymentLoading) return;
+    const accountEmail = user.phone.includes("@") ? user.phone : "";
+    const customerEmail = accountEmail || window.prompt("Quelle adresse e-mail utiliser pour le reçu de paiement ?")?.trim() || "";
+    if (!customerEmail && !accountEmail) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+      setError("Indique une adresse e-mail valide pour le paiement.");
+      return;
+    }
+    setPaymentLoading(planId);
+    setError("");
+    setMessage("");
+    try {
+      const result = await createSubscriptionCheckout(planId, billingCycle, customerEmail);
+      if (result.payment_url) {
+        window.location.assign(result.payment_url);
+      } else if (result.simulation) {
+        const refreshed = await getSubscription();
+        setSubscription(refreshed);
+        setMessage("Ton abonnement a été activé.");
+      } else {
+        throw new Error("Le lien de paiement n’a pas été généré.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Impossible de démarrer le paiement.");
+    } finally {
       setPaymentLoading("");
     }
   }
@@ -428,7 +507,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
       <ProfileMenuGroup title={tx("Préférences", "Preferences")}><button type="button" onClick={onThemeChange}><Moon /><span>{tx("Mode sombre", "Dark mode")}</span><i className={`profile-toggle ${theme === "dark" ? "on" : ""}`}><b /></i></button><button type="button" onClick={() => setSettingsSection("language")}><Globe /><span>{tx("Langue", "Language")}</span><small>{language}</small><ChevronRight /></button><button onClick={() => setSettingsSection("appearance")}><Palette /><span>{tx("Apparence", "Appearance")}</span><ChevronRight /></button></ProfileMenuGroup>
       <ProfileMenuGroup title={tx("Autres", "Other")}><button type="button" onClick={() => setSettingsSection("help")}><HelpCircle /><span>{tx("Aide et support", "Help and support")}</span><ChevronRight /></button><button type="button" onClick={() => setSettingsSection("about")}><Info /><span>{tx("À propos d’Orvix", "About Orvix")}</span><ChevronRight /></button><button type="button" className="profile-logout" onClick={confirmLogout}><LogOut /><span>{tx("Se déconnecter", "Log out")}</span><ChevronRight /></button></ProfileMenuGroup>
     </>}
-    {settingsSection !== "overview" && <header className="profile-detail-heading"><button type="button" onClick={() => setSettingsSection("overview")}><ArrowLeft /></button><div><span>PROFIL</span><h1>{settingsSection === "profile" ? "Informations personnelles" : settingsSection === "subscription" ? "Abonnement" : settingsSection === "security" ? "Sécurité" : settingsSection === "notifications" ? "Notifications" : settingsSection === "language" ? "Langue" : settingsSection === "help" ? "Aide et support" : settingsSection === "about" ? "À propos d’Orvix" : "Apparence"}</h1></div></header>}
+    {settingsSection !== "overview" && <header className={`profile-detail-heading ${settingsSection === "profile" ? "personal-details-heading" : ""}`}><button type="button" onClick={() => setSettingsSection("overview")}><ArrowLeft /></button><div><span>PROFIL</span><h1>{settingsSection === "profile" ? "Informations personnelles" : settingsSection === "subscription" ? "Abonnement" : settingsSection === "security" ? "Sécurité" : settingsSection === "notifications" ? "Notifications" : settingsSection === "language" ? "Langue" : settingsSection === "help" ? "Aide et support" : settingsSection === "about" ? "À propos d’Orvix" : "Apparence"}</h1></div></header>}
     {settingsSection === "profile" && <form className="settings-form" onSubmit={submit}>
       <div className="settings-field"><label htmlFor="settings-name">Nom</label><input id="settings-name" value={form.name} onChange={(event) => update("name", event.target.value)} /></div>
       <div className="settings-field"><label htmlFor="settings-level">Niveau ou classe</label><input id="settings-level" value={form.level} onChange={(event) => update("level", event.target.value)} /></div>
@@ -443,21 +522,24 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     {settingsSection === "security" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Protection du compte</h2><p>Gère les alertes importantes liées à la sécurité de ton compte.</p></div><button className={`setting-toggle ${securityAlerts ? "on" : ""}`} onClick={() => setSecurityAlerts((value) => !value)} aria-pressed={securityAlerts}><span />{securityAlerts ? "Activées" : "Désactivées"}</button></section><section className="setting-group full"><div><h2>Mot de passe</h2><p>Pour modifier ton mot de passe, utilise la procédure de récupération depuis l’écran de connexion.</p></div><button type="button" className="setting-action" onClick={() => alert("Un lien de récupération sera bientôt disponible.")}>Gérer</button></section></section>}
     {settingsSection === "notifications" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Notifications par e-mail</h2><p>Reçois les informations importantes concernant ton compte et tes abonnements.</p></div><button className={`setting-toggle ${emailNotifications ? "on" : ""}`} onClick={() => setEmailNotifications((value) => !value)} aria-pressed={emailNotifications}><span />{emailNotifications ? "Activées" : "Désactivées"}</button></section><section className="setting-group full"><div><h2>Réponses et quiz</h2><p>Les notifications liées aux générations terminées seront disponibles prochainement.</p></div><span className="setting-status">Bientôt</span></section></section>}
     {settingsSection === "language" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Langue de l’interface</h2><p>Le français est disponible maintenant. Les autres langues arrivent bientôt.</p></div><div className="setting-options">{["Français", "English", "Italiano", "Español"].map((item) => <button type="button" key={item} className={language === item ? "selected" : ""} disabled={item !== "Français"} onClick={() => item === "Français" && onLanguageChange("Français")}>{item}{item !== "Français" && <small>Bientôt</small>}</button>)}</div></section></section>}
-    {settingsSection === "help" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Besoin d’aide ?</h2><p>Importe un document, sélectionne-le puis pose ta question à ORVIX. Pour un problème technique, redémarre le site et le backend.</p></div></section></section>}
+    {settingsSection === "help" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Besoin d’aide ?</h2><p>Importe un document, sélectionne-le puis pose ta question à ORVIX. Si un problème survient, actualise la page puis réessaie.</p></div></section></section>}
     {settingsSection === "about" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>À propos d’ORVIX</h2><p>ORVIX est une intelligence artificielle créée par DIEU MERCI KAZADI pour aider les étudiants à comprendre leurs documents.</p></div></section></section>}
     {settingsSection === "subscription" && <section className="subscription-panel">
-      <div className="subscription-heading"><div><span>ABONNEMENT · MODE TEST</span><h2>Choisis ton forfait ORVIX</h2><p>Simulation uniquement : aucun Mobile Money ni aucune carte bancaire ne sera débité.</p></div><div className="billing-switch"><button className={billingCycle === "monthly" ? "active" : ""} onClick={() => setBillingCycle("monthly")}>Mensuel</button><button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Annuel <small>2 mois offerts</small></button></div></div>
-      {subscription && <div className="quota-summary"><span>Forfait actuel : <strong>{subscription.plan.name}</strong></span><span>Requêtes aujourd’hui : <strong>{subscription.requests_used_today}/{subscription.plan.daily_requests}</strong></span><span>Documents autorisés : <strong>{subscription.plan.documents}</strong></span></div>}
-      {subscription && <div className="quota-progress"><span style={{ width: `${Math.min(100, (subscription.requests_used_today / subscription.plan.daily_requests) * 100)}%` }} /></div>}
-      {paymentError && <p className="subscription-error">{paymentError}</p>}
-      {paymentMessage && <p className="settings-success"><CheckCircle2 size={19} />{paymentMessage}</p>}
+      <div className="subscription-heading"><div><span>ABONNEMENT · CRÉDITS ORVIX</span><h2>Choisis ton forfait ORVIX</h2><p>Choisis l’offre qui correspond à tes besoins.</p></div><div className="billing-switch"><button className={billingCycle === "monthly" ? "active" : ""} onClick={() => setBillingCycle("monthly")}>Mensuel</button><button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Annuel <small>2 mois offerts</small></button></div></div>
+      {subscription && <div className="quota-summary"><span>Forfait actuel : <strong>{subscription.plan.name}</strong></span><span>Crédits disponibles {subscription.credit_period === "daily" ? "aujourd’hui" : "ce mois"} : <strong>{subscription.credits_remaining}/{subscription.credits_limit}</strong></span><span>{subscription.credit_period === "daily" ? "Renouvelés chaque jour" : "Renouvelés chaque mois"}</span><span>Documents autorisés : <strong>{subscription.plan.documents}</strong></span></div>}
+      {subscription && <div className="quota-progress"><span style={{ width: `${Math.min(100, ((subscription.credits_limit - subscription.credits_remaining) / Math.max(1, subscription.credits_limit)) * 100)}%` }} /></div>}
+      {subscription && <div className="credit-costs"><strong>Coût indicatif des actions</strong><span>Question : {subscription.credit_costs.chat} crédit</span><span>Avec document : à partir de {subscription.credit_costs.chat_with_documents} crédits</span><span>Analyse : selon la longueur</span><span>Révision : {subscription.credit_costs.revision} crédits</span><span>Quiz : {subscription.credit_costs.quiz_short} à {subscription.credit_costs.quiz_long} crédits</span><span>Plan d’examen : {subscription.credit_costs.exam_plan} crédits</span></div>}
+      {message && settingsSection === "subscription" && <p className="settings-success"><CheckCircle2 size={19} />{message}</p>}
+      {error && settingsSection === "subscription" && <p className="subscription-error">{error}</p>}
+      {plansLoading && <p role="status" aria-live="polite">Chargement des forfaits et de ton abonnement…</p>}
+      {!plansLoading && (plansError || subscriptionError) && <div className="subscription-load-error" role="alert"><p>{plansError || subscriptionError}</p><button type="button" onClick={() => void loadSubscriptionData()}>Réessayer</button></div>}
       <div className="plans-grid">{plans.map((plan) => {
         const active = subscription?.plan.id === plan.id;
         const price = billingCycle === "annual" ? plan.annual_price : plan.monthly_price;
         return <article key={plan.id} className={`plan-card ${active ? "current" : ""} ${plan.id === "student" ? "recommended" : ""}`}>
-          {plan.id === "student" && <em>RECOMMANDÉ</em>}<h3>{plan.name}</h3><p className="plan-price"><strong>{price === 0 ? "0 $" : `${price.toFixed(2).replace(".", ",")} $`}</strong><small>{price > 0 ? (billingCycle === "annual" ? "/an" : "/mois") : "pour toujours"}</small></p>
-          <ul><li><Check size={17} />{plan.documents} document{plan.documents > 1 ? "s" : ""}</li><li><Check size={17} />{plan.daily_requests} requêtes par jour</li>{plan.features.map((feature) => <li key={feature}><Check size={17} />{feature}</li>)}</ul>
-          <button type="button" disabled={active || plan.id === "free" || plan.id === "pro" || Boolean(paymentLoading)} onClick={() => plan.id === "student" && startPayment("student")}>{plan.id === "pro" ? "Bientôt" : active ? "Forfait actuel" : plan.id === "free" ? "Gratuit" : paymentLoading === plan.id ? "Simulation en cours…" : "Tester ce forfait"}</button>
+          {plan.id === "student" && <em>RECOMMANDÉ</em>}<h3>{plan.name}</h3><p className="plan-tagline">{plan.tagline}</p><p className="plan-price"><strong>{price === 0 ? "Gratuit" : `${price.toFixed(2).replace(".", ",")} $`}</strong><small>{price > 0 ? (billingCycle === "annual" ? "/an" : "/mois") : ""}</small></p>{billingCycle === "annual" && price > 0 && <p className="annual-comparison"><s>{(plan.monthly_price * 12).toFixed(2).replace(".", ",")} $</s><span>2 mois offerts</span></p>}
+          <ul><li><Check size={17} />{plan.id === "free" ? `Environ ${plan.daily_credits} crédits/jour` : plan.id === "student" ? "Environ 1 500–2 000 crédits/mois" : "Environ 4 000–6 000 crédits/mois"}</li><li><Check size={17} />{plan.documents} document{plan.documents > 1 ? "s" : ""}</li>{plan.features.map((feature) => <li key={feature}><Check size={17} />{feature}</li>)}</ul>
+          <button type="button" disabled={plansLoading || !!subscriptionError || !subscription || active || plan.id === "free" || !!paymentLoading} onClick={() => !active && plan.id !== "free" && startCheckout(plan.id as "student" | "pro")}>{active ? "Forfait actuel" : plan.id === "free" ? "Gratuit pour toujours" : paymentLoading === plan.id ? "Ouverture du paiement…" : "Payer maintenant"}</button>
         </article>;
       })}</div>
     </section>}
@@ -682,168 +764,170 @@ function DocumentPicker({ documents, activeDocumentId, onActiveDocumentChange }:
   );
 }
 
-function ChatView({
-  language,
-  documents,
-  onDocumentsChange,
-  activeDocumentId,
-  onActiveDocumentChange,
-  documentIds,
-  conversationId,
-  onConversationChange,
-  messages,
-  onMessagesChange,
-  onSaved,
-}: {
-  language: string;
-  documents: DocumentInfo[];
-  onDocumentsChange: (documents: DocumentInfo[]) => void;
-  activeDocumentId: string;
-  onActiveDocumentChange: (id: string) => void;
-  documentIds: string[];
-  conversationId: string;
-  onConversationChange: (id: string) => void;
-  messages: ChatMessage[];
-  onMessagesChange: (messages: ChatMessage[]) => void;
-  onSaved: () => Promise<void>;
-}) {
+function ChatView({ language, documents, onDocumentsChange, activeDocumentId, onActiveDocumentChange, documentIds, conversationId, onConversationChange, messages, onMessagesChange, onSaved }: { language: string; documents: DocumentInfo[]; onDocumentsChange: (documents: DocumentInfo[]) => void; activeDocumentId: string; onActiveDocumentChange: (id: string) => void; documentIds: string[]; conversationId: string; onConversationChange: (id: string) => void; messages: ChatMessage[]; onMessagesChange: (messages: ChatMessage[]) => void; onSaved: () => Promise<void> }) {
   const [message, setMessage] = useState("");
-  const [composerExpanded, setComposerExpanded] = useState(false);
-  const [pendingMessage, setPendingMessage] = useState("");
-  const [attachmentMenu, setAttachmentMenu] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mobileComposer, setMobileComposer] = useState(false);
-  const [composerOverflowing, setComposerOverflowing] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const attachmentInputRef = useRef<HTMLInputElement>(null);
-  const composerRef = useRef<HTMLFormElement>(null);
+  const [responding, setResponding] = useState(false);
+  const [attachmentMenu, setAttachmentMenu] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const attachmentButtonRef = useRef<HTMLButtonElement>(null);
+  const attachmentMenuRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const followLatestMessageRef = useRef(true);
+  const responseControllerRef = useRef<AbortController | null>(null);
+  const responseRunRef = useRef(0);
   useEffect(() => {
-    const updateMobileComposer = () => setMobileComposer(window.innerWidth <= 900);
-    updateMobileComposer();
-    window.addEventListener("resize", updateMobileComposer);
-    return () => window.removeEventListener("resize", updateMobileComposer);
-  }, []);
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const maxHeight = 94;
-    textarea.style.setProperty("height", "auto", "important");
-    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 24), maxHeight);
-    setComposerOverflowing(textarea.scrollHeight > maxHeight + 1);
-    textarea.style.setProperty("height", `${nextHeight}px`, "important");
-    textarea.style.setProperty("overflow-y", textarea.scrollHeight > maxHeight ? "auto" : "hidden", "important");
-    const composer = composerRef.current;
-    const downwardOffset = Math.max(0, nextHeight - 24);
-    composer?.style.setProperty("height", `${Math.max(48, nextHeight + 12)}px`, "important");
-    if (!mobileComposer && composer) {
-      if (composer.parentElement?.classList.contains("has-messages")) composer.style.setProperty("transform", `translateY(${downwardOffset}px)`, "important");
-      else composer.style.setProperty("transform", `translate(-50%, ${downwardOffset}px)`, "important");
-    } else composer?.style.removeProperty("transform");
-  }, [message, mobileComposer]);
+    const panel = messagesRef.current;
+    if (!panel || !followLatestMessageRef.current) return;
+    requestAnimationFrame(() => { panel.scrollTo({ top: panel.scrollHeight, behavior: "auto" }); });
+  }, [messages, loading]);
   useEffect(() => {
     if (!attachmentMenu) return;
-    const closeMenu = (event: MouseEvent) => {
-      if (!composerRef.current?.contains(event.target as Node)) setAttachmentMenu(false);
+    const closeOutside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (attachmentButtonRef.current?.contains(target) || attachmentMenuRef.current?.contains(target)) return;
+      setAttachmentMenu(false);
     };
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setAttachmentMenu(false); };
-    document.addEventListener("mousedown", closeMenu);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => { document.removeEventListener("mousedown", closeMenu); document.removeEventListener("keydown", closeOnEscape); };
+    const closeWithEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAttachmentMenu(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeWithEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeWithEscape);
+    };
   }, [attachmentMenu]);
+  useEffect(() => () => responseControllerRef.current?.abort(), []);
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+    if (!window.matchMedia("(max-width: 900px)").matches) return;
+    const focusComposer = () => textareaRef.current?.focus({ preventScroll: true });
+    const frame = requestAnimationFrame(focusComposer);
+    const timer = window.setTimeout(focusComposer, 180);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [conversationId]);
+  useEffect(() => {
+    if (responding || !window.matchMedia("(max-width: 900px)").matches) return;
+    const timer = window.setTimeout(() => textareaRef.current?.focus({ preventScroll: true }), 80);
+    return () => window.clearTimeout(timer);
+  }, [responding]);
+  useEffect(() => {
+    if (!message && textareaRef.current) {
+      textareaRef.current.style.height = "24px";
+      textareaRef.current.style.overflowY = "hidden";
+    }
+  }, [message]);
 
-  async function sendValue(value: string) {
-    if (!value || loading) return;
-    const next = [...messages, { role: "user" as const, content: value }];
-    onMessagesChange(next); setPendingMessage(value); setMessage(""); setComposerExpanded(false); setLoading(true);
-    try {
-      // Garder 30 échanges complets pour que l'IA conserve le fil de la discussion.
-      const result = await sendChat(value, messages.slice(-60), documentIds, conversationId);
-      onConversationChange(result.conversation_id);
-      setLoading(false);
-      setPendingMessage("");
-      let visibleAnswer = "";
-      const answer = result.answer || "";
-      for (let index = 0; index < answer.length; index += 6) {
-        visibleAnswer += answer.slice(index, index + 6);
-        onMessagesChange([...next, { role: "assistant", content: visibleAnswer }]);
-        await new Promise((resolve) => window.setTimeout(resolve, 18));
-      }
-      await onSaved();
-    } catch (error) {
-      onMessagesChange([...next, { role: "assistant", content: error instanceof Error ? error.message : "Une erreur est survenue." }]);
-    } finally { setLoading(false); setPendingMessage(""); }
+  function stopResponse() {
+    responseRunRef.current += 1;
+    responseControllerRef.current?.abort();
+    responseControllerRef.current = null;
+    setLoading(false);
+    setResponding(false);
   }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    await sendValue(message.trim());
+    const value = message.trim();
+    if (!value || responding) return;
+    setAttachmentMenu(false);
+    const next = [...messages, { role: "user" as const, content: value }];
+    const run = responseRunRef.current + 1;
+    responseRunRef.current = run;
+    const controller = new AbortController();
+    responseControllerRef.current = controller;
+    followLatestMessageRef.current = true;
+    onMessagesChange(next); setMessage(""); setLoading(true); setResponding(true);
+    requestAnimationFrame(() => { messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: "auto" }); });
+    try {
+      const result = await sendChat(value, messages.slice(-60), documentIds, conversationId, controller.signal);
+      if (controller.signal.aborted || responseRunRef.current !== run) return;
+      onConversationChange(result.conversation_id);
+      const answer = result.answer || "";
+      setLoading(false);
+      let visible = "";
+      for (let i = 0; i < answer.length; i += 6) {
+        if (controller.signal.aborted || responseRunRef.current !== run) return;
+        visible += answer.slice(i, i + 6);
+        onMessagesChange([...next, { role: "assistant", content: visible }]);
+        await new Promise((resolve) => window.setTimeout(resolve, 18));
+      }
+      if (controller.signal.aborted || responseRunRef.current !== run) return;
+      await onSaved();
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError") && !controller.signal.aborted && responseRunRef.current === run) {
+        onMessagesChange([...next, { role: "assistant", content: error instanceof Error ? error.message : "Une erreur est survenue." }]);
+      }
+    } finally {
+      if (responseRunRef.current === run) {
+        responseControllerRef.current = null;
+        setLoading(false);
+        setResponding(false);
+      }
+    }
   }
 
   async function addSupports(files: FileList | null) {
     if (!files?.length) return;
     const result = await uploadDocuments(Array.from(files));
     onDocumentsChange(result.documents);
-    const uploadedNames = new Set(Array.from(files).map((file) => file.name));
-    const uploaded = [...result.documents].reverse().find((document) => uploadedNames.has(document.name));
+    const names = new Set(Array.from(files).map((file) => file.name));
+    const uploaded = [...result.documents].reverse().find((doc) => names.has(doc.name));
     if (uploaded) onActiveDocumentChange(uploaded.id);
     setAttachmentMenu(false);
   }
+  function resize(event: React.ChangeEvent<HTMLTextAreaElement>) {
+    const el = event.currentTarget;
+    const maxHeight = 88;
+    el.style.height = "24px";
+    el.style.overflowY = "hidden";
+    const nextHeight = Math.min(Math.max(el.scrollHeight, 24), maxHeight);
+    el.style.height = `${nextHeight}px`;
+    if (el.scrollHeight > maxHeight) el.style.overflowY = "auto";
+  }
 
-  const activeDocument = documents.find((doc) => doc.id === activeDocumentId);
-  const readingDocument = Boolean(documentIds.length) && needsDocumentContext(pendingMessage);
-  const chatText = language === "English"
-    ? { title: "What do you want to understand today?", hint: "Ask a question or choose a support from the input area.", placeholder: "Write your message…" }
-    : language === "Italiano"
-      ? { title: "Che cosa vuoi capire oggi?", hint: "Fai una domanda o scegli un documento dall’area di scrittura.", placeholder: "Scrivi il tuo messaggio…" }
-      : language === "Español"
-        ? { title: "¿Qué quieres comprender hoy?", hint: "Haz una pregunta o elige un documento desde la zona de entrada.", placeholder: "Escribe tu mensaje…" }
-        : { title: "Que veux-tu comprendre aujourd’hui ?", hint: "Pose une question, ou choisis un support depuis la zone de saisie.", placeholder: "Écrivez votre message..." };
   return <section className={`orvix-chat-shell chat-view ${messages.length || loading ? "has-messages" : "empty-chat"}`}>
-    <div className="messages orvix-chat-messages" aria-live="polite">
-      {!messages.length && !loading && (
+    <div
+      ref={messagesRef}
+      className="messages orvix-chat-messages"
+      aria-live="polite"
+      onScroll={(event) => {
+        const panel = event.currentTarget;
+        followLatestMessageRef.current = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 72;
+      }}
+    >
+      {!messages.length && (
         <div className="chat-empty orvix-chat-empty">
           <div className="brand chat-empty-brand orvix-chat-empty-brand"><img className="brand-logo chat-empty-logo orvix-chat-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /></div>
           <div className="orvix-introduction regular-welcome orvix-chat-welcome"><h1><span>Que veux-tu comprendre</span><br /><em>aujourd'hui ?</em></h1></div>
         </div>
       )}
       {messages.map((item, index) => <ChatMessageBubble key={index} item={item} />)}
-      {loading && <div className="message-row assistant orvix-chat-loading"><span className="assistant-avatar"><img src="/orvix-logo-transparent.png" alt="Orvix" /></span><div className="message-stack"><div className="message reading-state"><span>{readingDocument ? (activeDocument ? `Lecture du Document ${activeDocument.number}` : "Recherche dans vos supports") : "Orvix vous répond"}</span>{readingDocument && <small>{activeDocument?.name || "Recherche des passages pertinents"}</small>}<div className="typing"><i /><i /><i /></div></div></div></div>}
+      {loading && <div className="message-row assistant orvix-chat-loading"><span className="assistant-avatar"><img src="/orvix-logo-transparent.png" alt="Orvix" /></span><div className="message reading-state">Orvix réfléchit…</div></div>}
       <div ref={bottomRef} />
     </div>
-    <form ref={composerRef} className={`composer orvix-chat-composer ${composerExpanded ? "has-message" : ""} ${message ? "is-typing" : ""} ${mobileComposer ? "mobile-flat-input" : ""}`} onSubmit={submit}>
-      <div className="composer-tools orvix-chat-composer-tools">
-        <button className="composer-support" type="button" onClick={() => setAttachmentMenu((open) => !open)} aria-expanded={attachmentMenu} aria-label="Ajouter une pièce jointe" title="Ajouter une pièce jointe"><Plus size={18} /></button>
-        <input ref={attachmentInputRef} className="composer-file-input" type="file" multiple accept=".pdf,.txt,.md" onChange={(event) => addSupports(event.target.files)} />
-        {attachmentMenu && <div className="attachment-menu orvix-chat-attachment-menu">
-          <button type="button" onClick={() => attachmentInputRef.current?.click()}><FileText size={17} /><span><strong>Ajouter un document</strong><small>PDF, TXT ou Markdown</small></span></button>
-          <div className="attachment-future"><UploadCloud size={17} /><span><strong>Ajouter une image</strong><small>Analyse visuelle dans une prochaine phase</small></span><b>Bientôt</b></div>
-        </div>}
-      </div>
-      <div className="composer-input-stack orvix-chat-input-stack">
-        <textarea className={composerOverflowing ? "is-overflowing" : ""} ref={textareaRef} rows={1} value={message} onChange={(event) => { const value = event.target.value; setMessage(value); const textarea = event.currentTarget; textarea.style.setProperty("height", "auto", "important"); const maxHeight = 94; const nextHeight = Math.min(Math.max(textarea.scrollHeight, 24), maxHeight); setComposerExpanded(nextHeight > 34); textarea.style.setProperty("height", `${nextHeight}px`, "important"); textarea.style.setProperty("overflow-y", textarea.scrollHeight > maxHeight ? "auto" : "hidden", "important"); const composer = composerRef.current; const downwardOffset = Math.max(0, nextHeight - 24); composer?.style.setProperty("height", `${Math.max(48, nextHeight + 12)}px`, "important"); if (composer && !mobileComposer) { if (composer.parentElement?.classList.contains("has-messages")) composer.style.setProperty("transform", `translateY(${downwardOffset}px)`, "important"); else composer.style.setProperty("transform", `translate(-50%, ${downwardOffset}px)`, "important"); } setComposerOverflowing(textarea.scrollHeight > maxHeight + 1); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder={chatText.placeholder} aria-label={chatText.placeholder} />
-      </div>
-      <button className="orvix-chat-send" disabled={!message.trim() || loading} aria-label="Envoyer"><Send size={21} fill="currentColor" strokeWidth={1.5} /></button>
+    <form className="orvix-functional-composer" onSubmit={submit}>
+      <div className="orvix-functional-writing"><textarea ref={textareaRef} autoFocus inputMode="text" enterKeyHint="send" value={message} onFocus={() => setAttachmentMenu(false)} onChange={(event) => { setMessage(event.target.value); resize(event); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Poser une question" aria-label="Poser une question" rows={1} /></div>
+      <div className="orvix-functional-actions"><button ref={attachmentButtonRef} type="button" aria-label="Ajouter un support" aria-expanded={attachmentMenu} onClick={() => setAttachmentMenu((value) => !value)}><Plus size={30} /></button><input ref={fileRef} type="file" hidden multiple accept=".pdf,.txt,.md" onChange={(event) => addSupports(event.target.files)} />{attachmentMenu && <div ref={attachmentMenuRef} className="orvix-functional-menu"><button type="button" onClick={() => { setAttachmentMenu(false); fileRef.current?.click(); }}>Ajouter un document</button></div>}<div><button type="button" aria-label="Microphone"><Mic size={28} /></button><button type={responding ? "button" : "submit"} aria-label={responding ? "Arrêter la réponse" : "Envoyer"} onClick={responding ? stopResponse : undefined} disabled={!responding && !message.trim()}>{responding ? <Square size={13} fill="currentColor" /> : <Send size={22} fill="currentColor" />}</button></div></div>
     </form>
   </section>;
-}
-
-function needsDocumentContext(value: string) {
-  const normalized = value.toLocaleLowerCase("fr").replace(/[^a-zà-ÿ0-9' ]/g, " ").replace(/\s+/g, " ").trim();
-  return !new Set(["bonjour", "bonsoir", "salut", "coucou", "hello", "hey", "merci", "merci beaucoup", "au revoir", "à bientôt", "a bientot", "comment vas tu", "comment allez vous", "ça va", "ca va", "qui es tu", "comment tu t'appelles", "comment tu t appelles"]).has(normalized);
 }
 
 function ChatMessageBubble({ item }: { item: ChatMessage }) {
   const time = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const assistant = item.role === "assistant";
+  const { cleanContent, sources } = parseMessageSources(item.content);
   return <div className={`message-row ${item.role} orvix-chat-message-row`}>
     {assistant && <span className="assistant-avatar orvix-chat-avatar"><img src="/orvix-logo-transparent.png" alt="Orvix" /></span>}
     <div className="message-stack">
       <div className="message orvix-chat-message">
-        <FormattedMessage content={item.content} />
+        <FormattedMessage content={cleanContent} />
+        {assistant && sources.length > 0 && <DocumentSources sources={sources} />}
         <span className="message-time">{time}{!assistant && <Check size={11} />}</span>
       </div>
       {assistant && <div className="message-actions">
@@ -862,7 +946,7 @@ function FormattedMessage({ content }: { content: string }) {
     <div className="formatted-message">
       {lines.map((line, index) => {
         if (/^-{3,}$/.test(line)) return <hr key={index} />;
-        const heading = line.match(/^#{1,3}\s+(.+)/);
+        const heading = line.match(/^#{1,6}\s*(.+)/);
         if (heading) return <h3 key={index}>{renderInline(heading[1])}</h3>;
         if (/^[-*]\s+/.test(line)) return <p className="bullet-line" key={index}>{renderInline(line.replace(/^[-*]\s+/, ""))}</p>;
         if (/^\d+[.)]\s+/.test(line)) return <p className="number-line" key={index}>{renderInline(line)}</p>;
@@ -882,23 +966,125 @@ function renderInline(text: string) {
   });
 }
 
-function RevisionView({ documents, activeDocumentId, onActiveDocumentChange, documentIds }: { documents: DocumentInfo[]; activeDocumentId: string; onActiveDocumentChange: (id: string) => void; documentIds: string[] }) {
-  const [topic, setTopic] = useState(""); const [content, setContent] = useState(""); const [loading, setLoading] = useState(false); const [error, setError] = useState("");
-  async function submit(event: FormEvent) {
-    event.preventDefault(); if (!topic.trim()) return; setLoading(true); setError("");
-    try { setContent((await createRevision(topic, documentIds)).content); } catch (e) { setError(e instanceof Error ? e.message : "Impossible de créer la fiche."); } finally { setLoading(false); }
+function revisionPresentation(content: string, fallbackTitle: string) {
+  const lines = content.split("\n");
+  let title = fallbackTitle;
+  let titleIndex = -1;
+  for (let index = 0; index < lines.length; index += 1) {
+    const clean = lines[index].trim().replace(/^#{1,6}\s*/, "").replace(/\*\*/g, "");
+    const namedTitle = clean.match(/^(?:fiche de révision|révision guidée|révision express)\s*:\s*(.+)$/i);
+    if (namedTitle?.[1]) { title = namedTitle[1].trim(); titleIndex = index; break; }
   }
-  return <section className="workspace-page">
-    <PageIntro eyebrow="DOCUMENTS ET COURS" title="Réviser un support" description="Choisissez un document ou tous vos cours, puis demandez une fiche claire pour réviser." />
+  if (titleIndex < 0) {
+    const headingIndex = lines.findIndex((line) => /^#{1,6}\s*\S/.test(line.trim()));
+    if (headingIndex >= 0) {
+      title = lines[headingIndex].trim().replace(/^#{1,6}\s*/, "").replace(/\*\*/g, "");
+      titleIndex = headingIndex;
+    }
+  }
+  return { title, body: lines.filter((_, index) => index !== titleIndex).join("\n") };
+}
+
+type MessageSource = { id: string; document_name: string; document_number: number; page: number | null; location: string; excerpt: string };
+
+function parseMessageSources(content: string): { cleanContent: string; sources: MessageSource[] } {
+  const sources: MessageSource[] = [];
+  const cleanContent = content.replace(/\[\[ORVIX_SOURCE\]\]([\s\S]*?)\[\[\/ORVIX_SOURCE\]\]/g, (_match, raw: string) => {
+    try { sources.push(JSON.parse(raw) as MessageSource); } catch { /* ignore malformed source metadata */ }
+    return "";
+  }).trim();
+  return { cleanContent, sources };
+}
+
+function DocumentSources({ sources }: { sources: MessageSource[] }) {
+  const [openId, setOpenId] = useState("");
+  return <section className="message-sources" aria-label="Sources dans vos documents">
+    <strong><BookOpenText size={16} />Source dans vos documents</strong>
+    {sources.map((source) => <article key={source.id}>
+      <div><span>{source.document_name}</span><small>{source.page ? `Page ${source.page}` : source.location}</small></div>
+      <button type="button" onClick={() => setOpenId((current) => current === source.id ? "" : source.id)}>{openId === source.id ? "Masquer le passage" : "Voir le passage"}</button>
+      {openId === source.id && <blockquote>{source.excerpt}</blockquote>}
+    </article>)}
+  </section>;
+}
+
+function RevisionView({ documents, activeDocumentId, onActiveDocumentChange, documentIds }: { documents: DocumentInfo[]; activeDocumentId: string; onActiveDocumentChange: (id: string) => void; documentIds: string[] }) {
+  const modes = [
+    { id: "sheet", label: "Fiche essentielle", description: "Les notions, définitions et exemples à retenir.", placeholder: "Ex. Le chapitre 2 sur la photosynthèse…", action: "Créer la fiche", instruction: "Crée une fiche de révision courte et structurée avec les notions essentielles, les définitions, des exemples et les points à retenir." },
+    { id: "guided", label: "Révision guidée", description: "Une explication progressive suivie de questions.", placeholder: "Ex. Aide-moi à comprendre la photosynthèse…", action: "Commencer", instruction: "Prépare une révision guidée : explique progressivement le sujet, puis propose des questions de compréhension avec leurs corrections expliquées." },
+    { id: "quick", label: "Révision express", description: "L’essentiel du cours en quelques minutes.", placeholder: "Ex. Les points clés à connaître avant mon contrôle…", action: "Réviser vite", instruction: "Prépare une révision express très concise : résumé, cinq points clés et trois questions flash avec réponses." },
+  ] as const;
+  const objectives = ["Comprendre", "Mémoriser", "Résumer", "Préparer un examen"] as const;
+  const [mode, setMode] = useState<(typeof modes)[number]["id"]>("guided");
+  const [objective, setObjective] = useState<(typeof objectives)[number]>("Comprendre");
+  const [topic, setTopic] = useState(""); const [content, setContent] = useState(""); const [loading, setLoading] = useState(false); const [error, setError] = useState("");
+  const [guidedQuestions, setGuidedQuestions] = useState<QuizQuestion[]>([]);
+  const [guidedIndex, setGuidedIndex] = useState(0);
+  const [guidedAnswer, setGuidedAnswer] = useState<number | null>(null);
+  const [reviewPoints, setReviewPoints] = useState<string[]>([]);
+  const selectedMode = modes.find((item) => item.id === mode) || modes[0];
+  const revisionDocument = revisionPresentation(content, selectedMode.label);
+  function resetGuidedSession() {
+    setGuidedQuestions([]); setGuidedIndex(0); setGuidedAnswer(null); setReviewPoints([]);
+  }
+  async function submit(event: FormEvent) {
+    event.preventDefault(); if (!topic.trim()) return; setLoading(true); setError(""); setContent(""); resetGuidedSession();
+    const request = `${selectedMode.instruction}\nObjectif de l'étudiant : ${objective}.\n\nSujet demandé : ${topic.trim()}`;
+    try {
+      if (mode === "guided") {
+        const [revision, quiz] = await Promise.all([
+          createRevision(request, documentIds),
+          createQuiz(`${topic.trim()}. Objectif : ${objective}. Vérifie les notions essentielles avec des questions progressives.`, documentIds, 5, "multiple_choice"),
+        ]);
+        setContent(revision.content);
+        setGuidedQuestions(quiz.questions);
+      } else {
+        setContent((await createRevision(request, documentIds)).content);
+      }
+    } catch (e) { setError(e instanceof Error ? e.message : "Impossible de préparer la révision."); } finally { setLoading(false); }
+  }
+  function answerGuidedQuestion(answerIndex: number) {
+    if (guidedAnswer !== null || guidedIndex >= guidedQuestions.length) return;
+    setGuidedAnswer(answerIndex);
+    const question = guidedQuestions[guidedIndex];
+    if (answerIndex !== question.answer_index) {
+      const point = `${question.question} — ${question.explanation}`;
+      setReviewPoints((current) => current.includes(point) ? current : [...current, point]);
+    }
+  }
+  function nextGuidedQuestion() {
+    setGuidedIndex((current) => Math.min(current + 1, guidedQuestions.length));
+    setGuidedAnswer(null);
+  }
+  return <section className="workspace-page revision-page">
+    <p className="revision-lead">Choisis une méthode, sélectionne ton cours et indique ce que tu veux maîtriser.</p>
+    <div className="revision-modes" role="group" aria-label="Méthode de révision">
+      {modes.map((item) => <button key={item.id} type="button" className={mode === item.id ? "active" : ""} onClick={() => { setMode(item.id); setContent(""); resetGuidedSession(); }}><strong>{item.label}</strong><span>{item.description}</span></button>)}
+    </div>
+    <div className="revision-objectives" role="group" aria-label="Objectif de révision"><span>Mon objectif</span><div>{objectives.map((item) => <button key={item} type="button" className={objective === item ? "active" : ""} onClick={() => { setObjective(item); setContent(""); resetGuidedSession(); }}>{item}</button>)}</div></div>
     <DocumentPicker documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={onActiveDocumentChange} />
-    <form className="action-card" onSubmit={submit}><label htmlFor="revision-topic">Ce que tu veux réviser</label><div className="inline-form"><input id="revision-topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Ex. Résume le chapitre 2, prépare une fiche sur la photosynthèse..." /><button disabled={loading || !topic.trim()}><Sparkles size={18} />{loading ? "Création…" : "Créer la fiche"}</button></div></form>
+    <form className="revision-request" onSubmit={submit}><label htmlFor="revision-topic">Ce que tu veux réviser</label><div className="inline-form"><input id="revision-topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={selectedMode.placeholder} /><button disabled={loading || !topic.trim()}><Sparkles size={17} />{loading ? "Préparation…" : selectedMode.action}</button></div></form>
     {error && <p className="error-banner">{error}</p>}
-    {content ? <article className="result-card prose"><h2>Votre fiche</h2><p>{content}</p></article> : <EmptyState icon={<BookOpenText />} text="Votre prochaine fiche apparaîtra ici." />}
+    {content ? <article className="result-card prose revision-result"><h2>{revisionDocument.title}</h2><FormattedMessage content={revisionDocument.body} /></article> : <EmptyState icon={<BookOpenText />} text="Ta séance de révision apparaîtra ici." />}
+    {mode === "guided" && guidedQuestions.length > 0 && guidedIndex < guidedQuestions.length && <section className="guided-session" aria-live="polite">
+      <div className="guided-progress"><span>Question {guidedIndex + 1} sur {guidedQuestions.length}</span><div><i style={{ width: `${((guidedIndex + 1) / guidedQuestions.length) * 100}%` }} /></div></div>
+      <h3>{guidedQuestions[guidedIndex].question}</h3>
+      <div className="guided-choices">{guidedQuestions[guidedIndex].choices.map((choice, index) => {
+        const answered = guidedAnswer !== null;
+        const correct = index === guidedQuestions[guidedIndex].answer_index;
+        const selected = index === guidedAnswer;
+        return <button key={choice} type="button" disabled={answered} className={answered ? correct ? "correct" : selected ? "incorrect" : "" : ""} onClick={() => answerGuidedQuestion(index)}><span>{String.fromCharCode(65 + index)}</span>{choice}{answered && correct && <Check size={16} />}{answered && selected && !correct && <X size={16} />}</button>;
+      })}</div>
+      {guidedAnswer !== null && <div className={guidedAnswer === guidedQuestions[guidedIndex].answer_index ? "guided-feedback correct" : "guided-feedback incorrect"}><strong>{guidedAnswer === guidedQuestions[guidedIndex].answer_index ? "Bonne réponse" : "À revoir"}</strong><p>{guidedQuestions[guidedIndex].explanation}</p><button type="button" onClick={nextGuidedQuestion}>{guidedIndex + 1 === guidedQuestions.length ? "Voir mon bilan" : "Question suivante"}<ChevronRight size={16} /></button></div>}
+    </section>}
+    {mode === "guided" && guidedQuestions.length > 0 && guidedIndex >= guidedQuestions.length && <section className="guided-summary"><CheckCircle2 size={24} /><div><h3>Séance terminée</h3><p>{reviewPoints.length ? `${reviewPoints.length} point${reviewPoints.length > 1 ? "s" : ""} à revoir.` : "Tout est maîtrisé sur cette série."}</p></div></section>}
+    {mode === "guided" && reviewPoints.length > 0 && <aside className="review-points"><h3>Points à revoir</h3>{reviewPoints.map((point) => <p key={point}>{point}</p>)}</aside>}
   </section>;
 }
 
 function QuizView({ documents, activeDocumentId, onActiveDocumentChange, documentIds }: { documents: DocumentInfo[]; activeDocumentId: string; onActiveDocumentChange: (id: string) => void; documentIds: string[] }) {
   const [topic, setTopic] = useState(""); const [quizType, setQuizType] = useState<"multiple_choice" | "traditional">("multiple_choice"); const [questionCount, setQuestionCount] = useState(3); const [quizTitle, setQuizTitle] = useState("Quiz Orvix"); const [questions, setQuestions] = useState<QuizQuestion[]>([]); const [selectedQuestions, setSelectedQuestions] = useState<Set<number>>(new Set()); const [answers, setAnswers] = useState<Record<number, number>>({}); const [writtenAnswers, setWrittenAnswers] = useState<Record<number, string>>({}); const [reviewed, setReviewed] = useState<Record<number, boolean>>({}); const [selfScores, setSelfScores] = useState<Record<number, boolean>>({}); const [loading, setLoading] = useState(false); const [exporting, setExporting] = useState(false); const [error, setError] = useState("");
+  const [activeQuizIndex, setActiveQuizIndex] = useState(0);
   useEffect(() => {
     if (questions.length) window.setTimeout(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }), 80);
   }, [questions.length]);
@@ -907,15 +1093,19 @@ function QuizView({ documents, activeDocumentId, onActiveDocumentChange, documen
   const completed = Boolean(questions.length && answeredCount === questions.length);
   const activeDocument = documents.find((doc) => doc.id === activeDocumentId);
   const missedIndices = questions.map((_, index) => index).filter((index) => quizType === "multiple_choice" ? answers[index] !== questions[index].answer_index : selfScores[index] === false);
-  async function submit(event: FormEvent) { event.preventDefault(); if (!topic.trim() && !documentIds.length) return; const quizTopic = topic.trim() || "Le contenu principal du support sélectionné"; setLoading(true); setError(""); setAnswers({}); setWrittenAnswers({}); setReviewed({}); setSelfScores({}); try { const result = await createQuiz(quizTopic, documentIds, questionCount, quizType); setQuestions(result.questions); setSelectedQuestions(new Set(result.questions.map((_, index) => index))); setQuizTitle(result.title); } catch (e) { setError(e instanceof Error ? e.message : "Impossible de créer le quiz."); } finally { setLoading(false); } }
+  async function submit(event: FormEvent) { event.preventDefault(); if (!topic.trim() && !documentIds.length) return; const quizTopic = topic.trim() || "Le contenu principal du support sélectionné"; setLoading(true); setError(""); setAnswers({}); setWrittenAnswers({}); setReviewed({}); setSelfScores({}); setActiveQuizIndex(0); try { const result = await createQuiz(quizTopic, documentIds, questionCount, quizType); setQuestions(result.questions); setSelectedQuestions(new Set(result.questions.map((_, index) => index))); setQuizTitle(result.title); } catch (e) { setError(e instanceof Error ? e.message : "Impossible de créer le quiz."); } finally { setLoading(false); } }
   function toggleQuestion(index: number) { setSelectedQuestions((current) => { const next = new Set(current); if (next.has(index)) next.delete(index); else next.add(index); return next; }); }
   async function downloadWord() { const chosenQuestions = questions.filter((_, index) => selectedQuestions.has(index)); if (!chosenQuestions.length) return; setExporting(true); setError(""); try { const blob = await exportQuizWord(quizTitle, chosenQuestions, quizType); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${quizTitle.replace(/[^a-zA-ZÀ-ÿ0-9 -]/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "quiz-orvix"}.docx`; link.click(); URL.revokeObjectURL(url); } catch (e) { setError(e instanceof Error ? e.message : "Téléchargement impossible."); } finally { setExporting(false); } }
   return <section className="workspace-page quiz-page">
-    <div className="quiz-hero"><div><PageIntro eyebrow="" title="Quiz de leçon" description="Choisissez un document ou un thème. Orvix corrige vos réponses et vous indique quoi revoir." /></div><div className="quiz-illustration" aria-hidden="true"><div><CheckCircle2 size={26} /><FileText size={72} /><Sparkles size={22} /></div></div></div>
+    <p className="quiz-lead">Choisis ton cours, règle la difficulté de la séance et réponds aux questions une par une.</p>
     <DocumentPicker documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={onActiveDocumentChange} />
-    <form className="action-card quiz-card" onSubmit={submit}><div className="quiz-settings"><fieldset className="quiz-radio-fieldset"><legend>Type de questions</legend><div className="quiz-radio-group"><label><input type="radio" name="quiz-type" value="multiple_choice" checked={quizType === "multiple_choice"} onChange={() => { setQuizType("multiple_choice"); setQuestions([]); }} /><span>Choix multiple</span></label><label><input type="radio" name="quiz-type" value="traditional" checked={quizType === "traditional"} onChange={() => { setQuizType("traditional"); setQuestions([]); }} /><span>Questions traditionnelles</span></label></div></fieldset><label className="question-count"><span>Nombre de questions</span><select value={questionCount} onChange={(event) => { setQuestionCount(Number(event.target.value)); setQuestions([]); }}><option value={2}>2 questions</option><option value={3}>3 questions</option><option value={5}>5 questions</option><option value={10}>10 questions</option><option value={20}>20 questions</option><option value={50}>50 questions</option><option value={100}>100 questions</option><option value={150}>150 questions</option></select>{questionCount > 20 && <small>Génération par lots — la préparation peut prendre quelques minutes.</small>}</label><button className="quiz-generate-top" disabled={loading || (!topic.trim() && !documentIds.length)}><Plus size={18} />{loading ? `Préparation de ${questionCount} questions…` : "Générer le quiz"}</button></div><label htmlFor="quiz-topic">Leçon ou notion à tester <small>(optionnel)</small></label><div className="inline-form quiz-topic-line"><input id="quiz-topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={activeDocument ? `Facultatif — quiz sur le Document ${activeDocument.number}` : documentIds.length ? "Facultatif — quiz sur les supports sélectionnés" : "Ex. Les fonctions affines"} /></div></form>
+    {!questions.length && <form className="quiz-setup" onSubmit={submit}><div className="quiz-options"><div><span>Format</span><div className="quiz-segments"><button type="button" className={quizType === "multiple_choice" ? "active" : ""} onClick={() => setQuizType("multiple_choice")}>Choix multiple</button><button type="button" className={quizType === "traditional" ? "active" : ""} onClick={() => setQuizType("traditional")}>Réponse rédigée</button></div></div><label><span>Questions</span><select value={questionCount} onChange={(event) => setQuestionCount(Number(event.target.value))}><option value={3}>3</option><option value={5}>5</option><option value={10}>10</option><option value={20}>20</option></select></label></div><label htmlFor="quiz-topic">Notion à tester <small>(optionnel avec un support)</small></label><div className="quiz-start-line"><input id="quiz-topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={activeDocument ? `Quiz sur le Document ${activeDocument.number}` : documentIds.length ? "Quiz sur les supports sélectionnés" : "Ex. Les fonctions affines"} /><button disabled={loading || (!topic.trim() && !documentIds.length)}><Sparkles size={17} />{loading ? "Préparation…" : "Commencer"}</button></div></form>}
     {error && <p className="error-banner">{error}</p>}
-    {questions.length ? <div className="quiz-output-grid"><div><div className="quiz-progress"><span>Aperçu du quiz</span><div><strong>{questions.length} Questions</strong><small>{answeredCount}/{questions.length} réponses</small><span className="selection-actions"><button onClick={() => setSelectedQuestions(new Set(questions.map((_, index) => index)))}>Tout sélectionner</button><button onClick={() => setSelectedQuestions(new Set())}>Tout retirer</button></span><button className="word-download" onClick={downloadWord} disabled={exporting || !selectedQuestions.size}><Download size={16} />{exporting ? "Création…" : `Word (${selectedQuestions.size})`}</button></div></div>{questions.length ? <div className="quiz-list">{questions.map((item, index) => <article className={selectedQuestions.has(index) ? "question-card export-selected" : "question-card"} key={index}><button className="question-export-toggle" onClick={() => toggleQuestion(index)} aria-pressed={selectedQuestions.has(index)}>{selectedQuestions.has(index) ? "✓ Incluse" : "+ Word"}</button><span className="question-number">Question {index + 1}</span><h2>{item.question}</h2>{quizType === "multiple_choice" ? <><div className="choices">{item.choices.map((choice, choiceIndex) => { const selected = answers[index] === choiceIndex; const revealedChoice = answers[index] !== undefined; return <button key={choice} className={`${selected ? "selected" : ""} ${revealedChoice && choiceIndex === item.answer_index ? "correct" : ""}`} onClick={() => setAnswers({ ...answers, [index]: choiceIndex })}><span>{String.fromCharCode(65 + choiceIndex)}</span>{choice}</button>; })}</div>{answers[index] !== undefined && <p className={answers[index] === item.answer_index ? "feedback good" : "feedback"}><CheckCircle2 size={17} />{item.explanation}</p>}</> : <div className="traditional-answer"><textarea value={writtenAnswers[index] || ""} onChange={(event) => setWrittenAnswers({ ...writtenAnswers, [index]: event.target.value })} disabled={reviewed[index]} placeholder="Rédigez votre réponse avec vos propres mots…" />{!reviewed[index] ? <button type="button" disabled={!writtenAnswers[index]?.trim()} onClick={() => setReviewed({ ...reviewed, [index]: true })}>Voir la correction</button> : <div className="expected-answer"><strong>Réponse attendue</strong><p>{item.expected_answer}</p><small>{item.explanation}</small><div><button type="button" className={selfScores[index] === true ? "understood active" : "understood"} onClick={() => setSelfScores({ ...selfScores, [index]: true })}>J’avais compris</button><button type="button" className={selfScores[index] === false ? "review active" : "review"} onClick={() => setSelfScores({ ...selfScores, [index]: false })}>À revoir</button></div></div>}</div>}</article>)}</div> : null}</div><aside>{completed ? <QuizSummary score={score} total={questions.length} missedIndices={missedIndices} /> : <article className="quiz-advice-card"><span><BookOpenText size={20} /></span><h2>Conseil de révision</h2><p>Répondez aux questions, puis relisez seulement les notions marquées à revoir.</p></article>}</aside></div> : <EmptyState icon={<HelpCircle />} text="Votre quiz apparaîtra ici." />}
+    {questions.length > 0 && <div className="quiz-focus">
+      <header><div><small>{quizTitle}</small><strong>{activeQuizIndex >= questions.length ? "Bilan" : `Question ${activeQuizIndex + 1} sur ${questions.length}`}</strong></div><div><button type="button" className="word-download" onClick={downloadWord} disabled={exporting}><Download size={15} />{exporting ? "Création…" : "Word"}</button><button type="button" onClick={() => { setQuestions([]); setAnswers({}); setWrittenAnswers({}); setReviewed({}); setSelfScores({}); setActiveQuizIndex(0); }}>Nouveau quiz</button></div><span><i style={{ width: `${Math.min(100, (activeQuizIndex / questions.length) * 100)}%` }} /></span></header>
+      {activeQuizIndex < questions.length ? <article className="quiz-focus-card"><h2>{questions[activeQuizIndex].question}</h2>{quizType === "multiple_choice" ? <><div className="quiz-focus-choices">{questions[activeQuizIndex].choices.map((choice, choiceIndex) => { const answered = answers[activeQuizIndex] !== undefined; const selected = answers[activeQuizIndex] === choiceIndex; const correct = choiceIndex === questions[activeQuizIndex].answer_index; return <button type="button" key={choice} disabled={answered} className={answered ? correct ? "correct" : selected ? "incorrect" : "" : ""} onClick={() => setAnswers({ ...answers, [activeQuizIndex]: choiceIndex })}><span>{String.fromCharCode(65 + choiceIndex)}</span>{choice}{answered && correct && <Check size={16} />}{answered && selected && !correct && <X size={16} />}</button>; })}</div>{answers[activeQuizIndex] !== undefined && <div className={answers[activeQuizIndex] === questions[activeQuizIndex].answer_index ? "quiz-focus-feedback correct" : "quiz-focus-feedback incorrect"}><strong>{answers[activeQuizIndex] === questions[activeQuizIndex].answer_index ? "Bonne réponse" : "Réponse à revoir"}</strong><p>{questions[activeQuizIndex].explanation}</p><button type="button" onClick={() => setActiveQuizIndex((index) => index + 1)}>{activeQuizIndex + 1 === questions.length ? "Voir le bilan" : "Question suivante"}<ChevronRight size={16} /></button></div>}</> : <div className="quiz-written"><textarea value={writtenAnswers[activeQuizIndex] || ""} onChange={(event) => setWrittenAnswers({ ...writtenAnswers, [activeQuizIndex]: event.target.value })} disabled={reviewed[activeQuizIndex]} placeholder="Écris ta réponse avec tes propres mots…" />{!reviewed[activeQuizIndex] ? <button type="button" disabled={!writtenAnswers[activeQuizIndex]?.trim()} onClick={() => setReviewed({ ...reviewed, [activeQuizIndex]: true })}>Comparer ma réponse</button> : <div className="quiz-expected"><strong>Réponse attendue</strong><p>{questions[activeQuizIndex].expected_answer}</p><small>{questions[activeQuizIndex].explanation}</small><div><button type="button" className={selfScores[activeQuizIndex] === true ? "active" : ""} onClick={() => setSelfScores({ ...selfScores, [activeQuizIndex]: true })}>J’avais compris</button><button type="button" className={selfScores[activeQuizIndex] === false ? "active review" : "review"} onClick={() => setSelfScores({ ...selfScores, [activeQuizIndex]: false })}>À revoir</button></div>{selfScores[activeQuizIndex] !== undefined && <button type="button" className="quiz-next" onClick={() => setActiveQuizIndex((index) => index + 1)}>{activeQuizIndex + 1 === questions.length ? "Voir le bilan" : "Question suivante"}<ChevronRight size={16} /></button>}</div>}</div>}</article> : <div className="quiz-complete"><QuizSummary score={score} total={questions.length} missedIndices={missedIndices} /><section className="quiz-review"><h3>Correction complète</h3><p>Ouvre une question pour revoir la réponse et son explication.</p>{questions.map((question, index) => { const correct = quizType === "multiple_choice" ? answers[index] === question.answer_index : selfScores[index] === true; return <details key={question.question} className={correct ? "correct" : "incorrect"}><summary><span>{correct ? <Check size={14} /> : <X size={14} />}</span><strong>Question {index + 1}</strong><small>{question.question}</small><ChevronRight size={15} /></summary><div>{quizType === "multiple_choice" && <p><b>Ta réponse :</b> {question.choices[answers[index]] || "Aucune réponse"}</p>}<p><b>Réponse attendue :</b> {quizType === "multiple_choice" ? question.choices[question.answer_index] : question.expected_answer}</p><p>{question.explanation}</p></div></details>; })}</section></div>}
+    </div>}
+    {!questions.length && !loading && <EmptyState icon={<HelpCircle />} text="Ton quiz apparaîtra ici." />}
   </section>;
 }
 
@@ -982,6 +1172,7 @@ function SupportView({ documents, onDocumentsChange, activeDocumentId, onActiveD
   const [loading, setLoading] = useState(false); const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState("");
   const [search, setSearch] = useState("");
+  const [dragging, setDragging] = useState(false);
   useEffect(() => { listDocuments().then((r) => onDocumentsChange(r.documents)).catch(() => undefined); }, [onDocumentsChange]);
   async function upload(files: FileList | null) { if (!files?.length) return; setLoading(true); setError(""); try { onDocumentsChange((await uploadDocuments(Array.from(files))).documents); } catch (e) { setError(e instanceof Error ? e.message : "Import impossible."); } finally { setLoading(false); } }
   async function remove(doc: DocumentInfo) {
@@ -996,13 +1187,12 @@ function SupportView({ documents, onDocumentsChange, activeDocumentId, onActiveD
     } finally { setDeletingId(""); }
   }
   const visibleDocuments = documents.filter((doc) => `${doc.number} ${doc.name}`.toLowerCase().includes(search.trim().toLowerCase()));
-  return <section className="workspace-page">
-    <PageIntro eyebrow="VOTRE BIBLIOTHÈQUE" title="Supports de cours" description="Ajoutez vos documents pour que les réponses, fiches et quiz utilisent votre contenu." />
-    <DocumentPicker documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={onActiveDocumentChange} />
-    <input className="document-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Chercher un document par nom ou numéro..." />
-    <label className="upload-zone"><UploadCloud size={34} /><strong>{loading ? "Import en cours…" : "Déposez ou sélectionnez vos fichiers"}</strong><span>PDF, TXT ou Markdown · 10 Mo maximum par fichier</span><input type="file" multiple accept=".pdf,.txt,.md" onChange={(e) => upload(e.target.files)} disabled={loading} /></label>
+  return <section className="workspace-page support-page">
+    <p className="support-lead">Ajoute tes cours une fois, puis utilise-les dans Chat, Révision et Quiz.</p>
+    <label className={dragging ? "upload-zone support-upload dragging" : "upload-zone support-upload"} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={(event) => { event.preventDefault(); setDragging(false); upload(event.dataTransfer.files); }}><UploadCloud size={27} /><span><strong>{loading ? "Import en cours…" : "Dépose tes fichiers ici"}</strong><small>ou clique pour les sélectionner · PDF, TXT, Markdown · 10 Mo max.</small></span><b>{loading ? "Patiente…" : "Ajouter"}</b><input type="file" multiple accept=".pdf,.txt,.md" onChange={(e) => upload(e.target.files)} disabled={loading} /></label>
     {error && <p className="error-banner">{error}</p>}
-    <div className="document-grid">{visibleDocuments.map((doc) => <article className={activeDocumentId === doc.id ? "document-card active" : "document-card"} key={doc.id}><button className="document-select" onClick={() => onActiveDocumentChange(activeDocumentId === doc.id ? "" : doc.id)}><span className="document-number">{doc.number}</span><span className="file-icon"><FileText /></span><span className="document-details"><strong>{doc.name}</strong><small>{(doc.size / 1024).toFixed(1)} Ko</small></span></button><button className="document-delete" onClick={() => remove(doc)} disabled={deletingId === doc.id} aria-label={`Supprimer ${doc.name}`} title="Supprimer le document"><Trash2 size={17} /></button></article>)}</div>
+    <div className="support-library-head"><div><strong>Mes documents</strong><span>{documents.length} support{documents.length > 1 ? "s" : ""}</span></div><input className="document-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher…" /></div>
+    <div className="document-grid support-grid">{visibleDocuments.map((doc) => <article className={activeDocumentId === doc.id ? "document-card active" : "document-card"} key={doc.id}><button className="document-select" onClick={() => onActiveDocumentChange(activeDocumentId === doc.id ? "" : doc.id)}><span className="file-icon"><FileText /></span><span className="document-details"><strong>{doc.name}</strong><small>Document {doc.number} · {(doc.size / 1024).toFixed(1)} Ko</small></span>{activeDocumentId === doc.id && <span className="support-active">Utilisé</span>}</button><button className="document-delete" onClick={() => remove(doc)} disabled={deletingId === doc.id} aria-label={`Supprimer ${doc.name}`} title="Supprimer le document"><Trash2 size={16} /></button></article>)}</div>
     {!documents.length && <EmptyState icon={<FileText />} text="Aucun support importé pour le moment." />}
     {Boolean(documents.length && !visibleDocuments.length) && <EmptyState icon={<FileText />} text="Aucun document ne correspond à cette recherche." />}
   </section>;

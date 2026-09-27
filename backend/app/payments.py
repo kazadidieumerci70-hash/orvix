@@ -2,6 +2,8 @@ import json
 import secrets
 import hashlib
 import hmac
+import logging
+import re
 from datetime import datetime, timezone
 
 import httpx
@@ -10,9 +12,18 @@ from fastapi import HTTPException
 from .config import get_settings
 from .json_store import atomic_write_json
 from .subscriptions import activate_subscription, plans_config
+from .email_service import send_payment_email
+
+logger = logging.getLogger(__name__)
 
 
 def _read_payments() -> dict:
+    if get_settings().database_url:
+        import psycopg
+        with psycopg.connect(get_settings().database_url) as connection:
+            connection.execute("CREATE TABLE IF NOT EXISTS payment_checkout_records (transaction_id TEXT PRIMARY KEY, record JSONB NOT NULL)")
+            rows = connection.execute("SELECT transaction_id, record FROM payment_checkout_records").fetchall()
+        return {"payments": {key: value for key, value in rows}}
     path = get_settings().payments_file
     if not path.exists():
         return {"payments": {}}
@@ -20,12 +31,42 @@ def _read_payments() -> dict:
 
 
 def _write_payments(data: dict) -> None:
+    if get_settings().database_url:
+        import psycopg
+        with psycopg.connect(get_settings().database_url) as connection:
+            connection.execute("CREATE TABLE IF NOT EXISTS payment_checkout_records (transaction_id TEXT PRIMARY KEY, record JSONB NOT NULL)")
+            for key, record in data["payments"].items():
+                connection.execute("INSERT INTO payment_checkout_records (transaction_id, record) VALUES (%s, %s::jsonb) ON CONFLICT (transaction_id) DO UPDATE SET record = EXCLUDED.record", (key, json.dumps(record)))
+        return
     atomic_write_json(get_settings().payments_file, data)
+
+
+def _payment_matches(record: dict, data: dict) -> bool:
+    metadata = data.get("metadata") or {}
+    if not record.get("provider_reference") or data.get("reference") != record["provider_reference"]:
+        return False
+    if metadata.get("transaction_id") != record["transaction_id"]:
+        return False
+    if str(metadata.get("user_id")) != str(record["user_id"]):
+        return False
+    try:
+        same_amount = abs(float(data.get("amount")) - float(record["amount"])) < 0.001
+    except (TypeError, ValueError):
+        return False
+    return same_amount and data.get("currency") == record["currency"]
+
+
+def _accept_payment(record: dict) -> dict:
+    activate_subscription(record["user_id"], record["plan_id"], record["billing_cycle"], record["transaction_id"])
+    record["status"] = "ACCEPTED"
+    record["verified_at"] = datetime.now(timezone.utc).isoformat()
+    _write_payments({"payments": {record["transaction_id"]: record}})
+    return record
 
 
 def _configured() -> bool:
     s = get_settings()
-    return bool(s.geniuspay_api_key)
+    return bool(s.geniuspay_api_key and s.geniuspay_api_secret)
 
 
 def valid_geniuspay_signature(raw_body: bytes, signature: str | None, timestamp: str | None) -> bool:
@@ -34,11 +75,19 @@ def valid_geniuspay_signature(raw_body: bytes, signature: str | None, timestamp:
         return False
     if not signature or not timestamp:
         return False
+    try:
+        if abs(datetime.now(timezone.utc).timestamp() - int(timestamp)) > 300:
+            return False
+    except ValueError:
+        return False
     expected = hmac.new(secret.encode(), f"{timestamp}.".encode() + raw_body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(signature, expected)
 
 
-async def create_checkout(user, plan_id: str, billing_cycle: str) -> dict:
+async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email: str) -> dict:
+    customer_email = customer_email.strip().lower()
+    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", customer_email):
+        raise HTTPException(422, "Indiquez une adresse e-mail valide pour recevoir votre confirmation de paiement.")
     config = plans_config()
     plan = next((item for item in config["plans"] if item["id"] == plan_id), None)
     if not plan or plan_id == "free":
@@ -47,55 +96,102 @@ async def create_checkout(user, plan_id: str, billing_cycle: str) -> dict:
     transaction_id = f"ORVIX{datetime.now(timezone.utc):%Y%m%d%H%M%S}{secrets.token_hex(4).upper()}"
     settings = get_settings()
     simulation = get_settings().payment_simulation
-    record = {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle, "amount": amount, "currency": config["currency"], "status": "SIMULATED" if simulation else "PENDING", "simulation": simulation, "created_at": datetime.now(timezone.utc).isoformat()}
-    payments = _read_payments(); payments["payments"][transaction_id] = record; _write_payments(payments)
+    record = {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle, "amount": amount, "currency": config["currency"], "customer_email": customer_email, "customer_name": user.name, "status": "SIMULATED" if simulation else "PENDING", "simulation": simulation, "created_at": datetime.now(timezone.utc).isoformat()}
+    payments = {"payments": {transaction_id: record}}; _write_payments(payments)
     if simulation:
         activate_subscription(user.id, plan_id, billing_cycle, transaction_id)
+        await send_payment_email(email=customer_email, name=user.name, plan_name=plan["name"], amount=amount, currency=config["currency"], transaction_id=transaction_id, paid=False)
         return {"transaction_id": transaction_id, "payment_url": "", "simulation": True}
     if not _configured():
         raise HTTPException(503, "Le paiement n'est pas encore configuré.")
+    customer = {"name": user.name, "email": customer_email}
+    if user.phone and "@" not in user.phone:
+        customer["phone"] = user.phone
     payload = {
-        "customer_phone": user.phone, "customer_name": user.name,
-        "customer_email": f"{user.id}@orvix.local",
-        "plan_name": f"ORVIX {plan['name']}", "amount": amount,
-        "currency": config["currency"], "billing_cycle": billing_cycle,
-        "payment_method": "stripe_checkout",
+        "amount": amount,
+        "currency": config["currency"],
+        "description": f"ORVIX {plan['name']} - {billing_cycle}",
+        "customer": customer,
         "success_url": f"{settings.public_frontend_url}/?payment=success&transaction_id={transaction_id}",
-        "cancel_url": f"{settings.public_frontend_url}/?payment=cancelled&transaction_id={transaction_id}",
+        "error_url": f"{settings.public_frontend_url}/?payment=cancelled&transaction_id={transaction_id}",
         "metadata": {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle},
     }
     try:
         async with httpx.AsyncClient(timeout=25) as client:
-            response = await client.post(f"{settings.geniuspay_base_url}/v1/merchant/subscriptions", json=payload, headers={"Authorization": f"Bearer {settings.geniuspay_api_key}", "Content-Type": "application/json", "Idempotency-Key": transaction_id})
-            result = response.json()
-        payment_url = (result.get("data") or {}).get("redirect_url") or (result.get("data") or {}).get("checkout_url")
+            response = await client.post(f"{settings.geniuspay_base_url}/v1/merchant/payments", json=payload, headers={"X-API-Key": settings.geniuspay_api_key, "X-API-Secret": settings.geniuspay_api_secret, "Accept": "application/json"})
+            try:
+                result = response.json()
+            except ValueError:
+                logger.error("Genius Pay returned non-JSON response (status %s)", response.status_code)
+                raise HTTPException(502, "Le service de paiement est temporairement indisponible.")
+        if response.status_code in (401, 403):
+            logger.error("Genius Pay rejected merchant credentials (status %s)", response.status_code)
+            raise HTTPException(503, "Le paiement est temporairement indisponible. Réessayez plus tard.")
+        if response.status_code == 422:
+            logger.error("Genius Pay rejected checkout fields: %s", list((result.get("errors") or {}).keys()) if isinstance(result.get("errors"), dict) else "validation")
+            raise HTTPException(502, "Les informations du paiement doivent être vérifiées. Contactez le support.")
+        if response.status_code >= 400:
+            logger.error("Genius Pay checkout failed (status %s)", response.status_code)
+            raise HTTPException(502, "Le service de paiement est temporairement indisponible.")
+        data = result.get("data") or {}
+        payment_url = data.get("checkout_url") or data.get("payment_url") or data.get("redirect_url")
         if not result.get("success") or not payment_url:
             raise HTTPException(502, result.get("message") or "Le paiement n'a pas pu être créé.")
+        record["provider_reference"] = data.get("reference")
+        _write_payments({"payments": {transaction_id: record}})
         return {"transaction_id": transaction_id, "payment_url": payment_url, "simulation": False}
     except HTTPException:
         raise
-    except Exception as error:
+    except httpx.HTTPError as error:
+        logger.error("Genius Pay connection failed: %s", type(error).__name__)
         raise HTTPException(502, "Connexion au service de paiement impossible.") from error
 
 
 async def apply_geniuspay_webhook(payload: dict) -> dict:
     data = payload.get("data") or {}
     metadata = data.get("metadata") or {}
-    subscription = data.get("subscription") or {}
-    invoice = data.get("invoice") or {}
-    transaction_id = metadata.get("transaction_id") or subscription.get("metadata", {}).get("transaction_id") or invoice.get("metadata", {}).get("transaction_id")
+    transaction_id = metadata.get("transaction_id")
     if not transaction_id:
         raise HTTPException(400, "Transaction absente du webhook.")
-    settings = get_settings(); payments = _read_payments(); record = payments["payments"].get(transaction_id)
+    payments = _read_payments(); record = payments["payments"].get(transaction_id)
     if not record:
         raise HTTPException(404, "Transaction inconnue.")
-    accepted = payload.get("event") in {"payment.success", "payment.completed", "subscription.payment_succeeded"} and data.get("status", invoice.get("status")) in {"completed", "paid", "succeeded", "active"}
-    received_amount = data.get("amount", invoice.get("amount", -1))
-    received_currency = data.get("currency", invoice.get("currency", record["currency"]))
-    same_amount = abs(float(received_amount) - float(record["amount"])) < 0.001
-    same_currency = received_currency == record["currency"]
-    record["status"] = "ACCEPTED" if accepted and same_amount and same_currency else "FAILED"
-    record["verified_at"] = datetime.now(timezone.utc).isoformat(); payments["payments"][transaction_id] = record; _write_payments(payments)
     if record["status"] == "ACCEPTED":
-        activate_subscription(record["user_id"], record["plan_id"], record["billing_cycle"], transaction_id)
+        return record
+    if payload.get("event") == "payment.success" and data.get("status") == "completed":
+        if not _payment_matches(record, data):
+            logger.error("Payment confirmation did not match order %s", transaction_id)
+            raise HTTPException(409, "Confirmation de paiement incohérente.")
+        accepted = _accept_payment(record)
+        await send_payment_email(email=record.get("customer_email", ""), name=record.get("customer_name", ""), plan_name=record["plan_id"], amount=record["amount"], currency=record["currency"], transaction_id=record["transaction_id"], paid=True)
+        return accepted
+    if payload.get("event") in {"payment.failed", "payment.cancelled", "payment.expired"}:
+        record["status"] = "FAILED"
+        record["verified_at"] = datetime.now(timezone.utc).isoformat()
+        _write_payments({"payments": {transaction_id: record}})
     return record
+
+
+async def reconcile_user_payments(user_id: str) -> None:
+    settings = get_settings()
+    pending = [record for record in _read_payments()["payments"].values()
+               if record.get("user_id") == user_id and record.get("status") in {"PENDING", "FAILED"} and record.get("provider_reference")]
+    for record in sorted(pending, key=lambda item: item.get("created_at", ""), reverse=True)[:3]:
+        try:
+            async with httpx.AsyncClient(timeout=12) as client:
+                response = await client.get(
+                    f"{settings.geniuspay_base_url}/v1/merchant/payments/{record['provider_reference']}",
+                    headers={"X-API-Key": settings.geniuspay_api_key, "X-API-Secret": settings.geniuspay_api_secret, "Accept": "application/json"},
+                )
+            if response.status_code != 200:
+                logger.warning("Payment status lookup returned %s", response.status_code)
+                continue
+            result = response.json()
+            data = result.get("data") or {}
+            if result.get("success") and data.get("status") == "completed":
+                if _payment_matches(record, data):
+                    _accept_payment(record)
+                else:
+                    logger.error("Completed payment did not match order %s", record["transaction_id"])
+        except (httpx.HTTPError, ValueError, KeyError) as error:
+            logger.warning("Payment status lookup failed: %s", type(error).__name__)

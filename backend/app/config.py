@@ -48,14 +48,18 @@ class Settings:
     payments_file = BACKEND_DIR / "data" / "payments.json"
     waitlist_file = BACKEND_DIR / "data" / "subscription_waitlist.json"
     geniuspay_api_key = os.getenv("GENIUSPAY_API_KEY", "").strip()
+    geniuspay_api_secret = os.getenv("GENIUSPAY_API_SECRET", "").strip()
     geniuspay_webhook_secret = os.getenv("GENIUSPAY_WEBHOOK_SECRET", "").strip()
-    geniuspay_base_url = os.getenv("GENIUSPAY_BASE_URL", "https://api.geniuspay.ci").rstrip("/")
+    geniuspay_base_url = os.getenv("GENIUSPAY_BASE_URL", "https://geniuspay.ci/api").rstrip("/")
     payment_simulation = os.getenv("PAYMENT_SIMULATION", "true").strip().lower() == "true"
     public_api_url = os.getenv("PUBLIC_API_URL", "http://127.0.0.1:8010").rstrip("/")
     public_frontend_url = os.getenv("PUBLIC_FRONTEND_URL", "http://127.0.0.1:5173").rstrip("/")
     superadmin_phone = os.getenv("SUPERADMIN_PHONE", "").strip()
     superadmin_password = os.getenv("SUPERADMIN_PASSWORD", "")
     max_upload_bytes = int(os.getenv("MAX_UPLOAD_MB", "10")) * 1024 * 1024
+    resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
+    resend_from_email = os.getenv("RESEND_FROM_EMAIL", "Orvix <noreply@orvix.work>").strip()
+    resend_reply_to = os.getenv("RESEND_REPLY_TO", "").strip()
 
 
 @lru_cache

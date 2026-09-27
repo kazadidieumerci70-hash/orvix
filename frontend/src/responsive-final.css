@@ -1,0 +1,3321 @@
+/* Final responsive contract. This file is intentionally loaded last. */
+:root {
+  --orvix-sidebar: clamp(230px, 19vw, 300px);
+  --orvix-header-h: 64px;
+  --orvix-page-pad: clamp(20px, 4vw, 64px);
+  --orvix-content-max: 1180px;
+}
+
+/* Definitive dark-theme surface lock.
+   Theme-only overrides: no geometry, spacing or responsive behavior lives here. */
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root,
+html[data-theme="dark"] .app-shell,
+html[data-theme="dark"] .main-content,
+html[data-theme="dark"] .workspace-page,
+html[data-theme="dark"] .settings-page,
+html[data-theme="dark"] .revision-page,
+html[data-theme="dark"] .quiz-page,
+html[data-theme="dark"] .support-page {
+  color: #edf4f3 !important;
+  background-color: #0d1517 !important;
+}
+
+html[data-theme="dark"] .main-content > .page-actions,
+html[data-theme="dark"] .main-content.chat-main > .page-actions {
+  color: #edf4f3 !important;
+  border-color: #223234 !important;
+  background: #101a1c !important;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .24) !important;
+}
+
+html[data-theme="dark"] .main-content > .page-actions button,
+html[data-theme="dark"] .main-content > .page-actions .mobile-menu,
+html[data-theme="dark"] .main-content > .page-actions .top-new-conversation-button {
+  color: #e3eceb !important;
+  background-color: transparent !important;
+}
+
+html[data-theme="dark"] .main-content > .page-actions .top-view-label,
+html[data-theme="dark"] .main-content > .page-actions .top-document-selector {
+  color: #d7e3e1 !important;
+  border-color: #355653 !important;
+  background: #182527 !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-lead,
+html[data-theme="dark"] .quiz-page .quiz-lead,
+html[data-theme="dark"] .support-page .support-lead,
+html[data-theme="dark"] .revision-page .revision-objectives > span,
+html[data-theme="dark"] .revision-page .document-picker > label,
+html[data-theme="dark"] .revision-page .revision-request > label,
+html[data-theme="dark"] .quiz-page .document-picker > label,
+html[data-theme="dark"] .quiz-page .quiz-options span,
+html[data-theme="dark"] .quiz-page .quiz-setup > label,
+html[data-theme="dark"] .quiz-page .quiz-setup small,
+html[data-theme="dark"] .support-page .support-library-head span,
+html[data-theme="dark"] .settings-page p,
+html[data-theme="dark"] .settings-page small {
+  color: #a9b9b7 !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-request,
+html[data-theme="dark"] .revision-page .document-picker,
+html[data-theme="dark"] .quiz-page .quiz-setup,
+html[data-theme="dark"] .quiz-page .document-picker,
+html[data-theme="dark"] .settings-form,
+html[data-theme="dark"] .general-settings,
+html[data-theme="dark"] .profile-simple-panel,
+html[data-theme="dark"] .subscription-panel,
+html[data-theme="dark"] .profile-hero-card,
+html[data-theme="dark"] .profile-menu-group > div,
+html[data-theme="dark"] .result-card,
+html[data-theme="dark"] .guided-session,
+html[data-theme="dark"] .guided-summary,
+html[data-theme="dark"] .quiz-focus-card,
+html[data-theme="dark"] .quiz-review,
+html[data-theme="dark"] .document-card {
+  color: #edf4f3 !important;
+  border-color: #2a3b3d !important;
+  background: #131e20 !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .18) !important;
+}
+
+html[data-theme="dark"] .revision-page input,
+html[data-theme="dark"] .revision-page select,
+html[data-theme="dark"] .revision-page textarea,
+html[data-theme="dark"] .quiz-page input,
+html[data-theme="dark"] .quiz-page select,
+html[data-theme="dark"] .quiz-page textarea,
+html[data-theme="dark"] .support-page input,
+html[data-theme="dark"] .settings-page input,
+html[data-theme="dark"] .settings-page select,
+html[data-theme="dark"] .settings-page textarea {
+  color: #edf4f3 !important;
+  border-color: #2f4244 !important;
+  background: #101a1c !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .revision-page input::placeholder,
+html[data-theme="dark"] .quiz-page input::placeholder,
+html[data-theme="dark"] .support-page input::placeholder,
+html[data-theme="dark"] .settings-page input::placeholder,
+html[data-theme="dark"] .settings-page textarea::placeholder {
+  color: #81918f !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-modes,
+html[data-theme="dark"] .quiz-page .quiz-segments {
+  border-color: #263638 !important;
+  background: #101a1c !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-modes button,
+html[data-theme="dark"] .quiz-page .quiz-segments button {
+  color: #aebdbb !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-modes button.active,
+html[data-theme="dark"] .quiz-page .quiz-segments button.active {
+  color: #82ddd4 !important;
+  border-color: #3a6662 !important;
+  background: #1d2d2f !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-objectives button {
+  color: #dce6e5 !important;
+  border-color: #2f4244 !important;
+  background: #182527 !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-objectives button.active {
+  color: #8de1d8 !important;
+  border-color: #39716b !important;
+  background: #203b38 !important;
+}
+
+html[data-theme="dark"] .revision-page button:disabled,
+html[data-theme="dark"] .quiz-page button:disabled,
+html[data-theme="dark"] .settings-page button:disabled {
+  color: #93a7a4 !important;
+  border-color: #31504d !important;
+  background-color: #1c4643 !important;
+  opacity: .72 !important;
+}
+
+html[data-theme="dark"] .support-page > .support-upload {
+  color: #79d8cf !important;
+  border-color: #397d77 !important;
+  background: #162826 !important;
+}
+
+html[data-theme="dark"] .support-page > .support-upload small,
+html[data-theme="dark"] .support-page .empty-state p {
+  color: #a0b2b0 !important;
+}
+
+html[data-theme="dark"] .revision-page > .empty-state span,
+html[data-theme="dark"] .quiz-page > .empty-state span,
+html[data-theme="dark"] .support-page > .empty-state span {
+  color: #72d2c9 !important;
+  border-color: #2f4b48 !important;
+  background: #182a2b !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .profile-menu-group button,
+html[data-theme="dark"] .setting-group,
+html[data-theme="dark"] .settings-validation,
+html[data-theme="dark"] .chip-grid button {
+  color: #e1ebe9 !important;
+  border-color: #2a3b3d !important;
+  background-color: transparent !important;
+}
+
+html[data-theme="dark"] .chip-grid button.selected,
+html[data-theme="dark"] .setting-options button.selected {
+  color: #82ddd4 !important;
+  border-color: #39716b !important;
+  background: #203b38 !important;
+}
+
+/* Revision desktop dark mode: soften stacked surface and control contrast. */
+@media (min-width: 901px) {
+  html[data-theme="dark"] .revision-page .revision-modes {
+    border-color: #263436 !important;
+    background: transparent !important;
+  }
+
+  html[data-theme="dark"] .revision-page .revision-modes > button {
+    color: #b6c2c0 !important;
+    border-color: #354548 !important;
+    background: #111a1c !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .revision-page .revision-modes > button span {
+    color: #748683 !important;
+  }
+
+  html[data-theme="dark"] .revision-page .revision-modes > button.active {
+    color: #68c8bf !important;
+    border-color: #41635f !important;
+    background: #1a292b !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .revision-page .revision-modes > button.active span {
+    color: #729b97 !important;
+  }
+
+  html[data-theme="dark"] .revision-page .revision-objectives button {
+    color: #b5c1bf !important;
+    border-color: #2b3a3c !important;
+    background: #151f21 !important;
+  }
+
+  html[data-theme="dark"] .revision-page .revision-objectives button.active {
+    color: #70c9c1 !important;
+    border-color: #375d59 !important;
+    background: #1b302f !important;
+  }
+
+  html[data-theme="dark"] .revision-page .revision-request,
+  html[data-theme="dark"] .revision-page .document-picker {
+    border-color: #243234 !important;
+    background: #111a1c !important;
+  }
+
+  html[data-theme="dark"] .revision-page input,
+  html[data-theme="dark"] .revision-page select,
+  html[data-theme="dark"] .revision-page textarea {
+    color: #d9e3e1 !important;
+    border-color: #344447 !important;
+    background: #0f181a !important;
+  }
+
+  html[data-theme="dark"] .revision-page .revision-objectives > span,
+  html[data-theme="dark"] .revision-page .document-picker > label,
+  html[data-theme="dark"] .revision-page .revision-request > label {
+    color: #8fa19f !important;
+  }
+
+  html[data-theme="dark"] .revision-page button:disabled {
+    color: #748a87 !important;
+    border-color: #29423f !important;
+    background-color: #193330 !important;
+    opacity: .78 !important;
+  }
+
+  /* Keep the course selector and prompt area on the same visual plane. */
+  html[data-theme="dark"] .revision-page > .document-picker,
+  html[data-theme="dark"] .revision-page > .revision-request {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .revision-page > .document-picker select,
+  html[data-theme="dark"] .revision-page > .revision-request .inline-form input {
+    border-color: #273638 !important;
+    background: #10191b !important;
+  }
+
+  html[data-theme="dark"] .revision-page > .revision-request .inline-form button:disabled {
+    color: #718582 !important;
+    border-color: #263c3a !important;
+    background: #18302e !important;
+  }
+}
+
+/* Final visibility lock for the new-conversation icon on dark headers. */
+html[data-theme="dark"] .main-content.revision-main > .page-actions .top-new-conversation-button,
+html[data-theme="dark"] .main-content.quiz-main > .page-actions .top-new-conversation-button,
+html[data-theme="dark"] .main-content.support-main > .page-actions .top-new-conversation-button,
+html[data-theme="dark"] .main-content.chat-main > .page-actions .top-new-conversation-button {
+  color: #73d9d0 !important;
+  background: transparent !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="dark"] .main-content.revision-main > .page-actions .top-new-conversation-button:hover,
+html[data-theme="dark"] .main-content.quiz-main > .page-actions .top-new-conversation-button:hover,
+html[data-theme="dark"] .main-content.support-main > .page-actions .top-new-conversation-button:hover,
+html[data-theme="dark"] .main-content.chat-main > .page-actions .top-new-conversation-button:hover {
+  background: #183033 !important;
+}
+
+/* Desktop revision workspace: override the light canvas locked in responsive-scale.css. */
+@media (min-width: 901px) {
+  html[data-theme="dark"] .main-content.revision-main {
+    color: #edf4f3 !important;
+    background: #0d1517 !important;
+  }
+
+  html[data-theme="dark"] .main-content.revision-main > .revision-page {
+    color: #edf4f3 !important;
+    background: #0d1517 !important;
+  }
+
+  html[data-theme="dark"] .main-content.revision-main > .page-actions {
+    color: #edf4f3 !important;
+    border-color: #223234 !important;
+    background: #101a1c !important;
+  }
+
+  html[data-theme="dark"] .main-content.revision-main > .page-actions::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto -1px -12px;
+    width: 12px;
+    border-bottom: 1px solid #223234;
+    background: #101a1c;
+    pointer-events: none;
+  }
+
+  html[data-theme="dark"] .main-content.revision-main > .page-actions .top-view-label {
+    color: #d7e3e1 !important;
+    border-color: #355653 !important;
+    background: #182527 !important;
+  }
+}
+
+/* Desktop quiz workspace: override the light canvas locked in responsive-scale.css. */
+@media (min-width: 901px) {
+  html[data-theme="dark"] .main-content.quiz-main {
+    color: #edf4f3 !important;
+    background: #0d1517 !important;
+  }
+
+  html[data-theme="dark"] .main-content.quiz-main > .quiz-page {
+    color: #edf4f3 !important;
+    background: #0d1517 !important;
+  }
+
+  html[data-theme="dark"] .main-content.quiz-main > .page-actions {
+    color: #edf4f3 !important;
+    border-color: #223234 !important;
+    background: #101a1c !important;
+  }
+
+  html[data-theme="dark"] .main-content.quiz-main > .page-actions .top-view-label {
+    color: #d7e3e1 !important;
+    border-color: #355653 !important;
+    background: #182527 !important;
+  }
+}
+
+/* Desktop supports workspace: override the light canvas locked in responsive-scale.css. */
+@media (min-width: 901px) {
+  html[data-theme="dark"] .main-content.support-main {
+    color: #edf4f3 !important;
+    background: #0d1517 !important;
+  }
+
+  html[data-theme="dark"] .main-content.support-main > .support-page {
+    color: #edf4f3 !important;
+    background: #0d1517 !important;
+  }
+
+  html[data-theme="dark"] .main-content.support-main > .page-actions {
+    color: #edf4f3 !important;
+    border-color: #223234 !important;
+    background: #101a1c !important;
+  }
+
+  html[data-theme="dark"] .main-content.support-main > .page-actions .top-view-label {
+    color: #d7e3e1 !important;
+    border-color: #355653 !important;
+    background: #182527 !important;
+  }
+}
+
+/* Keep the new-conversation action visible on every dark workspace header. */
+html[data-theme="dark"] .main-content.revision-main > .page-actions .top-new-conversation-button,
+html[data-theme="dark"] .main-content.quiz-main > .page-actions .top-new-conversation-button,
+html[data-theme="dark"] .main-content.support-main > .page-actions .top-new-conversation-button,
+html[data-theme="dark"] .main-content.chat-main > .page-actions .top-new-conversation-button {
+  color: #73d9d0 !important;
+  background: transparent !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="dark"] .main-content.revision-main > .page-actions .top-new-conversation-button:hover,
+html[data-theme="dark"] .main-content.quiz-main > .page-actions .top-new-conversation-button:hover,
+html[data-theme="dark"] .main-content.support-main > .page-actions .top-new-conversation-button:hover,
+html[data-theme="dark"] .main-content.chat-main > .page-actions .top-new-conversation-button:hover {
+  background: #183033 !important;
+}
+
+/* Desktop chat uses stronger legacy selectors and decorative layers. */
+html[data-theme="dark"] .main-content.chat-main,
+html[data-theme="dark"] .main-content.chat-main::before,
+html[data-theme="dark"] .main-content.chat-main::after {
+  background: #0d1517 !important;
+  background-image: none !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2,
+html[data-theme="dark"] .app-shell > .sidebar.menu-v2 {
+  color: #edf4f3 !important;
+  border-color: #2a3b3d !important;
+  background: #101a1c !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .recents,
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .recents-head,
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .sidebar-bottom {
+  color: #edf4f3 !important;
+  border-color: #2a3b3d !important;
+  background: #101a1c !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .recents-head h3,
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .conversation-link {
+  color: #9aabaa !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .conversation-link:hover,
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .conversation-link.active {
+  color: #73d9d0 !important;
+  background: #19302f !important;
+}
+
+html[data-theme="dark"] .main-content.chat-main > .orvix-chat-shell,
+html[data-theme="dark"] .main-content.chat-main > .orvix-chat-shell > .orvix-chat-messages {
+  color: #edf4f3 !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .main-content.chat-main .orvix-functional-composer {
+  color: #edf4f3 !important;
+  border-color: #37504f !important;
+  background: #131e20 !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .34) !important;
+}
+
+html[data-theme="dark"] .main-content.chat-main .orvix-functional-writing textarea {
+  color: #edf4f3 !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .main-content.chat-main .orvix-functional-writing textarea::placeholder {
+  color: #81918f !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .main-content.chat-main {
+  color: #edf4f3 !important;
+  background: #0d1517 !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) {
+  background: #0d1517 !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .main-content.chat-main::before {
+  background-color: #0d1517 !important;
+  background-image: url('/orvix-logo-transparent.png') !important;
+  background-repeat: no-repeat !important;
+  background-position: center 46% !important;
+  background-size: min(32vw, 360px) auto !important;
+  opacity: .075 !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .main-content.chat-main::after {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .nav-item,
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .profile-card {
+  color: #d2dddc !important;
+  border-color: #2a3b3d !important;
+  background-color: transparent !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .nav-item:hover,
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .nav-item.active {
+  color: #73d9d0 !important;
+  background: #19302f !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .profile-card {
+  background: #182527 !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .recents-head button,
+html[data-theme="dark"] .app-shell > .sidebar.menu-v2 .recents-head button {
+  color: #73d9d0 !important;
+  border: 1px solid #31504d !important;
+  background: #19302f !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .recents-head button:hover,
+html[data-theme="dark"] .app-shell > .sidebar.menu-v2 .recents-head button:hover {
+  color: #a0eee7 !important;
+  border-color: #467a75 !important;
+  background: #21413e !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .sidebar-brand,
+html[data-theme="dark"] .app-shell > .sidebar.menu-v2 .sidebar-brand {
+  color: #73d9d0 !important;
+}
+
+html[data-theme="dark"] .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .sidebar-brand span,
+html[data-theme="dark"] .app-shell > .sidebar.menu-v2 .sidebar-brand span {
+  color: inherit !important;
+}
+
+html[data-theme="dark"] .main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.assistant .orvix-chat-message {
+  color: #e3eceb !important;
+  border-color: #2b3e3f !important;
+  background: #172325 !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .2) !important;
+}
+
+/* Complete ORVIX dark theme. Kept last so newer responsive surfaces cannot force light colors. */
+html[data-theme="dark"] {
+  --orvix-dark-bg: #0d1517;
+  --orvix-dark-surface: #131e20;
+  --orvix-dark-surface-2: #182527;
+  --orvix-dark-surface-3: #1d2d2f;
+  --orvix-dark-border: #2a3b3d;
+  --orvix-dark-border-soft: #223234;
+  --orvix-dark-text: #edf4f3;
+  --orvix-dark-muted: #9aabaa;
+  --orvix-dark-teal: #58c9bf;
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root,
+html[data-theme="dark"] .app-shell,
+html[data-theme="dark"] .main-content,
+html[data-theme="dark"] .main-content.chat-main,
+html[data-theme="dark"] .main-content.revision-main,
+html[data-theme="dark"] .main-content.quiz-main,
+html[data-theme="dark"] .main-content.support-main {
+  color: var(--orvix-dark-text) !important;
+  background: var(--orvix-dark-bg) !important;
+}
+
+html[data-theme="dark"] .sidebar.menu-v2,
+html[data-theme="dark"] .sidebar.menu-v2 .recents-head,
+html[data-theme="dark"] .sidebar.menu-v2 .sidebar-bottom {
+  color: var(--orvix-dark-text) !important;
+  border-color: var(--orvix-dark-border) !important;
+  background: #101a1c !important;
+}
+
+html[data-theme="dark"] .sidebar.menu-v2 .sidebar-bottom::before {
+  background: linear-gradient(to top, #101a1c, transparent) !important;
+}
+
+html[data-theme="dark"] .sidebar.menu-v2 .brand,
+html[data-theme="dark"] .sidebar.menu-v2 .sidebar-brand {
+  color: var(--orvix-dark-teal) !important;
+}
+
+html[data-theme="dark"] .sidebar.menu-v2 .nav-item {
+  color: #d2dddc !important;
+}
+
+html[data-theme="dark"] .sidebar.menu-v2 .nav-item:hover,
+html[data-theme="dark"] .sidebar.menu-v2 .nav-item.active,
+html[data-theme="dark"] .sidebar.menu-v2 .conversation-link:hover,
+html[data-theme="dark"] .sidebar.menu-v2 .conversation-link.active {
+  color: #73d9d0 !important;
+  background: #19302f !important;
+}
+
+html[data-theme="dark"] .sidebar.menu-v2 .recents h3,
+html[data-theme="dark"] .sidebar.menu-v2 .conversation-link,
+html[data-theme="dark"] .sidebar.menu-v2 .profile-card small {
+  color: var(--orvix-dark-muted) !important;
+}
+
+html[data-theme="dark"] .sidebar.menu-v2 .profile-card,
+html[data-theme="dark"] .sidebar.menu-v2 .profile-card.account-button,
+html[data-theme="dark"] .sidebar.menu-v2 .profile-card.account-button:hover,
+html[data-theme="dark"] .sidebar.menu-v2 .profile-card.account-button.active {
+  color: var(--orvix-dark-text) !important;
+  border-color: var(--orvix-dark-border) !important;
+  background: var(--orvix-dark-surface-2) !important;
+}
+
+html[data-theme="dark"] .sidebar.menu-v2 .profile-card strong,
+html[data-theme="dark"] .sidebar.menu-v2 .profile-card .profile-caret {
+  color: var(--orvix-dark-text) !important;
+}
+
+html[data-theme="dark"] .page-actions,
+html[data-theme="dark"] .main-content > .page-actions,
+html[data-theme="dark"] .main-content.chat-main > .page-actions {
+  border-color: var(--orvix-dark-border-soft) !important;
+  background: rgba(13, 21, 23, .96) !important;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .18) !important;
+}
+
+html[data-theme="dark"] .page-actions button,
+html[data-theme="dark"] .page-actions .mobile-menu,
+html[data-theme="dark"] .page-actions .top-new-conversation-button {
+  color: #e4eeee !important;
+  border-color: transparent !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .page-actions .top-view-label,
+html[data-theme="dark"] .page-actions .top-document-selector {
+  color: #cbd7d5 !important;
+  border-color: #3e706d !important;
+  background: var(--orvix-dark-surface-2) !important;
+}
+
+html[data-theme="dark"] .page-actions .top-document-selector select {
+  color: #d8e4e2 !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .workspace-page,
+html[data-theme="dark"] .settings-page,
+html[data-theme="dark"] .appearance-settings,
+html[data-theme="dark"] .revision-page,
+html[data-theme="dark"] .quiz-page,
+html[data-theme="dark"] .support-page {
+  color: var(--orvix-dark-text) !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .revision-lead,
+html[data-theme="dark"] .quiz-lead,
+html[data-theme="dark"] .support-lead,
+html[data-theme="dark"] .page-intro p,
+html[data-theme="dark"] .empty-state p {
+  color: var(--orvix-dark-muted) !important;
+}
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] .page-intro h1,
+html[data-theme="dark"] .document-details strong,
+html[data-theme="dark"] .support-library-head strong,
+html[data-theme="dark"] .quiz-focus-card > h2 {
+  color: var(--orvix-dark-text) !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select,
+html[data-theme="dark"] .document-search,
+html[data-theme="dark"] .quiz-start-line input,
+html[data-theme="dark"] .quiz-options select,
+html[data-theme="dark"] .settings-field input,
+html[data-theme="dark"] .settings-field textarea {
+  color: var(--orvix-dark-text) !important;
+  border-color: var(--orvix-dark-border) !important;
+  background-color: #101a1c !important;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #738583 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="dark"] .settings-form,
+html[data-theme="dark"] .general-settings,
+html[data-theme="dark"] .profile-simple-panel,
+html[data-theme="dark"] .subscription-panel,
+html[data-theme="dark"] .result-card,
+html[data-theme="dark"] .guided-session,
+html[data-theme="dark"] .guided-summary,
+html[data-theme="dark"] .quiz-focus-card,
+html[data-theme="dark"] .quiz-review,
+html[data-theme="dark"] .quiz-summary > div,
+html[data-theme="dark"] .quiz-summary article,
+html[data-theme="dark"] .document-card,
+html[data-theme="dark"] .profile-hero-card,
+html[data-theme="dark"] .profile-menu-group > div {
+  color: var(--orvix-dark-text) !important;
+  border-color: var(--orvix-dark-border) !important;
+  background: var(--orvix-dark-surface) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .18) !important;
+}
+
+html[data-theme="dark"] .revision-modes,
+html[data-theme="dark"] .quiz-segments,
+html[data-theme="dark"] .settings-tabs,
+html[data-theme="dark"] .setting-options {
+  border-color: var(--orvix-dark-border) !important;
+  background: #101a1c !important;
+}
+
+html[data-theme="dark"] .revision-modes button,
+html[data-theme="dark"] .quiz-segments button,
+html[data-theme="dark"] .settings-tabs button,
+html[data-theme="dark"] .setting-options button {
+  color: #a8b7b5 !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .revision-modes button.active,
+html[data-theme="dark"] .quiz-segments button.active,
+html[data-theme="dark"] .settings-tabs button.active,
+html[data-theme="dark"] .setting-options button.selected {
+  color: #74d8cf !important;
+  border-color: #396d68 !important;
+  background: var(--orvix-dark-surface-3) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .2) !important;
+}
+
+html[data-theme="dark"] .quiz-segments button::before {
+  border-color: #66817d !important;
+  background: #101a1c !important;
+}
+
+html[data-theme="dark"] .quiz-segments button.active::before {
+  border-color: var(--orvix-dark-teal) !important;
+  background: #101a1c !important;
+}
+
+html[data-theme="dark"] .quiz-focus-choices button,
+html[data-theme="dark"] .guided-choices button,
+html[data-theme="dark"] .quiz-review details,
+html[data-theme="dark"] .quiz-expected,
+html[data-theme="dark"] .revision-objectives button {
+  color: #dce6e5 !important;
+  border-color: var(--orvix-dark-border) !important;
+  background: var(--orvix-dark-surface-2) !important;
+}
+
+html[data-theme="dark"] .quiz-focus-choices button > span,
+html[data-theme="dark"] .file-icon {
+  color: #68d0c6 !important;
+  background: #203432 !important;
+}
+
+html[data-theme="dark"] .quiz-focus-choices button.correct,
+html[data-theme="dark"] .quiz-focus-feedback.correct {
+  color: #9be0bd !important;
+  border-color: #3f7659 !important;
+  background: #193126 !important;
+}
+
+html[data-theme="dark"] .quiz-focus-choices button.incorrect,
+html[data-theme="dark"] .quiz-focus-feedback.incorrect {
+  color: #f0aaa5 !important;
+  border-color: #774946 !important;
+  background: #352120 !important;
+}
+
+html[data-theme="dark"] .support-upload,
+html[data-theme="dark"] .support-page > .support-upload {
+  color: #68d0c6 !important;
+  border-color: #397d77 !important;
+  background: #162826 !important;
+}
+
+html[data-theme="dark"] .support-page > .support-upload > svg {
+  color: #68d0c6 !important;
+  background: #203432 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .support-page > .support-upload strong {
+  color: #86d9d1 !important;
+}
+
+html[data-theme="dark"] .support-page > .support-upload small,
+html[data-theme="dark"] .support-library-head span,
+html[data-theme="dark"] .document-details small {
+  color: var(--orvix-dark-muted) !important;
+}
+
+html[data-theme="dark"] .support-grid .document-card.active {
+  border-color: #4a918a !important;
+  background: #19302f !important;
+  box-shadow: inset 3px 0 0 #58c9bf !important;
+}
+
+html[data-theme="dark"] .support-active {
+  color: #82ddd4 !important;
+  background: #21413e !important;
+}
+
+html[data-theme="dark"] .document-delete {
+  color: #9aabaa !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .orvix-chat-shell,
+html[data-theme="dark"] .orvix-chat-messages {
+  color: var(--orvix-dark-text) !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .orvix-chat-message-row.assistant .orvix-chat-message {
+  color: #e3eceb !important;
+  border-color: #2b3e3f !important;
+  background: #172325 !important;
+}
+
+html[data-theme="dark"] .orvix-chat-message-row.user .orvix-chat-message {
+  color: #effafa !important;
+  background: #167d77 !important;
+}
+
+html[data-theme="dark"] .orvix-functional-composer {
+  border-color: #37504f !important;
+  background: #131e20 !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .34) !important;
+}
+
+html[data-theme="dark"] .orvix-functional-writing textarea {
+  color: var(--orvix-dark-text) !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .attachment-menu,
+html[data-theme="dark"] .message-sources article {
+  color: var(--orvix-dark-text) !important;
+  border-color: var(--orvix-dark-border) !important;
+  background: var(--orvix-dark-surface-2) !important;
+}
+
+html[data-theme="dark"] .profile-menu-group button,
+html[data-theme="dark"] .setting-group,
+html[data-theme="dark"] .settings-validation {
+  color: var(--orvix-dark-text) !important;
+  border-color: var(--orvix-dark-border) !important;
+}
+
+html[data-theme="dark"] .profile-menu-group button:hover {
+  background: var(--orvix-dark-surface-3) !important;
+}
+
+html[data-theme="dark"] .backdrop {
+  background: rgba(2, 8, 9, .68) !important;
+}
+
+@media (max-width: 900px) {
+  html[data-theme="dark"] .main-content.chat-main:has(.orvix-chat-shell.empty-chat),
+  html[data-theme="dark"] .main-content.chat-main:has(.orvix-chat-shell.empty-chat)::before,
+  html[data-theme="dark"] .main-content.chat-main:has(.orvix-chat-shell.empty-chat)::after {
+    background: #0d1517 !important;
+  }
+
+  html[data-theme="dark"] .orvix-chat-shell.empty-chat .orvix-chat-welcome h1 span {
+    color: #edf4f3 !important;
+  }
+
+  html[data-theme="dark"] .orvix-chat-shell.empty-chat .orvix-chat-welcome h1 em {
+    color: #58c9bf !important;
+  }
+
+  html[data-theme="dark"] .sidebar.menu-v2 .close-nav {
+    color: #58c9bf !important;
+    background: #172827 !important;
+  }
+}
+
+/* Mobile Supports workspace — clean import and library flow. */
+@media (max-width: 900px) {
+  .main-content.support-main {
+    height: 100dvh !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    background: #f8fbfa !important;
+  }
+
+  .main-content.support-main > .page-actions .top-view-label {
+    position: absolute !important;
+    top: calc(50% + (env(safe-area-inset-top) / 2)) !important;
+    left: 50% !important;
+    right: auto !important;
+    width: 146px !important;
+    max-width: 146px !important;
+    height: 32px !important;
+    display: grid !important;
+    place-items: center !important;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    transform: translate(-50%, -50%) !important;
+    border: 1px solid rgba(32, 167, 160, .5) !important;
+    border-radius: 999px !important;
+    color: #6d7b79 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    font-size: 10.5px !important;
+    font-weight: 650 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+  }
+
+  .main-content.support-main > .support-page {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: calc(76px + env(safe-area-inset-top)) 14px calc(30px + env(safe-area-inset-bottom)) !important;
+    overflow: visible !important;
+    background: transparent !important;
+    box-sizing: border-box !important;
+  }
+
+  .support-page > .support-lead,
+  .support-page > .support-upload,
+  .support-page > .error-banner,
+  .support-page > .support-library-head,
+  .support-page > .support-grid,
+  .support-page > .empty-state {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .support-page > .support-lead {
+    margin: 2px 2px 14px !important;
+    color: #657674 !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+
+  .support-page > .support-upload {
+    min-height: 132px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 9px !important;
+    padding: 20px 14px !important;
+    border: 1.5px dashed #86c9c1 !important;
+    border-radius: 17px !important;
+    color: #159f95 !important;
+    background: #f1faf8 !important;
+    box-shadow: none !important;
+    text-align: center !important;
+  }
+
+  .support-page > .support-upload.dragging {
+    border-color: #087f78 !important;
+    background: #e7f7f4 !important;
+  }
+
+  .support-page > .support-upload > svg {
+    width: 30px !important;
+    height: 30px !important;
+    padding: 9px !important;
+    border-radius: 13px !important;
+    color: #159f95 !important;
+    background: #fff !important;
+    box-shadow: 0 5px 14px rgba(25, 111, 104, .08) !important;
+  }
+
+  .support-page > .support-upload > span {
+    display: grid !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+    text-align: center !important;
+  }
+
+  .support-page > .support-upload strong {
+    color: #176f69 !important;
+    font-size: 13px !important;
+    font-weight: 750 !important;
+  }
+
+  .support-page > .support-upload small {
+    max-width: 280px !important;
+    color: #7d8c89 !important;
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+    white-space: normal !important;
+  }
+
+  .support-page > .support-upload > b {
+    min-width: 92px !important;
+    min-height: 34px !important;
+    display: grid !important;
+    place-items: center !important;
+    margin-top: 2px !important;
+    padding: 0 14px !important;
+    border-radius: 10px !important;
+    color: #fff !important;
+    background: #159f95 !important;
+    font-size: 11px !important;
+  }
+
+  .support-page .support-library-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    margin: 22px 0 10px !important;
+  }
+
+  .support-page .support-library-head > div {
+    display: flex !important;
+    align-items: baseline !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    padding-inline: 2px !important;
+  }
+
+  .support-page .support-library-head strong {
+    color: #17243f !important;
+    font-size: 15px !important;
+  }
+
+  .support-page .support-library-head span {
+    color: #87938f !important;
+    font-size: 10px !important;
+  }
+
+  .support-page .support-library-head .document-search {
+    width: 100% !important;
+    height: 44px !important;
+    margin: 0 !important;
+    padding: 0 13px !important;
+    border: 1px solid #dce8e6 !important;
+    border-radius: 13px !important;
+    color: #263936 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    font-size: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  .support-page .support-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 9px !important;
+  }
+
+  .support-page .support-grid .document-card {
+    position: relative !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 70px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid #e0e9e8 !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .support-page .support-grid .document-card.active {
+    border-color: #78c3ba !important;
+    background: #f1faf8 !important;
+    box-shadow: inset 3px 0 0 #159f95 !important;
+  }
+
+  .support-page .support-grid .document-select {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 70px !important;
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px 42px 10px 11px !important;
+    text-align: left !important;
+  }
+
+  .support-page .support-grid .file-icon {
+    width: 38px !important;
+    height: 38px !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 11px !important;
+    color: #159f95 !important;
+    background: #eaf7f5 !important;
+  }
+
+  .support-page .support-grid .file-icon svg {
+    width: 19px !important;
+    height: 19px !important;
+  }
+
+  .support-page .support-grid .document-details {
+    min-width: 0 !important;
+    display: grid !important;
+    gap: 4px !important;
+  }
+
+  .support-page .support-grid .document-details strong {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    color: #26343a !important;
+    font-size: 12px !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .support-page .support-grid .document-details small {
+    color: #879491 !important;
+    font-size: 9px !important;
+  }
+
+  .support-page .support-active {
+    padding: 4px 7px !important;
+    border-radius: 999px !important;
+    color: #087f78 !important;
+    background: #dcf3ef !important;
+    font-size: 9px !important;
+    font-weight: 750 !important;
+  }
+
+  .support-page .support-grid .document-delete {
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    width: 30px !important;
+    height: 30px !important;
+    display: grid !important;
+    place-items: center !important;
+    transform: translateY(-50%) !important;
+    border-radius: 9px !important;
+    color: #8a9895 !important;
+    background: transparent !important;
+  }
+
+  .support-page > .empty-state {
+    min-height: 150px !important;
+    margin-top: 12px !important;
+    padding: 24px 12px !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .main-content.support-main > .support-page {
+    padding-inline: 10px !important;
+  }
+
+  .support-page .support-grid .document-select {
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+  }
+
+  .support-page .support-active {
+    grid-column: 2 !important;
+    justify-self: start !important;
+  }
+}
+
+/* Mobile Quiz title capsule, centred independently from side actions. */
+@media (max-width: 900px) {
+  .main-content.quiz-main > .page-actions .top-view-label {
+    position: absolute !important;
+    top: calc(50% + (env(safe-area-inset-top) / 2)) !important;
+    left: 50% !important;
+    right: auto !important;
+    width: 132px !important;
+    max-width: 132px !important;
+    height: 32px !important;
+    display: grid !important;
+    place-items: center !important;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    transform: translate(-50%, -50%) !important;
+    border: 1px solid rgba(32, 167, 160, .5) !important;
+    border-radius: 999px !important;
+    color: #6d7b79 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    font-size: 10.5px !important;
+    font-weight: 650 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Mobile Quiz format selector — clearer two-option segmented control. */
+@media (max-width: 900px) {
+  .quiz-page .quiz-options > div:first-child > span {
+    margin-bottom: 8px !important;
+  }
+
+  .quiz-page .quiz-segments {
+    min-height: 54px !important;
+    gap: 5px !important;
+    padding: 4px !important;
+    border: 1px solid #d6e6e3 !important;
+    border-radius: 15px !important;
+    background: #eef5f4 !important;
+  }
+
+  .quiz-page .quiz-segments button {
+    position: relative !important;
+    min-height: 46px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    padding: 7px 8px !important;
+    border: 1px solid transparent !important;
+    border-radius: 11px !important;
+    color: #647572 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 11px !important;
+    font-weight: 650 !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease !important;
+  }
+
+  .quiz-page .quiz-segments button::before {
+    content: "" !important;
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    border: 1.5px solid #91aaa6 !important;
+    border-radius: 50% !important;
+    background: #fff !important;
+    box-sizing: border-box !important;
+  }
+
+  .quiz-page .quiz-segments button.active {
+    border-color: rgba(21, 159, 149, .32) !important;
+    color: #087f78 !important;
+    background: #fff !important;
+    box-shadow: 0 3px 10px rgba(24, 92, 86, .09) !important;
+    font-weight: 750 !important;
+  }
+
+  .quiz-page .quiz-segments button.active::before {
+    border: 4px solid #159f95 !important;
+    background: #fff !important;
+  }
+
+  .quiz-page .quiz-segments button:focus-visible {
+    outline: 2px solid rgba(21, 159, 149, .42) !important;
+    outline-offset: 2px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .quiz-page .quiz-segments button {
+    gap: 5px !important;
+    padding-inline: 5px !important;
+    font-size: 10px !important;
+  }
+}
+
+/* Mobile Quiz workspace — compact, touch-friendly and independent from desktop. */
+@media (max-width: 900px) {
+  .main-content.quiz-main {
+    min-width: 0 !important;
+    overflow: hidden auto !important;
+    background: #fbfdfd !important;
+  }
+
+  .main-content.quiz-main > .quiz-page {
+    width: 100% !important;
+    min-height: 100dvh !important;
+    padding: calc(76px + env(safe-area-inset-top)) 14px calc(30px + env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+  }
+
+  .quiz-page > .quiz-lead {
+    margin: 2px 2px 14px !important;
+    color: #657674 !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+
+  .quiz-page > .document-picker {
+    margin: 0 0 14px !important;
+    padding: 12px !important;
+    border: 1px solid #dfeae8 !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .quiz-page > .document-picker select {
+    width: 100% !important;
+    height: 44px !important;
+    padding-inline: 12px 34px !important;
+    border-radius: 11px !important;
+    font-size: 13px !important;
+  }
+
+  .quiz-page > .quiz-setup {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .quiz-page .quiz-options {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 92px !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .quiz-page .quiz-options > div,
+  .quiz-page .quiz-options > label {
+    min-width: 0 !important;
+  }
+
+  .quiz-page .quiz-options > div > span,
+  .quiz-page .quiz-options > label > span,
+  .quiz-page .quiz-setup > label {
+    display: block !important;
+    margin: 0 0 7px !important;
+    color: #50635f !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+  }
+
+  .quiz-page .quiz-segments {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 3px !important;
+    padding: 3px !important;
+    border: 1px solid #dce8e6 !important;
+    border-radius: 12px !important;
+    background: #f4f8f7 !important;
+  }
+
+  .quiz-page .quiz-segments button {
+    min-width: 0 !important;
+    min-height: 40px !important;
+    padding: 6px 7px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    white-space: normal !important;
+  }
+
+  .quiz-page .quiz-segments button.active {
+    background: #fff !important;
+    color: #087f78 !important;
+    box-shadow: 0 2px 8px rgba(35, 69, 77, .08) !important;
+  }
+
+  .quiz-page .quiz-options select {
+    width: 100% !important;
+    height: 46px !important;
+    padding-inline: 10px 28px !important;
+    border: 1px solid #dce8e6 !important;
+    border-radius: 12px !important;
+    background-color: #fff !important;
+    font-size: 13px !important;
+  }
+
+  .quiz-page .quiz-setup > label small {
+    color: #87928f !important;
+    font-size: 10px !important;
+    font-weight: 500 !important;
+  }
+
+  .quiz-page .quiz-start-line {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .quiz-page .quiz-start-line input {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 48px !important;
+    padding-inline: 14px !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    font-size: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  .quiz-page .quiz-start-line button {
+    width: 100% !important;
+    min-height: 48px !important;
+    justify-content: center !important;
+    border-radius: 14px !important;
+    background: #159f95 !important;
+    font-size: 13px !important;
+  }
+
+  .quiz-page > .empty-state {
+    min-height: 150px !important;
+    margin-top: 12px !important;
+    padding: 24px 12px !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .quiz-page .quiz-focus {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .quiz-page .quiz-focus > header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+    align-items: center !important;
+    padding: 2px 0 15px !important;
+  }
+
+  .quiz-page .quiz-focus > header > div:first-child {
+    min-width: 0 !important;
+  }
+
+  .quiz-page .quiz-focus > header > div:first-child small {
+    display: block !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .quiz-page .quiz-focus > header > div:nth-child(2) {
+    width: auto !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-end !important;
+    gap: 5px !important;
+  }
+
+  .quiz-page .quiz-focus > header button {
+    min-height: 34px !important;
+    padding-inline: 9px !important;
+    white-space: nowrap !important;
+  }
+
+  .quiz-page .quiz-focus > header > span {
+    grid-column: 1 / -1 !important;
+    position: static !important;
+    width: 100% !important;
+    height: 4px !important;
+  }
+
+  .quiz-page .quiz-focus-card {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 18px 14px !important;
+    border-radius: 17px !important;
+    box-shadow: 0 8px 24px rgba(35, 69, 77, .045) !important;
+  }
+
+  .quiz-page .quiz-focus-card > h2 {
+    margin-bottom: 16px !important;
+    font-size: 16px !important;
+    line-height: 1.45 !important;
+  }
+
+  .quiz-page .quiz-focus-choices {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 9px !important;
+  }
+
+  .quiz-page .quiz-focus-choices button {
+    min-height: 50px !important;
+    grid-template-columns: 30px minmax(0, 1fr) 18px !important;
+    padding: 9px 10px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+  }
+
+  .quiz-page .quiz-focus-feedback,
+  .quiz-page .quiz-expected {
+    padding: 13px !important;
+    border-radius: 12px !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .quiz-page .quiz-written textarea {
+    min-height: 140px !important;
+    font-size: 16px !important;
+  }
+
+  .quiz-page .quiz-summary {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    margin-top: 0 !important;
+  }
+
+  .quiz-page .quiz-summary > div,
+  .quiz-page .quiz-summary article,
+  .quiz-page .quiz-review {
+    width: 100% !important;
+    padding: 15px !important;
+    border-radius: 15px !important;
+    box-sizing: border-box !important;
+  }
+
+  .quiz-page .quiz-review summary {
+    grid-template-columns: 24px minmax(0, 1fr) 16px !important;
+    min-height: 48px !important;
+    padding: 8px 9px !important;
+  }
+
+  .quiz-page .quiz-review summary strong {
+    display: none !important;
+  }
+
+  .quiz-page .quiz-review details > div {
+    padding: 4px 10px 12px !important;
+    overflow-wrap: anywhere !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .main-content.quiz-main > .quiz-page {
+    padding-inline: 10px !important;
+  }
+
+  .quiz-page .quiz-options {
+    grid-template-columns: minmax(0, 1fr) 82px !important;
+    gap: 8px !important;
+  }
+
+  .quiz-page .quiz-focus > header {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .quiz-page .quiz-focus > header > div:nth-child(2) {
+    justify-content: flex-start !important;
+  }
+}
+
+/* Keep the mobile profile identity visually stable on every workspace page. */
+@media (max-width: 900px) {
+  .app-shell > .sidebar.menu-v2 .profile-card.account-button,
+  .app-shell > .sidebar.menu-v2 .profile-card.account-button:hover,
+  .app-shell > .sidebar.menu-v2 .profile-card.account-button.active {
+    color: #101d4f !important;
+  }
+
+  .app-shell > .sidebar.menu-v2 .profile-card strong {
+    color: #101d4f !important;
+  }
+
+  .app-shell > .sidebar.menu-v2 .profile-card small {
+    color: #74828e !important;
+  }
+
+  .app-shell > .sidebar.menu-v2 .profile-card .profile-caret {
+    color: #52616f !important;
+  }
+}
+
+html, body, #root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+img, svg { max-width: 100%; }
+button, input, select, textarea { font: inherit; }
+
+.app-shell {
+  display: grid !important;
+  grid-template-columns: var(--orvix-sidebar) minmax(0, 1fr) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 100dvh !important;
+  min-height: 100vh !important;
+  overflow: hidden !important;
+}
+
+.app-shell > .sidebar.menu-v2 {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 100dvh !important;
+  padding: 22px 16px 16px !important;
+  overflow: hidden !important;
+}
+
+.sidebar .sidebar-brand { margin: 0 8px 24px !important; }
+.sidebar nav { gap: 4px !important; }
+.sidebar nav .nav-item { min-height: 46px !important; }
+.sidebar .recents { min-height: 0; overflow: hidden auto; }
+.sidebar .conversation-link { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar .sidebar-bottom { margin-top: auto; }
+
+.app-shell > .main-content {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.main-content > .page-actions {
+  position: absolute !important;
+  inset: 0 0 auto 0 !important;
+  width: 100% !important;
+  height: var(--orvix-header-h) !important;
+  z-index: 50 !important;
+}
+
+.workspace-page,
+.settings-page,
+.appearance-settings {
+  width: min(var(--orvix-content-max), 100%) !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 auto !important;
+  padding: calc(var(--orvix-header-h) + 28px) var(--orvix-page-pad) 48px !important;
+  height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.workspace-page > *, .settings-page > *, .appearance-settings > * { min-width: 0; }
+.settings-form, .plans-grid, .profile-stats, .exam-columns,
+.quiz-options, .quiz-start-line, .support-grid { max-width: 100%; }
+
+/* Chat geometry */
+.app-shell:has(.main-content.chat-main) {
+  display: grid !important;
+  grid-template-columns: var(--orvix-sidebar) minmax(0, 1fr) !important;
+}
+
+.app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main,
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main::before,
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main::after,
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main > .page-actions,
+.app-shell:has(.main-content.chat-main) > .main-content.chat-main > .orvix-chat-shell {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+}
+
+.main-content.chat-main > .orvix-chat-shell {
+  display: block !important;
+  position: absolute !important;
+  inset: var(--orvix-header-h) 0 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.main-content.chat-main > .orvix-chat-shell > .orvix-chat-messages {
+  display: block !important;
+  position: absolute !important;
+  inset: 0 0 104px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 24px clamp(24px, 6vw, 88px) 36px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.orvix-chat-message-row { width: min(920px, 100%) !important; }
+.orvix-chat-message-row .message-stack { min-width: 0; }
+.orvix-chat-message-row.user .message-stack { max-width: min(72%, 680px) !important; }
+.orvix-chat-message-row.assistant .message-stack { max-width: min(82%, 760px) !important; }
+.orvix-chat-message { overflow-wrap: anywhere; }
+
+.orvix-chat-shell.empty-chat .orvix-chat-messages {
+  inset: 0 0 104px !important;
+  display: grid !important;
+  place-items: center !important;
+  pointer-events: none !important;
+}
+.orvix-chat-shell.empty-chat .orvix-chat-empty {
+  position: static !important;
+  transform: none !important;
+  padding: 0 20px 8vh !important;
+}
+
+/* One composer for every viewport. */
+.main-content.chat-main .orvix-functional-composer {
+  position: absolute !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: max(18px, env(safe-area-inset-bottom)) !important;
+  transform: translateX(-50%) !important;
+  z-index: 100 !important;
+  width: min(820px, calc(100% - 48px)) !important;
+  min-height: 58px !important;
+  max-height: 128px !important;
+  margin: 0 !important;
+  padding: 8px 104px 8px 58px !important;
+  display: flex !important;
+  align-items: center !important;
+  border: 1px solid #cfe0de !important;
+  border-radius: 28px !important;
+  background: rgba(255,255,255,.98) !important;
+  box-shadow: 0 14px 38px rgba(17,48,45,.11) !important;
+  overflow: visible !important;
+}
+
+.orvix-functional-writing { flex: 1 1 auto !important; min-width: 0 !important; }
+.orvix-functional-writing textarea {
+  display: block !important;
+  width: 100% !important;
+  height: 24px;
+  min-height: 24px !important;
+  max-height: 88px !important;
+  margin: 0 !important;
+  padding: 2px 6px !important;
+  border: 0 !important;
+  outline: 0 !important;
+  resize: none !important;
+  overflow-x: hidden !important;
+  background: transparent !important;
+  color: #17243f !important;
+  font-size: 15px !important;
+  line-height: 20px !important;
+}
+
+.orvix-functional-actions { position: static !important; }
+.orvix-functional-actions > button:first-child {
+  position: absolute !important;
+  left: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+.orvix-functional-actions > div:last-child {
+  position: absolute !important;
+  right: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin: 0 !important;
+}
+.orvix-functional-actions button {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+}
+.orvix-functional-actions > button:first-child,
+.orvix-functional-actions > div:last-child > button:first-child {
+  color: #168f87 !important;
+  background: transparent !important;
+}
+.orvix-functional-actions > div:last-child > button:last-child {
+  color: #fff !important;
+  background: linear-gradient(135deg, #62c7bf, #168f87) !important;
+}
+.orvix-functional-actions button:disabled { opacity: .42 !important; }
+.orvix-functional-menu { left: 10px !important; bottom: 56px !important; }
+
+/* Keep the microphone and send control locked inside the composer.  The
+   selector intentionally matches the desktop scaling layer so older negative
+   margins can never pull these controls onto the border again. */
+.app-shell:has(.main-content.chat-main) .orvix-functional-actions > div:last-child {
+  position: absolute !important;
+  right: 12px !important;
+  top: auto !important;
+  bottom: 6px !important;
+  transform: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.app-shell:has(.main-content.chat-main) .orvix-functional-actions > div:last-child > button {
+  flex: 0 0 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  max-width: 36px !important;
+  max-height: 36px !important;
+  aspect-ratio: 1 / 1 !important;
+  box-sizing: border-box !important;
+  border-radius: 50% !important;
+  line-height: 0 !important;
+  margin: 0 !important;
+}
+.app-shell:has(.main-content.chat-main) .orvix-functional-actions > div:last-child > button:last-child {
+  flex-basis: 30px !important;
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+  max-width: 30px !important;
+  max-height: 30px !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+.app-shell:has(.main-content.chat-main) .orvix-functional-actions button[aria-label="Envoyer"] svg {
+  display: block !important;
+  width: 15px !important;
+  height: 15px !important;
+  margin: 0 !important;
+  transform: translate(-1px, 1px) !important;
+  transform-origin: center !important;
+}
+
+/* Personal information must stay fully readable: remove the decorative
+   orbital layer only from the account area. */
+.main-content.account-scroll::before,
+.main-content.account-scroll::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+.main-content.account-scroll {
+  background: #fbfdfd !important;
+}
+.app-shell:has(.main-content.chat-main) .orvix-functional-actions > button:first-child {
+  top: auto !important;
+  bottom: 6px !important;
+  transform: none !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  margin: 0 !important;
+}
+
+/* Tablet */
+@media (max-width: 1100px) and (min-width: 901px) {
+  :root { --orvix-sidebar: 220px; --orvix-page-pad: 28px; }
+  .sidebar { padding-inline: 12px !important; }
+  .sidebar .sidebar-brand { font-size: 22px !important; }
+  .main-content.chat-main .orvix-functional-composer { width: min(720px, calc(100% - 36px)) !important; }
+}
+
+/* Mobile and portrait tablet */
+@media (max-width: 900px) {
+  :root { --orvix-header-h: 58px; --orvix-page-pad: 16px; }
+  .app-shell,
+  .app-shell:has(.main-content.chat-main) { display: block !important; height: 100dvh !important; }
+  .app-shell > .sidebar.menu-v2,
+  .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 200 !important;
+    width: min(84vw, 310px) !important;
+    height: 100dvh !important;
+    transform: translateX(-105%) !important;
+    transition: transform .22s ease !important;
+    box-shadow: 18px 0 45px rgba(16,29,79,.16) !important;
+  }
+  .app-shell > .sidebar.menu-v2.open { transform: translateX(0) !important; }
+  .app-shell > .backdrop { display: block !important; position: fixed !important; inset: 0 !important; z-index: 190 !important; }
+  .app-shell > .main-content { width: 100% !important; height: 100dvh !important; }
+  .main-content > .page-actions .mobile-menu { display: grid !important; }
+  .workspace-page, .settings-page, .appearance-settings {
+    padding: calc(var(--orvix-header-h) + 18px) var(--orvix-page-pad) calc(28px + env(safe-area-inset-bottom)) !important;
+  }
+  .page-intro h1, .profile-heading h1 { font-size: clamp(28px, 8vw, 40px) !important; }
+  .settings-form, .plans-grid, .profile-stats, .exam-columns,
+  .quiz-options, .quiz-start-line { grid-template-columns: 1fr !important; }
+  .main-content.chat-main > .orvix-chat-shell > .orvix-chat-messages {
+    inset: 0 0 84px !important;
+    padding: 16px 14px 24px !important;
+    scrollbar-gutter: auto;
+  }
+  .orvix-chat-message-row { gap: 8px !important; margin-bottom: 14px !important; }
+  .orvix-chat-message-row.user .message-stack { max-width: 86% !important; }
+  .orvix-chat-message-row.assistant .message-stack { max-width: calc(100% - 40px) !important; }
+  .orvix-chat-avatar { width: 30px !important; height: 30px !important; flex-basis: 30px !important; }
+  .orvix-chat-message { font-size: 14px !important; line-height: 1.5 !important; }
+  .orvix-chat-shell.empty-chat .orvix-chat-empty { padding-bottom: 5vh !important; }
+  .orvix-chat-empty-brand { width: 66px !important; height: 66px !important; margin-bottom: 16px !important; }
+  .orvix-chat-welcome h1 { font-size: clamp(28px, 9vw, 40px) !important; }
+  .main-content.chat-main .orvix-functional-composer {
+    width: calc(100% - 20px) !important;
+    min-height: 48px !important;
+    max-height: 116px !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    padding: 6px 82px 6px 42px !important;
+    border-radius: 24px !important;
+  }
+  .orvix-functional-writing textarea { font-size: 16px !important; }
+  .orvix-functional-actions > button:first-child { left: 6px !important; }
+  .orvix-functional-actions > div:last-child { right: 5px !important; gap: 0 !important; }
+  .orvix-functional-actions > div:last-child > button:first-child { display: none !important; }
+  .orvix-functional-actions button { width: 36px !important; height: 36px !important; min-width: 36px !important; }
+  .chat-main > .page-actions .top-document-selector {
+    left: 56px !important;
+    right: 54px !important;
+    top: 10px !important;
+    transform: none !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 38px !important;
+  }
+  .chat-main > .page-actions .top-actions-right { top: 8px !important; right: 8px !important; }
+  .chat-main > .page-actions .top-actions-right button { width: 40px !important; height: 40px !important; }
+}
+
+@media (max-width: 480px) {
+  .workspace-page, .settings-page, .appearance-settings { padding-inline: 12px !important; }
+  .revision-modes, .quiz-segments { width: 100% !important; overflow-x: auto !important; }
+  .support-upload { padding: 14px !important; }
+  .document-grid, .support-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .quiz-focus-card, .result-card, .subscription-panel, .settings-form { padding: 14px !important; }
+  .orvix-chat-message-row.user .message-stack { max-width: 90% !important; }
+  .main-content.chat-main .orvix-functional-composer { width: calc(100% - 14px) !important; }
+}
+
+@media (max-height: 620px) and (max-width: 900px) {
+  .orvix-chat-shell.empty-chat .orvix-chat-empty-brand { display: none !important; }
+  .orvix-chat-shell.empty-chat .orvix-chat-empty { padding-bottom: 0 !important; }
+  .orvix-chat-welcome h1 { font-size: 28px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* Mobile application contract — keep this block last. */
+@media (max-width: 900px) {
+  html, body, #root { width: 100%; min-width: 0; height: 100%; overflow: hidden; }
+  body { overscroll-behavior: none; }
+  button, input, select, textarea { max-width: 100%; }
+
+  .app-shell,
+  .app-shell:has(.main-content.chat-main) {
+    width: 100vw !important;
+    min-width: 0 !important;
+    min-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  .app-shell > .main-content,
+  .app-shell:has(.main-content.chat-main) > .main-content.chat-main {
+    position: relative !important;
+    left: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Drawer navigation */
+  .app-shell > .sidebar.menu-v2,
+  .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 {
+    width: min(86vw, 320px) !important;
+    max-width: 320px !important;
+    padding: max(18px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) !important;
+    overflow: hidden !important;
+  }
+  .sidebar.menu-v2 .sidebar-brand { min-height: 42px !important; margin-bottom: 14px !important; }
+  .sidebar.menu-v2 nav { flex: 0 0 auto !important; }
+  .sidebar.menu-v2 .nav-item { min-height: 44px !important; }
+  .sidebar.menu-v2 .recents { min-height: 0 !important; overflow-y: auto !important; overscroll-behavior: contain; }
+  .sidebar.menu-v2 .sidebar-bottom { position: static !important; margin-top: auto !important; padding-top: 10px !important; background: #fff !important; }
+  .sidebar.menu-v2 .profile-card { width: 100% !important; }
+
+  /* Shared mobile header */
+  .main-content > .page-actions,
+  .app-shell:has(.main-content.chat-main) > .main-content.chat-main > .page-actions {
+    position: fixed !important;
+    z-index: 90 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: calc(58px + env(safe-area-inset-top)) !important;
+    padding: env(safe-area-inset-top) 10px 0 !important;
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) 40px !important;
+    align-items: center !important;
+    column-gap: 8px !important;
+    border-bottom: 1px solid #e8efee !important;
+    background: rgba(255,255,255,.96) !important;
+    backdrop-filter: blur(14px) !important;
+    box-sizing: border-box !important;
+  }
+  .main-content > .page-actions .mobile-menu {
+    position: static !important;
+    grid-column: 1 !important;
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0 !important;
+  }
+  .main-content > .page-actions .top-document-selector,
+  .main-content > .page-actions .top-view-label {
+    position: static !important;
+    grid-column: 2 !important;
+    justify-self: center !important;
+    transform: none !important;
+    width: min(100%, 220px) !important;
+    min-width: 0 !important;
+    max-width: 220px !important;
+    height: 36px !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+  .main-content > .page-actions .top-actions-right {
+    position: static !important;
+    grid-column: 3 !important;
+    justify-self: end !important;
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0 !important;
+  }
+  .main-content > .page-actions .top-actions-right button { width: 40px !important; height: 40px !important; }
+
+  /* Shared pages and forms */
+  .workspace-page,
+  .settings-page,
+  .appearance-settings {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100dvh !important;
+    padding: calc(74px + env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+  .workspace-page > *, .settings-page > *, .appearance-settings > * { min-width: 0 !important; max-width: 100% !important; }
+  .workspace-page p, .settings-page p { overflow-wrap: anywhere; }
+  .settings-form,
+  .general-settings,
+  .profile-simple-panel,
+  .subscription-panel,
+  .result-card,
+  .quiz-focus-card,
+  .guided-session,
+  .guided-summary {
+    width: 100% !important;
+    padding: 16px !important;
+    border-radius: 18px !important;
+    box-sizing: border-box !important;
+  }
+  .settings-form,
+  .settings-validation,
+  .subscription-heading,
+  .quota-summary,
+  .setting-group {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .settings-validation,
+  .subscription-heading,
+  .setting-group { gap: 12px !important; align-items: stretch !important; }
+  .settings-validation button, .setting-action { width: 100% !important; justify-content: center !important; }
+  .chip-grid, .setting-options { display: flex !important; flex-wrap: wrap !important; gap: 8px !important; }
+  .settings-field input, .settings-field textarea, .settings-field select { width: 100% !important; box-sizing: border-box !important; }
+
+  /* Revision */
+  .revision-lead, .quiz-lead, .support-lead { margin: 0 0 16px !important; font-size: 14px !important; line-height: 1.5 !important; }
+  .revision-modes {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(150px, 1fr)) !important;
+    gap: 10px !important;
+    overflow-x: auto !important;
+    padding: 2px 2px 8px !important;
+    scroll-snap-type: x proximity;
+  }
+  .revision-modes > button { min-width: 150px !important; scroll-snap-align: start; }
+  .revision-objectives { align-items: flex-start !important; gap: 10px !important; }
+  .revision-objectives > div { width: 100% !important; display: flex !important; overflow-x: auto !important; padding-bottom: 4px !important; }
+  .revision-request, .inline-form { grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }
+  .revision-request button, .inline-form button { width: 100% !important; justify-content: center !important; }
+
+  /* Quiz */
+  .quiz-setup { width: 100% !important; padding: 16px !important; }
+  .quiz-options { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 16px !important; }
+  .quiz-segments { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; overflow: visible !important; }
+  .quiz-segments button { min-width: 0 !important; white-space: normal !important; }
+  .quiz-start-line { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }
+  .quiz-start-line button { width: 100% !important; justify-content: center !important; }
+  .quiz-focus > header { align-items: flex-start !important; gap: 10px !important; }
+  .quiz-focus > header > div { min-width: 0 !important; flex-wrap: wrap !important; }
+  .quiz-focus > header > div:last-of-type { width: 100% !important; justify-content: flex-start !important; }
+  .quiz-focus-choices, .guided-choices { grid-template-columns: minmax(0, 1fr) !important; }
+  .quiz-summary, .exam-columns { grid-template-columns: minmax(0, 1fr) !important; }
+  .quiz-review { padding: 12px !important; overflow-wrap: anywhere; }
+
+  /* Documents */
+  .support-upload { min-height: 160px !important; padding: 20px 14px !important; text-align: center !important; }
+  .support-upload > span { min-width: 0 !important; }
+  .support-upload small { white-space: normal !important; }
+  .support-library-head { align-items: stretch !important; gap: 10px !important; }
+  .support-library-head .document-search { width: 100% !important; }
+  .document-grid, .support-grid { width: 100% !important; grid-template-columns: minmax(0, 1fr) !important; }
+  .document-card, .document-select, .document-details { min-width: 0 !important; }
+  .document-details strong { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+
+  /* Profile */
+  .profile-heading, .profile-detail-heading { gap: 12px !important; align-items: flex-start !important; }
+  .profile-heading h1, .profile-detail-heading h1 { font-size: clamp(25px, 8vw, 34px) !important; overflow-wrap: anywhere; }
+  .profile-hero-card { width: 100% !important; overflow: hidden !important; }
+  .profile-hero-main { min-height: 250px !important; padding: 28px 16px !important; }
+  .profile-stats { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .profile-stats > div { min-width: 0 !important; padding-inline: 4px !important; }
+  .profile-stats span { font-size: 11px !important; overflow-wrap: anywhere; }
+  .profile-menu-group button { min-height: 56px !important; padding-inline: 14px !important; }
+  .profile-menu-group button span { min-width: 0 !important; }
+  .plans-grid { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* Chat: keep every control visible and inside the viewport. */
+  .main-content.chat-main > .orvix-chat-shell { width: 100% !important; min-width: 0 !important; height: 100dvh !important; }
+  .main-content.chat-main > .orvix-chat-shell > .orvix-chat-messages {
+    top: calc(58px + env(safe-area-inset-top)) !important;
+    bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+    padding: 14px 10px 18px !important;
+    overflow-x: hidden !important;
+  }
+  .orvix-chat-message-row { width: 100% !important; max-width: 100% !important; }
+  .orvix-chat-message-row.user .message-stack { max-width: 88% !important; }
+  .orvix-chat-message-row.assistant .message-stack { max-width: calc(100% - 38px) !important; }
+  .orvix-chat-message { max-width: 100% !important; padding: 13px 14px !important; overflow-wrap: anywhere; }
+  .orvix-chat-message pre, .orvix-chat-message table { display: block; max-width: 100%; overflow-x: auto; }
+  .orvix-chat-message img { height: auto; }
+  .message-sources article { grid-template-columns: minmax(0, 1fr) !important; }
+  .message-sources article button { width: 100% !important; justify-content: center !important; }
+  .main-content.chat-main .orvix-functional-composer {
+    left: 50% !important;
+    right: auto !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    transform: translateX(-50%) !important;
+    width: calc(100% - 16px) !important;
+    min-height: 54px !important;
+    max-height: 122px !important;
+    padding: 7px 82px 7px 42px !important;
+    border-radius: 28px !important;
+    box-sizing: border-box !important;
+  }
+  .orvix-functional-writing { min-width: 0 !important; }
+  .orvix-functional-writing textarea { width: 100% !important; min-height: 38px !important; font-size: 16px !important; }
+  .orvix-functional-actions > button:first-child { left: 5px !important; bottom: 8px !important; }
+  .orvix-functional-actions > div:last-child { right: 5px !important; bottom: 8px !important; gap: 2px !important; }
+  .orvix-functional-actions > div:last-child > button:first-child {
+    display: grid !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+  }
+  .orvix-functional-actions button[aria-label="Envoyer"],
+  .orvix-functional-actions button[aria-label="Arrêter la réponse"] {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+  }
+
+  /* Authentication and first-run flows */
+  .auth-page, .first-welcome-page { min-height: 100dvh !important; padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom)) !important; overflow-x: hidden !important; }
+  .auth-page > *, .first-welcome-card, .onboarding-panel { width: 100% !important; max-width: 520px !important; min-width: 0 !important; }
+  .auth-form, .onboarding-form { width: 100% !important; }
+  .onboarding-steps { overflow-x: auto !important; }
+  .onboarding-summary, .onboarding-actions { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+@media (max-width: 480px) {
+  .workspace-page, .settings-page, .appearance-settings { padding-inline: 10px !important; }
+  .main-content > .page-actions,
+  .app-shell:has(.main-content.chat-main) > .main-content.chat-main > .page-actions {
+    grid-template-columns: 38px minmax(0, 1fr) 38px !important;
+    column-gap: 6px !important;
+    padding-inline: 8px !important;
+  }
+  .main-content > .page-actions .mobile-menu,
+  .main-content > .page-actions .top-actions-right,
+  .main-content > .page-actions .top-actions-right button { width: 38px !important; height: 38px !important; }
+  .main-content > .page-actions .top-document-selector,
+  .main-content > .page-actions .top-view-label { max-width: 180px !important; }
+  .profile-stats strong { font-size: 20px !important; }
+  .quiz-segments { grid-template-columns: minmax(0, 1fr) !important; }
+  .orvix-chat-avatar { width: 28px !important; height: 28px !important; flex-basis: 28px !important; }
+  .orvix-chat-message-row.assistant .message-stack { max-width: calc(100% - 34px) !important; }
+  .orvix-chat-message { padding: 11px 12px !important; font-size: 13.5px !important; }
+}
+
+/* Mobile Chat welcome — faithful to the selected phone reference. */
+@media (max-width: 600px) {
+  .main-content.chat-main:has(.orvix-chat-shell.empty-chat) {
+    background: #eaf5f3 !important;
+  }
+  .main-content.chat-main:has(.orvix-chat-shell.empty-chat)::before {
+    inset: calc(58px + env(safe-area-inset-top)) 0 0 !important;
+    background:
+      radial-gradient(circle at 50% 52%, rgba(255,255,255,.24) 0 28%, transparent 28.5%),
+      radial-gradient(circle at 50% 52%, transparent 0 37%, rgba(255,255,255,.18) 37.5% 49%, transparent 49.5%),
+      #eaf5f3 !important;
+  }
+  .main-content.chat-main:has(.orvix-chat-shell.empty-chat)::after {
+    inset: calc(58px + env(safe-area-inset-top)) 0 0 !important;
+    opacity: .8 !important;
+    background:
+      radial-gradient(ellipse 80% 24% at 50% 96%, rgba(255,255,255,.17), transparent 72%),
+      radial-gradient(circle at 50% 52%, transparent 0 52%, rgba(255,255,255,.12) 52.5% 53%, transparent 53.5%) !important;
+  }
+  .main-content.chat-main:has(.orvix-chat-shell.empty-chat) > .page-actions {
+    background: #fff !important;
+    border-bottom-color: rgba(21,77,72,.06) !important;
+    box-shadow: 0 5px 14px rgba(22,73,68,.035) !important;
+  }
+  .main-content.chat-main:has(.orvix-chat-shell.empty-chat) .top-document-selector {
+    width: 164px !important;
+    max-width: 164px !important;
+    height: 40px !important;
+    border: 1px solid #20a7a0 !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+  .main-content.chat-main:has(.orvix-chat-shell.empty-chat) .top-document-selector select {
+    color: #168e89 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+  }
+  .main-content.chat-main:has(.orvix-chat-shell.empty-chat) .top-new-conversation-button {
+    color: #10204f !important;
+    background: transparent !important;
+  }
+  .orvix-chat-shell.empty-chat > .orvix-chat-messages {
+    top: calc(58px + env(safe-area-inset-top)) !important;
+    bottom: calc(68px + env(safe-area-inset-bottom)) !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  .orvix-chat-shell.empty-chat .orvix-chat-empty {
+    position: relative !important;
+    top: -1.5vh !important;
+    left: auto !important;
+    width: 100% !important;
+    transform: none !important;
+    padding: 0 16px !important;
+    box-sizing: border-box !important;
+  }
+  .orvix-chat-shell.empty-chat .orvix-chat-empty-brand {
+    width: 58px !important;
+    height: 58px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .orvix-chat-shell.empty-chat .orvix-chat-empty-brand .orvix-chat-logo {
+    width: 58px !important;
+    height: 58px !important;
+    max-width: 58px !important;
+    object-fit: contain !important;
+  }
+  .orvix-chat-shell.empty-chat .orvix-chat-welcome {
+    margin: 16px 0 0 !important;
+  }
+  .orvix-chat-shell.empty-chat .orvix-chat-welcome h1 {
+    font-size: clamp(23px, 7.3vw, 29px) !important;
+    line-height: 1.03 !important;
+    letter-spacing: -.035em !important;
+  }
+  .orvix-chat-shell.empty-chat .orvix-chat-welcome h1 span { color: #10204f !important; }
+  .orvix-chat-shell.empty-chat .orvix-chat-welcome h1 em { color: #18aaa3 !important; }
+
+  /* Centre the free-question capsule in the mobile header. */
+  .main-content.chat-main > .page-actions .top-document-selector {
+    position: absolute !important;
+    top: calc(50% + (env(safe-area-inset-top) / 2)) !important;
+    left: 50% !important;
+    right: auto !important;
+    grid-column: auto !important;
+    justify-self: auto !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+  }
+  .main-content.chat-main > .page-actions .top-document-selector select {
+    width: 100% !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+    color: #7d8988 !important;
+    font-size: 13px !important;
+    text-align: center !important;
+    text-align-last: center !important;
+  }
+}
+
+/* Definitive mobile-only Chat capsule. Keep after every legacy selector. */
+@media (max-width: 900px) {
+  /* Final stacking lock: the drawer must always sit above its dimmed backdrop. */
+  .app-shell > .sidebar.menu-v2,
+  .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 {
+    z-index: 10001 !important;
+    isolation: isolate !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .app-shell > .sidebar.menu-v2.open,
+  .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2.open {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+  .app-shell > .backdrop,
+  .app-shell:has(.main-content.chat-main) > .backdrop {
+    z-index: 10000 !important;
+  }
+
+  /* One functional drawer for every mobile view: Chat, Revision, Quiz, Supports and Profile. */
+  .app-shell > .sidebar.menu-v2 {
+    display: flex !important;
+    position: fixed !important;
+    z-index: 220 !important;
+    inset: 0 auto 0 0 !important;
+    width: min(86vw, 320px) !important;
+    min-width: 0 !important;
+    max-width: 320px !important;
+    height: 100dvh !important;
+    transform: translate3d(-105%, 0, 0) !important;
+    transition: transform .28s cubic-bezier(.22, 1, .36, 1) !important;
+    visibility: visible !important;
+    background: #fff !important;
+    box-shadow: 20px 0 48px rgba(10, 31, 48, .18) !important;
+    will-change: transform;
+  }
+  .app-shell > .sidebar.menu-v2.open {
+    transform: translate3d(0, 0, 0) !important;
+  }
+  .app-shell > .sidebar.menu-v2 .close-nav {
+    display: grid !important;
+    visibility: visible !important;
+    z-index: 2 !important;
+    color: #0b9c94 !important;
+    border: 1px solid rgba(11, 156, 148, .16) !important;
+    background: #eaf8f6 !important;
+  }
+  .app-shell > .sidebar.menu-v2 .sidebar-bottom {
+    transform: translateY(-30px) !important;
+  }
+  .app-shell > .backdrop {
+    display: block !important;
+    position: fixed !important;
+    z-index: 210 !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: rgba(8, 24, 38, .38) !important;
+    backdrop-filter: blur(1.5px) !important;
+    animation: orvix-mobile-backdrop-in .2s ease-out both;
+    pointer-events: auto !important;
+  }
+  .app-shell > .main-content > .page-actions > .mobile-menu {
+    display: grid !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  /* Functional sliding drawer opened by the mobile hamburger. */
+  .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 {
+    display: flex !important;
+    position: fixed !important;
+    z-index: 220 !important;
+    inset: 0 auto 0 0 !important;
+    width: min(86vw, 320px) !important;
+    min-width: 0 !important;
+    max-width: 320px !important;
+    height: 100dvh !important;
+    transform: translate3d(-105%, 0, 0) !important;
+    transition: transform .28s cubic-bezier(.22, 1, .36, 1) !important;
+    will-change: transform;
+    visibility: visible !important;
+    background: #fff !important;
+    box-shadow: 20px 0 48px rgba(10, 31, 48, .18) !important;
+  }
+  .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2.open {
+    transform: translate3d(0, 0, 0) !important;
+  }
+  .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .close-nav {
+    display: grid !important;
+    visibility: visible !important;
+    z-index: 2 !important;
+    color: #0b9c94 !important;
+    border: 1px solid rgba(11, 156, 148, .16) !important;
+    background: #eaf8f6 !important;
+    box-shadow: none !important;
+  }
+  .app-shell:has(.main-content.chat-main) > .sidebar.menu-v2 .sidebar-bottom {
+    transform: translateY(-30px) !important;
+  }
+  .app-shell:has(.main-content.chat-main) > .backdrop {
+    display: block !important;
+    position: fixed !important;
+    z-index: 210 !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: rgba(8, 24, 38, .38) !important;
+    backdrop-filter: blur(1.5px) !important;
+    animation: orvix-mobile-backdrop-in .2s ease-out both;
+    pointer-events: auto !important;
+  }
+
+  .app-shell .main-content.chat-main > .page-actions > .mobile-menu {
+    display: grid !important;
+    visibility: visible !important;
+    position: absolute !important;
+    top: calc(50% + (env(safe-area-inset-top) / 2)) !important;
+    left: 10px !important;
+    right: auto !important;
+    width: 38px !important;
+    height: 38px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    place-items: center !important;
+    transform: translateY(-50%) !important;
+    border: 0 !important;
+    border-radius: 10px !important;
+    color: #10204f !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    pointer-events: auto !important;
+  }
+  .app-shell .main-content.chat-main > .page-actions > .mobile-menu svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .app-shell .main-content.chat-main > .page-actions > .top-document-selector,
+  .app-shell .main-content.chat-main:has(.orvix-chat-shell.empty-chat) > .page-actions > .top-document-selector {
+    position: absolute !important;
+    top: calc(50% + (env(safe-area-inset-top) / 2)) !important;
+    left: 50% !important;
+    right: auto !important;
+    width: 132px !important;
+    min-width: 132px !important;
+    max-width: 132px !important;
+    height: 32px !important;
+    margin: 0 !important;
+    padding: 0 7px !important;
+    transform: translate(-50%, -50%) !important;
+    border: 1px solid #20a7a0 !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
+  .app-shell .main-content.chat-main > .page-actions > .top-document-selector > select,
+  .app-shell .main-content.chat-main:has(.orvix-chat-shell.empty-chat) > .page-actions > .top-document-selector > select {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 18px !important;
+    color: #7d8988 !important;
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    line-height: 32px !important;
+    text-align: center !important;
+    text-align-last: center !important;
+    border: 0 !important;
+    background-color: transparent !important;
+  }
+
+  /* Empty mobile Chat: centre the logo and welcome copy as one unit. */
+  .app-shell .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-empty {
+    position: fixed !important;
+    z-index: 3 !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    max-width: 360px !important;
+    margin: 0 !important;
+    padding: 0 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transform: translate(-50%, -50%) !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+  }
+  .app-shell .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-empty-brand {
+    width: 98px !important;
+    height: 98px !important;
+    flex: 0 0 auto !important;
+    margin: 0 auto !important;
+  }
+  .app-shell .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-empty-brand .orvix-chat-logo {
+    width: 98px !important;
+    height: 98px !important;
+    max-width: 98px !important;
+  }
+  .app-shell .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-welcome {
+    width: 100% !important;
+    margin: 16px 0 0 !important;
+    text-align: center !important;
+  }
+  .app-shell .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-welcome h1 {
+    width: 100% !important;
+    margin: 0 !important;
+    text-align: center !important;
+    transform: translateX(-10px) !important;
+  }
+}
+
+@keyframes orvix-mobile-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Mobile-only Revision workspace. Desktop rules remain untouched. */
+@media (max-width: 900px) {
+  .main-content.revision-main {
+    height: 100dvh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    background: #f7fbfa !important;
+  }
+  .main-content.revision-main > .page-actions .top-view-label {
+    width: 140px !important;
+    max-width: 140px !important;
+    height: 32px !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 1px solid rgba(32, 167, 160, .5) !important;
+    border-radius: 999px !important;
+    color: #697a78 !important;
+    background: #fff !important;
+    font-size: 10.5px !important;
+    font-weight: 650 !important;
+    box-shadow: none !important;
+  }
+  .main-content.revision-main > .revision-page {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: calc(72px + env(safe-area-inset-top)) 12px calc(32px + env(safe-area-inset-bottom)) !important;
+    display: block !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+  .revision-page .revision-lead {
+    width: 100% !important;
+    margin: 0 0 12px !important;
+    padding: 13px 14px !important;
+    border: 1px solid #deebe8 !important;
+    border-radius: 14px !important;
+    color: #5f706e !important;
+    background: rgba(255,255,255,.9) !important;
+    font-size: 12.5px !important;
+    line-height: 1.5 !important;
+    box-sizing: border-box !important;
+  }
+  .revision-page .revision-modes {
+    width: 100% !important;
+    margin: 0 0 12px !important;
+    padding: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+  .revision-page .revision-modes > button {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 62px !important;
+    padding: 11px 13px 11px 16px !important;
+    display: grid !important;
+    align-content: center !important;
+    border: 1px solid #dce8e6 !important;
+    border-radius: 14px !important;
+    color: #1b2b39 !important;
+    background: #fff !important;
+    box-shadow: 0 7px 18px rgba(31,75,68,.035) !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+  }
+  .revision-page .revision-modes > button.active {
+    border-color: #55b9b0 !important;
+    background: #eaf8f6 !important;
+    box-shadow: inset 3px 0 0 #159f95 !important;
+  }
+  .revision-page .revision-modes strong {
+    margin: 0 0 3px !important;
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+  }
+  .revision-page .revision-modes span {
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+  .revision-page .revision-objectives {
+    width: 100% !important;
+    margin: 0 0 12px !important;
+    padding: 13px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 9px !important;
+    border: 1px solid #deebe8 !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-sizing: border-box !important;
+  }
+  .revision-page .revision-objectives > span {
+    font-size: 12px !important;
+    color: #344643 !important;
+  }
+  .revision-page .revision-objectives > div {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  .revision-page .revision-objectives button {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 36px !important;
+    padding: 7px 8px !important;
+    border-radius: 10px !important;
+    font-size: 10.5px !important;
+    white-space: normal !important;
+  }
+  .revision-page > .document-picker {
+    width: 100% !important;
+    margin: 0 0 12px !important;
+    padding: 13px !important;
+    gap: 7px !important;
+    border: 1px solid #deebe8 !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-sizing: border-box !important;
+  }
+  .revision-page > .document-picker > span,
+  .revision-page > .revision-request > label {
+    color: #344643 !important;
+    font-size: 12px !important;
+    font-weight: 750 !important;
+  }
+  .revision-page > .document-picker select {
+    width: 100% !important;
+    min-height: 44px !important;
+    padding: 9px 11px !important;
+    border: 1px solid #d7e4e1 !important;
+    border-radius: 11px !important;
+    color: #334542 !important;
+    background: #fbfdfd !important;
+    font-size: 12px !important;
+    box-sizing: border-box !important;
+  }
+  .revision-page > .revision-request {
+    width: 100% !important;
+    margin: 0 0 12px !important;
+    padding: 13px !important;
+    border: 1px solid #deebe8 !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
+  .revision-page > .revision-request > label {
+    display: block !important;
+    margin: 0 0 8px !important;
+  }
+  .revision-page > .revision-request .inline-form {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+  .revision-page > .revision-request .inline-form input {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 46px !important;
+    padding: 11px 12px !important;
+    border: 1px solid #d7e4e1 !important;
+    border-radius: 11px !important;
+    background: #fbfdfd !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+  }
+  .revision-page > .revision-request .inline-form button {
+    width: 100% !important;
+    min-height: 44px !important;
+    padding: 10px 14px !important;
+    border-radius: 11px !important;
+    background: #159f95 !important;
+    box-shadow: none !important;
+    font-size: 12px !important;
+  }
+  .revision-page > .empty-state {
+    width: 100% !important;
+    min-height: 150px !important;
+    margin: 0 !important;
+    padding: 20px 14px !important;
+    border: 1px dashed #cfe2df !important;
+    border-radius: 16px !important;
+    color: #849693 !important;
+    background: rgba(255,255,255,.65) !important;
+    box-sizing: border-box !important;
+  }
+  .revision-page > .empty-state span {
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 14px !important;
+  }
+  .revision-page .revision-result,
+  .revision-page .guided-session,
+  .revision-page .guided-summary,
+  .revision-page .review-points {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    overflow-wrap: anywhere !important;
+    box-sizing: border-box !important;
+  }
+  .revision-page .revision-result {
+    margin-top: 0 !important;
+    padding: 16px !important;
+  }
+  .revision-page .revision-result h2 { font-size: 18px !important; line-height: 1.3 !important; }
+  .revision-page .revision-result .formatted-message { font-size: 13px !important; line-height: 1.6 !important; }
+  .revision-page .guided-session { margin-top: 12px !important; padding: 14px !important; }
+  .revision-page .guided-choices button { min-height: 46px !important; padding: 9px 10px !important; }
+}
+
+@media (max-width: 380px) {
+  .main-content.revision-main > .revision-page { padding-inline: 9px !important; }
+  .revision-page .revision-lead,
+  .revision-page .revision-objectives,
+  .revision-page > .document-picker,
+  .revision-page > .revision-request { padding: 11px !important; }
+}
+
+/* Revision mobile refinement: one calm surface instead of stacked cards. */
+@media (max-width: 900px) {
+  .main-content.revision-main { background: #fbfdfd !important; }
+  .revision-page .revision-lead {
+    margin-bottom: 14px !important;
+    padding: 0 2px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+  .revision-page .revision-modes {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 3px !important;
+    padding: 4px !important;
+    border: 0 !important;
+    border-radius: 13px !important;
+    background: #edf4f2 !important;
+  }
+  .revision-page .revision-modes > button {
+    min-height: 42px !important;
+    padding: 7px 5px !important;
+    place-items: center !important;
+    border: 0 !important;
+    border-radius: 10px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-align: center !important;
+  }
+  .revision-page .revision-modes > button.active {
+    color: #087f78 !important;
+    background: #fff !important;
+    box-shadow: 0 3px 10px rgba(21, 95, 88, .08) !important;
+  }
+  .revision-page .revision-modes strong { margin: 0 !important; font-size: 11px !important; }
+  .revision-page .revision-modes span { display: none !important; }
+
+  .revision-page .revision-objectives {
+    margin-bottom: 14px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+  .revision-page .revision-objectives > div {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .revision-page .revision-objectives button {
+    width: auto !important;
+    min-height: 30px !important;
+    padding: 5px 10px !important;
+    border-radius: 999px !important;
+  }
+
+  .revision-page > .document-picker {
+    margin-bottom: 14px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+  .revision-page > .document-picker select {
+    background: #fff !important;
+  }
+
+  .revision-page > .revision-request {
+    padding: 14px !important;
+    border-color: #dce9e6 !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    box-shadow: 0 10px 28px rgba(27, 69, 63, .05) !important;
+  }
+
+  .revision-page > .empty-state {
+    min-height: 120px !important;
+    padding: 12px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+  .revision-page > .empty-state span {
+    width: 42px !important;
+    height: 42px !important;
+  }
+}
+
+/* Dark-theme cascade lock: this must remain the final block in this stylesheet. */
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root,
+html[data-theme="dark"] .app-shell,
+html[data-theme="dark"] .main-content,
+html[data-theme="dark"] .main-content.chat-main,
+html[data-theme="dark"] .main-content.revision-main,
+html[data-theme="dark"] .main-content.quiz-main,
+html[data-theme="dark"] .main-content.support-main {
+  color: #edf4f3 !important;
+  background: #0d1517 !important;
+}
+
+html[data-theme="dark"] .sidebar.menu-v2,
+html[data-theme="dark"] .sidebar.menu-v2 .recents-head,
+html[data-theme="dark"] .sidebar.menu-v2 .sidebar-bottom,
+html[data-theme="dark"] .main-content > .page-actions {
+  color: #edf4f3 !important;
+  border-color: #2a3b3d !important;
+  background: #101a1c !important;
+}
+
+html[data-theme="dark"] .page-actions .top-view-label,
+html[data-theme="dark"] .page-actions .top-document-selector,
+html[data-theme="dark"] .profile-card,
+html[data-theme="dark"] .settings-form,
+html[data-theme="dark"] .general-settings,
+html[data-theme="dark"] .profile-simple-panel,
+html[data-theme="dark"] .subscription-panel,
+html[data-theme="dark"] .result-card,
+html[data-theme="dark"] .quiz-focus-card,
+html[data-theme="dark"] .quiz-review,
+html[data-theme="dark"] .quiz-summary > div,
+html[data-theme="dark"] .quiz-summary article,
+html[data-theme="dark"] .document-card,
+html[data-theme="dark"] .profile-hero-card,
+html[data-theme="dark"] .profile-menu-group > div,
+html[data-theme="dark"] .revision-page > .revision-request {
+  color: #edf4f3 !important;
+  border-color: #2a3b3d !important;
+  background: #131e20 !important;
+}
+
+html[data-theme="dark"] .revision-page > .document-picker,
+html[data-theme="dark"] .quiz-page > .document-picker {
+  border-color: #2a3b3d !important;
+  background: #131e20 !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select,
+html[data-theme="dark"] .document-search,
+html[data-theme="dark"] .revision-page > .document-picker select,
+html[data-theme="dark"] .quiz-page > .document-picker select,
+html[data-theme="dark"] .quiz-start-line input,
+html[data-theme="dark"] .quiz-options select {
+  color: #edf4f3 !important;
+  border-color: #2a3b3d !important;
+  background-color: #101a1c !important;
+}
+
+html[data-theme="dark"] .revision-lead,
+html[data-theme="dark"] .quiz-lead,
+html[data-theme="dark"] .support-lead,
+html[data-theme="dark"] .empty-state p,
+html[data-theme="dark"] .document-details small,
+html[data-theme="dark"] .support-library-head span {
+  color: #9aabaa !important;
+}
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] .document-details strong,
+html[data-theme="dark"] .support-library-head strong,
+html[data-theme="dark"] .profile-card strong {
+  color: #edf4f3 !important;
+}
+
+html[data-theme="dark"] .quiz-segments,
+html[data-theme="dark"] .revision-modes {
+  border-color: #2a3b3d !important;
+  background: #101a1c !important;
+}
+
+html[data-theme="dark"] .quiz-segments button,
+html[data-theme="dark"] .revision-modes button {
+  color: #a8b7b5 !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .quiz-segments button.active,
+html[data-theme="dark"] .revision-modes button.active {
+  color: #74d8cf !important;
+  border-color: #396d68 !important;
+  background: #1d2d2f !important;
+}
+
+html[data-theme="dark"] .quiz-focus-choices button,
+html[data-theme="dark"] .quiz-review details,
+html[data-theme="dark"] .quiz-expected,
+html[data-theme="dark"] .revision-objectives button {
+  color: #dce6e5 !important;
+  border-color: #2a3b3d !important;
+  background: #182527 !important;
+}
+
+html[data-theme="dark"] .support-page > .support-upload {
+  color: #68d0c6 !important;
+  border-color: #397d77 !important;
+  background: #162826 !important;
+}
+
+html[data-theme="dark"] .support-page > .support-upload > svg,
+html[data-theme="dark"] .support-grid .file-icon {
+  color: #68d0c6 !important;
+  background: #203432 !important;
+}
+
+html[data-theme="dark"] .support-grid .document-card.active {
+  border-color: #4a918a !important;
+  background: #19302f !important;
+  box-shadow: inset 3px 0 0 #58c9bf !important;
+}
+
+html[data-theme="dark"] .orvix-chat-message-row.assistant .orvix-chat-message,
+html[data-theme="dark"] .attachment-menu,
+html[data-theme="dark"] .message-sources article {
+  color: #e3eceb !important;
+  border-color: #2b3e3f !important;
+  background: #172325 !important;
+}
+
+html[data-theme="dark"] .orvix-chat-message-row.user .orvix-chat-message {
+  color: #effafa !important;
+  background: #167d77 !important;
+}
+
+html[data-theme="dark"] .orvix-functional-composer {
+  border-color: #37504f !important;
+  background: #131e20 !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .34) !important;
+}
+
+html[data-theme="dark"] .orvix-functional-writing textarea {
+  color: #edf4f3 !important;
+  background: transparent !important;
+}
+
+@media (max-width: 900px) {
+  html[data-theme="dark"] .main-content.chat-main:has(.orvix-chat-shell.empty-chat),
+  html[data-theme="dark"] .main-content.chat-main:has(.orvix-chat-shell.empty-chat)::before,
+  html[data-theme="dark"] .main-content.chat-main:has(.orvix-chat-shell.empty-chat)::after {
+    background: #0d1517 !important;
+  }
+}
+
+/* Lift the chat composer slightly on phones without changing desktop geometry. */
+@media (max-width: 900px) {
+  .main-content.chat-main .orvix-functional-composer {
+    bottom: max(73px, calc(env(safe-area-inset-bottom) + 65px)) !important;
+    z-index: 300 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+
+  .main-content.chat-main .orvix-chat-messages {
+    bottom: calc(135px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .main-content.chat-main .orvix-functional-writing,
+  .main-content.chat-main .orvix-functional-writing textarea,
+  .main-content.chat-main .orvix-functional-actions,
+  .main-content.chat-main .orvix-functional-actions button {
+    pointer-events: auto !important;
+  }
+
+  .main-content.chat-main .orvix-functional-writing {
+    display: flex !important;
+    align-items: center !important;
+    align-self: stretch !important;
+  }
+
+  .main-content.chat-main .orvix-functional-writing textarea {
+    position: relative !important;
+    z-index: 2 !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 10px 6px !important;
+    line-height: 20px !important;
+    box-sizing: border-box !important;
+    color: #17243f !important;
+    caret-color: #159f95 !important;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    touch-action: manipulation !important;
+  }
+
+  html[data-theme="dark"] .main-content.chat-main .orvix-functional-writing textarea {
+    color: #edf4f3 !important;
+    caret-color: #58c9bf !important;
+  }
+
+  .main-content.chat-main .orvix-functional-menu {
+    position: absolute !important;
+    z-index: 320 !important;
+    left: 8px !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: calc(100% + 10px) !important;
+    min-width: 168px !important;
+    margin: 0 !important;
+    padding: 6px !important;
+    transform: none !important;
+    border: 1px solid #dce8e6 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    box-shadow: 0 12px 30px rgba(17, 48, 45, .14) !important;
+    pointer-events: auto !important;
+  }
+
+  .main-content.chat-main .orvix-functional-menu button {
+    width: 100% !important;
+    min-height: 36px !important;
+    padding: 0 11px !important;
+    justify-content: flex-start !important;
+    border-radius: 8px !important;
+    color: #263936 !important;
+    background: transparent !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  html[data-theme="dark"] .main-content.chat-main .orvix-functional-menu {
+    border-color: #2a3b3d !important;
+    background: #182527 !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .3) !important;
+  }
+
+  html[data-theme="dark"] .main-content.chat-main .orvix-functional-menu button {
+    color: #edf4f3 !important;
+  }
+
+  .main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.assistant .orvix-chat-message {
+    width: 100% !important;
+    padding: 13px 14px !important;
+    border: 1px solid #cfe5e2 !important;
+    border-radius: 18px !important;
+    border-top-left-radius: 10px !important;
+    color: #17243f !important;
+    background: #edf8f6 !important;
+    box-shadow: 0 7px 20px rgba(25, 75, 69, .08) !important;
+    box-sizing: border-box !important;
+  }
+
+  html[data-theme="dark"] .main-content.chat-main > .orvix-chat-shell.has-messages .orvix-chat-message-row.assistant .orvix-chat-message {
+    color: #e3eceb !important;
+    border-color: #2b3e3f !important;
+    background: #172325 !important;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .2) !important;
+  }
+}
+
+/* Final dark-mode cascade guard — must stay at EOF. */
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root,
+html[data-theme="dark"] .app-shell,
+html[data-theme="dark"] .main-content,
+html[data-theme="dark"] .workspace-page,
+html[data-theme="dark"] .settings-page,
+html[data-theme="dark"] .revision-page,
+html[data-theme="dark"] .quiz-page,
+html[data-theme="dark"] .support-page {
+  color: #edf4f3 !important;
+  background-color: #0d1517 !important;
+}
+
+html[data-theme="dark"] .main-content > .page-actions {
+  color: #edf4f3 !important;
+  border-color: #223234 !important;
+  background: #101a1c !important;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .24) !important;
+}
+
+html[data-theme="dark"] .main-content > .page-actions button {
+  color: #e3eceb !important;
+  background-color: transparent !important;
+}
+
+html[data-theme="dark"] .main-content > .page-actions .top-new-conversation-button {
+  color: #58bdb6 !important;
+  background-color: transparent !important;
+  opacity: .9 !important;
+}
+
+html[data-theme="dark"] .main-content > .page-actions .top-new-conversation-button:hover {
+  background-color: #183033 !important;
+  opacity: 1 !important;
+}
+
+@media (min-width: 901px) {
+  .app-shell {
+    grid-template-columns: 230px minmax(0, 1fr) !important;
+    gap: 0 !important;
+    column-gap: 0 !important;
+  }
+
+  .app-shell > .main-content.revision-main,
+  .app-shell > .main-content.quiz-main,
+  .app-shell > .main-content.support-main {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+
+  .main-content.revision-main > .page-actions,
+  .main-content.quiz-main > .page-actions,
+  .main-content.support-main > .page-actions {
+    inset: 0 0 auto 0 !important;
+    width: 100% !important;
+  }
+
+  .main-content.revision-main > .page-actions .top-view-label,
+  .main-content.quiz-main > .page-actions .top-view-label,
+  .main-content.support-main > .page-actions .top-view-label {
+    left: 50% !important;
+  }
+}
+
+html[data-theme="dark"] .main-content > .page-actions .top-view-label,
+html[data-theme="dark"] .main-content > .page-actions .top-document-selector {
+  color: #d7e3e1 !important;
+  border-color: #355653 !important;
+  background: #182527 !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-objectives > span,
+html[data-theme="dark"] .revision-page .document-picker > label,
+html[data-theme="dark"] .revision-page .revision-request > label,
+html[data-theme="dark"] .quiz-page .document-picker > label,
+html[data-theme="dark"] .quiz-page .quiz-options span,
+html[data-theme="dark"] .quiz-page .quiz-setup > label,
+html[data-theme="dark"] .quiz-page .quiz-setup small,
+html[data-theme="dark"] .support-page .support-library-head span {
+  color: #a9b9b7 !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-request,
+html[data-theme="dark"] .revision-page .document-picker,
+html[data-theme="dark"] .quiz-page .quiz-setup,
+html[data-theme="dark"] .quiz-page .document-picker,
+html[data-theme="dark"] .settings-form,
+html[data-theme="dark"] .profile-simple-panel,
+html[data-theme="dark"] .subscription-panel,
+html[data-theme="dark"] .profile-hero-card,
+html[data-theme="dark"] .profile-menu-group > div,
+html[data-theme="dark"] .result-card,
+html[data-theme="dark"] .guided-session,
+html[data-theme="dark"] .guided-summary,
+html[data-theme="dark"] .quiz-focus-card,
+html[data-theme="dark"] .quiz-review,
+html[data-theme="dark"] .document-card {
+  color: #edf4f3 !important;
+  border-color: #2a3b3d !important;
+  background: #131e20 !important;
+}
+
+html[data-theme="dark"] .revision-page input,
+html[data-theme="dark"] .revision-page select,
+html[data-theme="dark"] .revision-page textarea,
+html[data-theme="dark"] .quiz-page input,
+html[data-theme="dark"] .quiz-page select,
+html[data-theme="dark"] .quiz-page textarea,
+html[data-theme="dark"] .support-page input,
+html[data-theme="dark"] .settings-page input,
+html[data-theme="dark"] .settings-page select,
+html[data-theme="dark"] .settings-page textarea {
+  color: #edf4f3 !important;
+  border-color: #2f4244 !important;
+  background: #101a1c !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .revision-page input::placeholder,
+html[data-theme="dark"] .quiz-page input::placeholder,
+html[data-theme="dark"] .support-page input::placeholder,
+html[data-theme="dark"] .settings-page input::placeholder,
+html[data-theme="dark"] .settings-page textarea::placeholder {
+  color: #81918f !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-modes,
+html[data-theme="dark"] .quiz-page .quiz-segments {
+  border-color: #263638 !important;
+  background: #101a1c !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-modes button,
+html[data-theme="dark"] .quiz-page .quiz-segments button {
+  color: #aebdbb !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-modes button.active,
+html[data-theme="dark"] .quiz-page .quiz-segments button.active {
+  color: #82ddd4 !important;
+  border-color: #3a6662 !important;
+  background: #1d2d2f !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-objectives button {
+  color: #dce6e5 !important;
+  border-color: #2f4244 !important;
+  background: #182527 !important;
+}
+
+html[data-theme="dark"] .revision-page .revision-objectives button.active {
+  color: #8de1d8 !important;
+  border-color: #39716b !important;
+  background: #203b38 !important;
+}
+
+html[data-theme="dark"] .revision-page button:disabled,
+html[data-theme="dark"] .quiz-page button:disabled,
+html[data-theme="dark"] .settings-page button:disabled {
+  color: #93a7a4 !important;
+  border-color: #31504d !important;
+  background-color: #1c4643 !important;
+  opacity: .72 !important;
+}
+
+html[data-theme="dark"] .support-page > .support-upload {
+  color: #79d8cf !important;
+  border-color: #397d77 !important;
+  background: #162826 !important;
+}
+
+html[data-theme="dark"] .revision-page > .empty-state span,
+html[data-theme="dark"] .quiz-page > .empty-state span,
+html[data-theme="dark"] .support-page > .empty-state span {
+  color: #72d2c9 !important;
+  border-color: #2f4b48 !important;
+  background: #182a2b !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .profile-menu-group button,
+html[data-theme="dark"] .setting-group,
+html[data-theme="dark"] .settings-validation,
+html[data-theme="dark"] .chip-grid button {
+  color: #e1ebe9 !important;
+  border-color: #2a3b3d !important;
+  background-color: transparent !important;
+}
+
+html[data-theme="dark"] .chip-grid button.selected,
+html[data-theme="dark"] .setting-options button.selected {
+  color: #82ddd4 !important;
+  border-color: #39716b !important;
+  background: #203b38 !important;
+}

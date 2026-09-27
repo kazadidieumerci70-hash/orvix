@@ -42,11 +42,12 @@ from .schemas import (
 )
 from .quiz_word import build_quiz_docx
 from .subscriptions import credit_cost, ensure_ai_quota, ensure_document_quota, join_waitlist, plans_config, record_ai_request, subscription_status
-from .payments import create_checkout, apply_geniuspay_webhook, valid_geniuspay_signature
+from .payments import create_checkout, apply_geniuspay_webhook, reconcile_user_payments, valid_geniuspay_signature
 from .core_engine import OrvixCoreEngine
 from .model_gateway import ModelGateway, create_model_provider
 from .memory import remember, relevant
 from .admin import admin_login, dashboard, require_superadmin
+from .email_service import send_welcome_email
 
 settings = get_settings()
 logger = logging.getLogger("orvix.http")
@@ -162,6 +163,8 @@ async def status(user: UserProfile = Depends(current_user)):
 @app.post(f"{settings.api_prefix}/auth/register", response_model=AuthResponse)
 async def register(payload: AuthRequest):
     token, user = register_user(payload.phone, payload.password)
+    if "@" in user.phone:
+        await send_welcome_email(email=user.phone, name=user.name)
     return AuthResponse(token=token, user=user)
 
 
@@ -263,6 +266,7 @@ async def subscription_plans():
 
 @app.get(f"{settings.api_prefix}/subscription")
 async def my_subscription(user: UserProfile = Depends(current_user)):
+    await reconcile_user_payments(user.id)
     return subscription_status(user.id)
 
 
@@ -273,7 +277,7 @@ async def subscription_waitlist(payload: WaitlistRequest, user: UserProfile = De
 
 @app.post(f"{settings.api_prefix}/subscription/checkout", response_model=CheckoutResponse)
 async def subscription_checkout(payload: CheckoutRequest, user: UserProfile = Depends(current_user)):
-    return await create_checkout(user, payload.plan_id, payload.billing_cycle)
+    return await create_checkout(user, payload.plan_id, payload.billing_cycle, payload.customer_email)
 
 
 @app.get(f"{settings.api_prefix}/payments/geniuspay/webhook")

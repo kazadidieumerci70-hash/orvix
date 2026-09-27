@@ -1,0 +1,15 @@
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS monthly_credits INTEGER NOT NULL DEFAULT 40;
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS daily_safety_limit INTEGER NOT NULL DEFAULT 18;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS bonus_credits INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE daily_usage ADD COLUMN IF NOT EXISTS credits_used INTEGER NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS credit_ledger (
+  id UUID PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  action VARCHAR(60) NOT NULL,
+  credits INTEGER NOT NULL CHECK (credits > 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_credit_ledger_user_created
+  ON credit_ledger(user_id, created_at DESC);

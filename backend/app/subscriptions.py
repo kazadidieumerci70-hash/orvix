@@ -18,6 +18,12 @@ DEFAULT_PLANS = {
 
 
 def _read(path, default):
+    if path == get_settings().subscriptions_file and get_settings().database_url:
+        import psycopg
+        with psycopg.connect(get_settings().database_url) as connection:
+            connection.execute("CREATE TABLE IF NOT EXISTS subscription_entitlements (user_id TEXT PRIMARY KEY, record JSONB NOT NULL)")
+            rows = connection.execute("SELECT user_id, record FROM subscription_entitlements").fetchall()
+        return {"subscriptions": {key: value for key, value in rows}}
     if not path.exists():
         atomic_write_json(path, default)
         return default
@@ -25,6 +31,13 @@ def _read(path, default):
 
 
 def _write(path, data):
+    if path == get_settings().subscriptions_file and get_settings().database_url:
+        import psycopg
+        with psycopg.connect(get_settings().database_url) as connection:
+            connection.execute("CREATE TABLE IF NOT EXISTS subscription_entitlements (user_id TEXT PRIMARY KEY, record JSONB NOT NULL)")
+            for user_id, record in data["subscriptions"].items():
+                connection.execute("INSERT INTO subscription_entitlements (user_id, record) VALUES (%s, %s::jsonb) ON CONFLICT (user_id) DO UPDATE SET record = EXCLUDED.record", (user_id, json.dumps(record)))
+        return
     atomic_write_json(path, data)
 
 

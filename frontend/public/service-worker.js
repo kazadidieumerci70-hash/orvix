@@ -1,4 +1,4 @@
-const CACHE_NAME = "orvix-app-v1";
+const CACHE_NAME = "orvix-app-v2";
 const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest", "/orvix-logo-transparent.png"];
 
 self.addEventListener("install", (event) => {

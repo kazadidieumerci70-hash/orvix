@@ -23,15 +23,19 @@ export type OnboardingPayload = {
   learning_style: string;
   difficulties: string;
 };
-export type SubscriptionPlan = { id: string; name: string; monthly_price: number; annual_price: number; documents: number; daily_requests: number; features: string[] };
-export type SubscriptionStatus = { subscription: { plan_id: string; status: string; billing_cycle: "monthly" | "annual"; expires_at: string | null }; plan: SubscriptionPlan; requests_used_today: number; requests_remaining_today: number };
+export type CreditCosts = { chat: number; chat_with_documents: number; revision: number; quiz_short: number; quiz_long: number; exam_plan: number };
+export type SubscriptionPlan = { id: string; name: string; tagline: string; monthly_price: number; annual_price: number; documents: number; daily_credits: number; monthly_credits: number; daily_safety_limit: number; features: string[] };
+export type SubscriptionStatus = { subscription: { plan_id: string; status: string; billing_cycle: "monthly" | "annual"; expires_at: string | null }; plan: SubscriptionPlan; credits_used_today: number; credits_used_month: number; credits_remaining: number; credits_limit: number; credit_period: "daily" | "monthly"; bonus_credits: number; daily_credits_remaining: number; credit_costs: CreditCosts };
 export type ExamPlan = { title: string; readiness_score: number; summary: string; mastered: string[]; priorities: string[]; plan: { day: number; title: string; tasks: string[]; minutes: number }[]; first_questions: QuizQuestion[] };
 
 const configuredUrl = import.meta.env.VITE_API_URL?.trim();
 // In production the Pages Function proxies /api to the FastAPI service. This
 // keeps auth and chat same-origin in the browser and avoids cross-origin fetch
 // failures in embedded/mobile browsers.
-const API_URL = (import.meta.env.DEV ? (configuredUrl || `http://${window.location.hostname}:8010`) : "").replace(/\/$/, "");
+const API_URL = (import.meta.env.DEV
+  ? (configuredUrl || `http://${window.location.hostname}:8010`)
+  : (configuredUrl || "https://orvix-production.up.railway.app")
+).replace(/\/$/, "");
 const TOKEN_KEY = "orvix_token";
 
 export function getToken() {
@@ -58,11 +62,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       response = await fetch(`${API_URL}${path}`, { ...options, headers, cache: "no-store" });
       if (![502, 503, 504].includes(response.status) || attempt === 1) break;
     } catch {
-      if (attempt === 1) throw new Error("Le serveur ORVIX est momentanément inaccessible. Vérifiez votre connexion puis réessayez.");
+      if (attempt === 1) throw new Error("ORVIX est momentanément inaccessible. Vérifiez votre connexion puis réessayez.");
     }
     await new Promise((resolve) => window.setTimeout(resolve, 900));
   }
-  if (!response) throw new Error("Le serveur ORVIX est momentanément inaccessible. Vérifiez votre connexion puis réessayez.");
+  if (!response) throw new Error("ORVIX est momentanément inaccessible. Vérifiez votre connexion puis réessayez.");
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     if (response.status === 401 && token) {
@@ -74,7 +78,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       ? payload.detail
       : Array.isArray(payload?.detail)
         ? payload.detail.map((item: { msg?: string }) => item?.msg).filter(Boolean).join(" ")
-        : "Le serveur Orvix est momentanément indisponible.";
+        : "ORVIX est momentanément indisponible. Réessayez dans quelques instants.";
     throw new Error(detail);
   }
   return response.json() as Promise<T>;
@@ -117,34 +121,47 @@ export function markWelcomeSeen() {
 }
 
 export function getSubscriptionPlans() {
-  return request<{ currency: string; annual_discount_percent: number; plans: SubscriptionPlan[] }>("/api/v1/subscription/plans");
+  return request<{ currency: string; annual_discount_percent: number; credit_costs: CreditCosts; plans: SubscriptionPlan[] }>("/api/v1/subscription/plans");
 }
 
 export function getSubscription() {
   return request<SubscriptionStatus>("/api/v1/subscription");
 }
 
-export function createSubscriptionCheckout(planId: "student" | "pro", billingCycle: "monthly" | "annual") {
-  return request<{ transaction_id: string; payment_url: string; simulation: boolean }>("/api/v1/subscription/checkout", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ plan_id: planId, billing_cycle: billingCycle }),
+export function joinSubscriptionWaitlist(planId: "student" | "pro") {
+  return request<{ joined: boolean; plan_id: string }>("/api/v1/subscription/waitlist", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan_id: planId }),
   });
 }
 
-export function sendChat(message: string, history: ChatMessage[], documentIds: string[], conversationId: string) {
+export function createSubscriptionCheckout(planId: "student" | "pro", billingCycle: "monthly" | "annual", customerEmail: string) {
+  return request<{ transaction_id: string; payment_url: string; simulation: boolean }>("/api/v1/subscription/checkout", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plan_id: planId, billing_cycle: billingCycle, customer_email: customerEmail }),
+  });
+}
+
+export function sendChat(message: string, history: ChatMessage[], documentIds: string[], conversationId: string, signal?: AbortSignal) {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 42_000);
+  let timedOut = false;
+  const abortFromCaller = () => controller.abort();
+  signal?.addEventListener("abort", abortFromCaller, { once: true });
+  const timeout = window.setTimeout(() => { timedOut = true; controller.abort(); }, 42_000);
   return request<{ conversation_id: string; answer: string }>("/api/v1/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     signal: controller.signal,
     body: JSON.stringify({ conversation_id: conversationId, message, history, document_ids: documentIds }),
   }).catch((error) => {
-    if (controller.signal.aborted) {
+    if (timedOut) {
       throw new Error("Orvix n’a pas reçu de réponse à temps. Vérifiez la connexion puis réessayez.");
     }
+    if (signal?.aborted) throw new DOMException("Réponse arrêtée", "AbortError");
     throw error;
-  }).finally(() => window.clearTimeout(timeout));
+  }).finally(() => {
+    window.clearTimeout(timeout);
+    signal?.removeEventListener("abort", abortFromCaller);
+  });
 }
 
 export function listConversations() {

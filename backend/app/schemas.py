@@ -163,6 +163,7 @@ class AuthResponse(BaseModel):
 class CheckoutRequest(BaseModel):
     plan_id: Literal["student", "pro"]
     billing_cycle: Literal["monthly", "annual"]
+    customer_email: str
 
 
 class WaitlistRequest(BaseModel):

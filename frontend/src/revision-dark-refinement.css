@@ -1,0 +1,440 @@
+/* Final, page-scoped dark-mode refinements for the desktop revision form. */
+@media (min-width: 901px) {
+  /* Desktop Chat: center only the empty-state logo/copy in the usable conversation area. */
+  .app-shell > .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-empty {
+    position: absolute !important;
+    top: calc(50% + 73px) !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark > .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-welcome h1 span {
+    color: #d9e4e2 !important;
+  }
+
+  html[data-theme="dark"] .revision-page > .document-picker,
+  html[data-theme="dark"] .revision-page > .revision-request {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .revision-page > .document-picker select,
+  html[data-theme="dark"] .revision-page > .revision-request .inline-form input {
+    color: #d6e0de !important;
+    border-color: #273638 !important;
+    background: #10191b !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .revision-page > .document-picker > span,
+  html[data-theme="dark"] .revision-page > .revision-request > label {
+    color: #81928f !important;
+  }
+
+  html[data-theme="dark"] .revision-page > .revision-request .inline-form button:disabled {
+    color: #718582 !important;
+    border-color: #263c3a !important;
+    background: #18302e !important;
+    opacity: .72 !important;
+  }
+}
+
+.recents-list {
+  display: contents;
+}
+
+/* Mobile dark header lock: never let light empty-state rules leak into dark mode. */
+@media (max-width: 900px) {
+  /* Final mobile scroll contract: one vertical scroller per screen. */
+  html,
+  body,
+  #root,
+  .app-shell {
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body {
+    position: fixed !important;
+    inset: 0 !important;
+    overscroll-behavior: none !important;
+  }
+
+  .app-shell > .main-content {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    max-height: 100dvh !important;
+  }
+
+  .app-shell > .main-content:not(.chat-main) {
+    overflow-x: hidden !important;
+    overflow-y: scroll !important;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y !important;
+    scroll-padding-top: calc(66px + env(safe-area-inset-top)) !important;
+  }
+
+  .app-shell > .main-content:not(.chat-main) > .workspace-page,
+  .app-shell > .main-content:not(.chat-main) > .settings-page,
+  .app-shell > .main-content:not(.chat-main) > .appearance-settings {
+    position: relative !important;
+    inset: auto !important;
+    display: block !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+  }
+
+  .app-shell > .main-content.revision-main > .revision-page,
+  .app-shell > .main-content.quiz-main > .quiz-page,
+  .app-shell > .main-content.support-main > .support-page,
+  .app-shell > .main-content.account-scroll > .settings-page {
+    position: relative !important;
+    inset: auto !important;
+    display: block !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    overscroll-behavior: auto !important;
+  }
+
+  /* Keep the complete last row reachable above the phone safe area. */
+  .app-shell > .main-content:not(.chat-main) > :is(
+    .revision-page,
+    .quiz-page,
+    .support-page,
+    .settings-page,
+    .appearance-settings
+  ) {
+    padding-bottom: max(40px, calc(24px + env(safe-area-inset-bottom))) !important;
+  }
+
+  .app-shell > .main-content.chat-main,
+  .app-shell > .main-content.chat-main > .orvix-chat-shell {
+    height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+  }
+
+  .app-shell > .main-content.chat-main .orvix-chat-shell.has-messages > .orvix-chat-messages {
+    display: block !important;
+    position: absolute !important;
+    top: calc(58px + env(safe-area-inset-top)) !important;
+    right: 0 !important;
+    bottom: calc(144px + env(safe-area-inset-bottom)) !important;
+    left: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: scroll !important;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y !important;
+    pointer-events: auto !important;
+    scroll-behavior: auto !important;
+    overflow-anchor: none !important;
+    z-index: 2 !important;
+    scroll-padding-block: 14px !important;
+  }
+
+  .app-shell > .main-content.chat-main .orvix-chat-shell.has-messages > .orvix-chat-messages > .orvix-chat-message-row,
+  .app-shell > .main-content.chat-main .orvix-chat-shell.has-messages > .orvix-chat-messages > .orvix-chat-loading {
+    display: flex !important;
+    pointer-events: auto !important;
+  }
+
+  .app-shell > .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-messages {
+    bottom: calc(144px + env(safe-area-inset-bottom)) !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell > .sidebar.menu-v2 .recents {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding-inline: 6px !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    overflow-y: hidden !important;
+  }
+
+  .app-shell > .sidebar.menu-v2 .recents-head {
+    position: relative !important;
+    flex: 0 0 auto !important;
+    z-index: 4 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell > .sidebar.menu-v2 .recents-list {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y !important;
+  }
+
+  .app-shell > .sidebar.menu-v2 .recents-list > .conversation-link {
+    flex: 0 0 auto !important;
+  }
+
+  .app-shell > .sidebar.menu-v2 .conversation-link {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding-right: 24px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .app-shell > .sidebar.menu-v2 .conversation-link.active::after {
+    position: absolute !important;
+    top: 50% !important;
+    right: 9px !important;
+    float: none !important;
+    margin: 0 !important;
+    transform: translateY(-50%) !important;
+  }
+
+  .profile-detail-heading.personal-details-heading {
+    align-items: center !important;
+  }
+
+  .profile-detail-heading.personal-details-heading > div {
+    min-width: 0 !important;
+  }
+
+  .profile-detail-heading.personal-details-heading h1 {
+    font-size: clamp(17px, 5.3vw, 21px) !important;
+    line-height: 1.1 !important;
+    letter-spacing: -.025em !important;
+    white-space: nowrap !important;
+    overflow-wrap: normal !important;
+  }
+
+  .app-shell > .main-content.support-main > .page-actions .top-view-label {
+    position: absolute !important;
+    top: calc(50% + (env(safe-area-inset-top) / 2)) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 132px !important;
+    max-width: 132px !important;
+    margin: 0 auto !important;
+    padding-inline: 10px !important;
+    transform: translate(-15px, -50%) !important;
+    box-sizing: border-box !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark .support-page .support-library-head .document-search {
+    color: #cbd7d5 !important;
+    border-color: #2b3d3f !important;
+    background-color: #121d1f !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark .support-page .support-library-head .document-search::placeholder {
+    color: #788986 !important;
+    opacity: 1 !important;
+  }
+
+  html[data-mobile-keyboard="open"] .app-shell > .main-content > .page-actions {
+    top: var(--orvix-visual-top, 0px) !important;
+    transform: none !important;
+  }
+
+  html[data-mobile-keyboard="open"] .app-shell .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-empty {
+    top: var(--orvix-welcome-top, 138px) !important;
+    transform: translate(-50%, -50%) !important;
+  }
+
+  html[data-mobile-keyboard="open"] .app-shell .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-empty-brand,
+  html[data-mobile-keyboard="open"] .app-shell .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-empty-brand .orvix-chat-logo {
+    width: 58px !important;
+    height: 58px !important;
+    max-width: 58px !important;
+  }
+
+  html[data-mobile-keyboard="open"] .app-shell .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-welcome {
+    margin-top: 8px !important;
+  }
+
+  html[data-mobile-keyboard="open"] .app-shell .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-welcome h1 {
+    font-size: clamp(21px, 6vw, 25px) !important;
+    line-height: 1.02 !important;
+    transform: none !important;
+  }
+
+  .main-content.chat-main .orvix-functional-composer {
+    width: calc(100% - 24px) !important;
+    bottom: max(83px, calc(env(safe-area-inset-bottom) + 75px)) !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark .orvix-chat-shell.has-messages .orvix-chat-message-row.assistant .orvix-chat-message {
+    color: #d5dfdd !important;
+    border-color: #243537 !important;
+    background-color: #142022 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark .orvix-chat-shell.has-messages .orvix-chat-message-row.user .orvix-chat-message {
+    color: #e8f2f0 !important;
+    border-color: #347f79 !important;
+    background-color: #287f79 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark .orvix-chat-shell.has-messages .orvix-chat-avatar {
+    color: #65c9c1 !important;
+    border-color: #29433f !important;
+    background-color: #152524 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark .orvix-chat-shell.has-messages .message-actions {
+    opacity: .66 !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark .orvix-chat-shell.has-messages .message-actions button {
+    color: #71827f !important;
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark .orvix-chat-shell.has-messages .message-actions button:hover {
+    color: #66c8c0 !important;
+    background-color: #172426 !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark .orvix-chat-shell.has-messages .message-time {
+    color: #738380 !important;
+    opacity: .68 !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark > .sidebar.menu-v2 .close-nav,
+  html[data-theme="dark"] .app-shell.theme-dark:has(.main-content.chat-main) > .sidebar.menu-v2 .close-nav {
+    color: #65d0c7 !important;
+    border: 1px solid #31514e !important;
+    border-radius: 9px !important;
+    background-color: #172827 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark > .sidebar.menu-v2 .close-nav:hover,
+  html[data-theme="dark"] .app-shell.theme-dark:has(.main-content.chat-main) > .sidebar.menu-v2 .close-nav:hover {
+    color: #8ae1da !important;
+    border-color: #3d6965 !important;
+    background-color: #1b302f !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark > .main-content.chat-main > .page-actions,
+  html[data-theme="dark"] .app-shell.theme-dark > .main-content.chat-main:has(.orvix-chat-shell.has-messages) > .page-actions {
+    color: #dce7e5 !important;
+    border-color: #223234 !important;
+    border-bottom-color: #223234 !important;
+    background-color: #101a1c !important;
+    background-image: none !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .18) !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark > .main-content.chat-main > .page-actions::before,
+  html[data-theme="dark"] .app-shell.theme-dark > .main-content.chat-main > .page-actions::after {
+    display: none !important;
+    background: transparent !important;
+  }
+
+  html[data-theme="dark"] .main-content > .page-actions,
+  html[data-theme="dark"] .main-content.chat-main:has(.orvix-chat-shell.empty-chat) > .page-actions,
+  .app-shell.theme-dark > .main-content > .page-actions,
+  .app-shell.theme-dark > .main-content.chat-main:has(.orvix-chat-shell.empty-chat) > .page-actions {
+    color: #dce7e5 !important;
+    border-bottom-color: #223234 !important;
+    background: #101a1c !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .18) !important;
+  }
+
+  html[data-theme="dark"] .main-content > .page-actions > .mobile-menu,
+  html[data-theme="dark"] .main-content > .page-actions .top-actions-right,
+  html[data-theme="dark"] .main-content > .page-actions .top-actions-right button,
+  html[data-theme="dark"] .main-content.chat-main:has(.orvix-chat-shell.empty-chat) > .page-actions .top-new-conversation-button,
+  .app-shell.theme-dark > .main-content > .page-actions > .mobile-menu,
+  .app-shell.theme-dark > .main-content > .page-actions .top-actions-right,
+  .app-shell.theme-dark > .main-content > .page-actions .top-actions-right button {
+    color: #60c8c0 !important;
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark > .main-content.chat-main > .page-actions > .mobile-menu,
+  html[data-theme="dark"] .app-shell.theme-dark > .main-content.chat-main > .page-actions .top-actions-right button {
+    color: #60c8c0 !important;
+    border-color: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .main-content > .page-actions .top-document-selector,
+  html[data-theme="dark"] .main-content.chat-main:has(.orvix-chat-shell.empty-chat) > .page-actions .top-document-selector,
+  .app-shell.theme-dark > .main-content > .page-actions .top-document-selector {
+    color: #aab8b6 !important;
+    border-color: #355653 !important;
+    background: #152123 !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .app-shell.theme-dark > .main-content.chat-main > .page-actions .top-document-selector {
+    color: #aab8b6 !important;
+    border-color: #355653 !important;
+    background-color: #152123 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme="dark"] .main-content > .page-actions .top-document-selector select,
+  html[data-theme="dark"] .main-content.chat-main:has(.orvix-chat-shell.empty-chat) > .page-actions .top-document-selector select,
+  .app-shell.theme-dark > .main-content > .page-actions .top-document-selector select {
+    color: #aab8b6 !important;
+    background: transparent !important;
+  }
+}

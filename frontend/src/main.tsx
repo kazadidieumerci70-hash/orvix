@@ -4,6 +4,8 @@ import App from "./App";
 import "./styles.css";
 import "./chat-ui/OrvixChat.css";
 import "./responsive-scale.css";
+import "./responsive-final.css";
+import "./revision-dark-refinement.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
