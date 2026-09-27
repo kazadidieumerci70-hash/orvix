@@ -127,10 +127,17 @@
     overscroll-behavior: none !important;
   }
 
+  /* The shell is already positioned below the fixed header. Keep it bounded
+     between the header and the viewport instead of adding another full screen. */
+  .app-shell > .main-content.chat-main > .orvix-chat-shell {
+    height: auto !important;
+    bottom: 0 !important;
+  }
+
   .app-shell > .main-content.chat-main .orvix-chat-shell.has-messages > .orvix-chat-messages {
     display: block !important;
     position: absolute !important;
-    top: calc(58px + env(safe-area-inset-top)) !important;
+    top: 0 !important;
     right: 0 !important;
     bottom: calc(144px + env(safe-area-inset-bottom)) !important;
     left: 0 !important;
