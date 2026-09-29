@@ -38,7 +38,9 @@ def _write_payments(data: dict) -> None:
             for key, record in data["payments"].items():
                 connection.execute("INSERT INTO payment_checkout_records (transaction_id, record) VALUES (%s, %s::jsonb) ON CONFLICT (transaction_id) DO UPDATE SET record = EXCLUDED.record", (key, json.dumps(record)))
         return
-    atomic_write_json(get_settings().payments_file, data)
+    existing = _read_payments()
+    existing.setdefault("payments", {}).update(data.get("payments", {}))
+    atomic_write_json(get_settings().payments_file, existing)
 
 
 def _payment_matches(record: dict, data: dict) -> bool:
@@ -92,8 +94,16 @@ def ensure_checkout_allowed(user_id: str, plan_id: str) -> None:
         raise HTTPException(409, f"Ton forfait Pro est encore actif{until}. Tu pourras choisir le forfait Étudiant après son expiration. Aucun paiement n’a été lancé.")
 
 
+def ensure_no_pending_checkout(user_id: str, plan_id: str, billing_cycle: str) -> None:
+    for record in _read_payments()["payments"].values():
+        if (record.get("user_id") == user_id and record.get("plan_id") == plan_id
+                and record.get("billing_cycle") == billing_cycle and record.get("status") == "PENDING"):
+            raise HTTPException(409, "Un paiement pour ce forfait est déjà en attente. Termine-le ou attends son expiration avant d’en créer un autre.")
+
+
 async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email: str) -> dict:
     ensure_checkout_allowed(user.id, plan_id)
+    ensure_no_pending_checkout(user.id, plan_id, billing_cycle)
     customer_email = customer_email.strip().lower()
     if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", customer_email):
         raise HTTPException(422, "Indiquez une adresse e-mail valide pour recevoir votre confirmation de paiement.")

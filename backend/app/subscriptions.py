@@ -149,6 +149,25 @@ def record_ai_request(user_id: str, cost: int = 1, action: str = "chat") -> None
     _write(settings.usage_file, usage)
 
 
+def refund_ai_request(user_id: str, cost: int = 1, action: str = "chat") -> None:
+    """Undo a pre-authorised quota debit when an AI request fails."""
+    settings = get_settings()
+    usage = _read(settings.usage_file, {"days": {}, "months": {}, "ledger": []})
+    today = date.today().isoformat()
+    month = today[:7]
+    day_usage = usage.setdefault("days", {}).setdefault(today, {})
+    month_usage = usage.setdefault("months", {}).setdefault(month, {})
+    day_usage[user_id] = max(0, int(day_usage.get(user_id, 0)) - cost)
+    month_usage[user_id] = max(0, int(month_usage.get(user_id, 0)) - cost)
+    ledger = usage.setdefault("ledger", [])
+    for index in range(len(ledger) - 1, -1, -1):
+        item = ledger[index]
+        if item.get("user_id") == user_id and item.get("action") == action and item.get("credits") == cost:
+            ledger.pop(index)
+            break
+    _write(settings.usage_file, usage)
+
+
 def activate_subscription(user_id: str, plan_id: str, billing_cycle: str, transaction_id: str) -> dict:
     settings = get_settings()
     data = _read(settings.subscriptions_file, {"subscriptions": {}})

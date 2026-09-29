@@ -1,12 +1,13 @@
 from contextlib import asynccontextmanager
 import json
 import logging
+import re
 import time
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from io import BytesIO
 
 from .auth import begin_email_registration, complete_onboarding, create_password_reset_token, current_user, google_login_user, init_auth_database, login_user, mark_welcome_seen, register_user, reset_password, revoke_token, verify_email_registration
@@ -44,7 +45,7 @@ from .schemas import (
     MAX_CONTEXT_MESSAGES,
 )
 from .quiz_word import build_quiz_docx
-from .subscriptions import credit_cost, ensure_ai_quota, ensure_document_quota, join_waitlist, plans_config, record_ai_request, subscription_status
+from .subscriptions import credit_cost, ensure_ai_quota, ensure_document_quota, join_waitlist, plans_config, record_ai_request, refund_ai_request, subscription_status
 from .payments import create_checkout, apply_geniuspay_webhook, reconcile_user_payments, valid_geniuspay_signature
 from .core_engine import OrvixCoreEngine
 from .model_gateway import ModelGateway, create_model_provider
@@ -54,6 +55,21 @@ from .email_service import send_password_reset_email, send_verification_email, s
 
 settings = get_settings()
 logger = logging.getLogger("orvix.http")
+_rate_buckets: dict[tuple[str, str], list[float]] = {}
+
+
+def _rate_limit(request: Request) -> tuple[int, int] | None:
+    """Small in-process guard for expensive and credential-bearing routes."""
+    path = request.url.path
+    if path.startswith(f"{settings.api_prefix}/auth/"):
+        return (12, 60)
+    if path in {f"{settings.api_prefix}/chat", f"{settings.api_prefix}/revision", f"{settings.api_prefix}/quiz", f"{settings.api_prefix}/exam-mode", "/core/process"}:
+        return (30, 60)
+    if path == f"{settings.api_prefix}/subscription/checkout":
+        return (5, 600)
+    if path == f"{settings.api_prefix}/documents":
+        return (20, 600)
+    return None
 
 
 @asynccontextmanager
@@ -72,7 +88,7 @@ def get_ai() -> OrvixAI:
 core_engine = OrvixCoreEngine(ModelGateway(create_model_provider()))
 
 
-app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
+app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(settings.frontend_origins),
@@ -93,15 +109,38 @@ async def superadmin_dashboard(_: str = Depends(require_superadmin)):
 @app.post("/core/process")
 async def process_core(payload: CoreProcessRequest, user: UserProfile = Depends(current_user)):
     """Provider-independent native core entry point for future clients."""
+    cost = credit_cost("chat")
+    ensure_ai_quota(user.id, cost)
+    record_ai_request(user.id, cost, "core")
     try:
         return await core_engine.generate(user_id=user.id, session_id=payload.session_id, message=payload.message, language=payload.language)
     except ValueError as error:
+        refund_ai_request(user.id, cost, "core")
         raise HTTPException(422, str(error)) from error
+    except Exception:
+        refund_ai_request(user.id, cost, "core")
+        raise
 
 
 @app.middleware("http")
 async def request_observability(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID") or uuid4().hex
+    if request.method == "POST" and request.url.path == f"{settings.api_prefix}/documents":
+        length = request.headers.get("content-length")
+        if length and length.isdigit() and int(length) > settings.max_upload_bytes + 1_500_000:
+            return JSONResponse({"detail": "La requête contient trop de données."}, status_code=413)
+    limit = _rate_limit(request)
+    if limit:
+        maximum, window = limit
+        host = request.client.host if request.client else "unknown"
+        key = (host, request.url.path)
+        now = time.monotonic()
+        attempts = [timestamp for timestamp in _rate_buckets.get(key, []) if timestamp > now - window]
+        if len(attempts) >= maximum:
+            return JSONResponse({"detail": "Trop de requêtes. Réessayez dans quelques instants."}, status_code=429, headers={"Retry-After": str(window)})
+        attempts.append(now)
+        _rate_buckets[key] = attempts
+    supplied_request_id = request.headers.get("X-Request-ID", "")
+    request_id = supplied_request_id if re.fullmatch(r"[A-Za-z0-9_-]{1,64}", supplied_request_id) else uuid4().hex
     started = time.perf_counter()
     try:
         response = await call_next(request)
@@ -113,6 +152,8 @@ async def request_observability(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
+    if request.url.path.startswith(f"{settings.api_prefix}/admin"):
+        response.headers["Cache-Control"] = "no-store"
     logger.info("request_complete request_id=%s method=%s path=%s status=%s duration_ms=%.1f", request_id, request.method, request.url.path, response.status_code, duration_ms)
     return response
 
@@ -146,8 +187,6 @@ async def root():
     return {
         "service": "orvix-api",
         "status": "ok",
-        "docs": "/docs",
-        "api": settings.api_prefix,
     }
 
 
@@ -156,7 +195,6 @@ async def status(user: UserProfile = Depends(current_user)):
     return {
         "service": "orvix-api",
         "status": "ok",
-        "model": settings.ollama_model,
         "documents": len(list_documents(user.id)),
         "max_upload_mb": settings.max_upload_bytes // (1024 * 1024),
         "user": user,
@@ -236,18 +274,22 @@ async def chat(payload: ChatRequest, language: str = Header("Français", alias="
     action = "chat_with_documents" if payload.document_ids else "chat"
     cost = credit_cost(action)
     ensure_ai_quota(user.id, cost)
+    record_ai_request(user.id, cost, action)
     history = payload.history[-MAX_CONTEXT_MESSAGES:]
     if payload.conversation_id:
         history = get_conversation(user.id, payload.conversation_id).messages[-MAX_CONTEXT_MESSAGES:]
     language_instruction = {"English": "Respond in English.", "Italiano": "Rispondi in italiano.", "Español": "Responde en español."}.get(language, "Réponds en français.")
     remember(user.id, payload.message)
-    answer = await get_ai().chat(
-        f"{language_instruction}{relevant(user.id, payload.message)}\n\n{payload.message}",
-        history,
-        user,
-        payload.document_ids,
-    )
-    record_ai_request(user.id, cost, action)
+    try:
+        answer = await get_ai().chat(
+            f"{language_instruction}{relevant(user.id, payload.message)}\n\n{payload.message}",
+            history,
+            user,
+            payload.document_ids,
+        )
+    except Exception:
+        refund_ai_request(user.id, cost, action)
+        raise
     conversation = append_exchange(user.id, payload.conversation_id, payload.message, answer, payload.document_ids)
     return ChatResponse(conversation_id=conversation.id, answer=answer)
 
@@ -266,8 +308,12 @@ async def conversation(conversation_id: str, user: UserProfile = Depends(current
 async def revision(payload: TopicRequest, user: UserProfile = Depends(current_user)):
     cost = credit_cost("revision")
     ensure_ai_quota(user.id, cost)
-    content = await get_ai().revision(payload.topic, user, payload.document_ids)
     record_ai_request(user.id, cost, "revision")
+    try:
+        content = await get_ai().revision(payload.topic, user, payload.document_ids)
+    except Exception:
+        refund_ai_request(user.id, cost, "revision")
+        raise
     return TextResponse(content=content)
 
 
@@ -276,8 +322,12 @@ async def quiz(payload: QuizRequest, user: UserProfile = Depends(current_user)):
     action = "quiz_short" if payload.count <= 5 else "quiz_long"
     cost = credit_cost(action)
     ensure_ai_quota(user.id, cost)
-    result = await get_ai().quiz(payload.topic, payload.count, payload.quiz_type, user, payload.document_ids)
     record_ai_request(user.id, cost, action)
+    try:
+        result = await get_ai().quiz(payload.topic, payload.count, payload.quiz_type, user, payload.document_ids)
+    except Exception:
+        refund_ai_request(user.id, cost, action)
+        raise
     return result
 
 
@@ -285,8 +335,12 @@ async def quiz(payload: QuizRequest, user: UserProfile = Depends(current_user)):
 async def exam_mode(payload: ExamModeRequest, user: UserProfile = Depends(current_user)):
     cost = credit_cost("exam_plan")
     ensure_ai_quota(user.id, cost)
-    result = await get_ai().exam_mode(payload.exam_date, payload.minutes_per_day, payload.confidence, payload.subject, user, payload.document_ids)
     record_ai_request(user.id, cost, "exam_plan")
+    try:
+        result = await get_ai().exam_mode(payload.exam_date, payload.minutes_per_day, payload.confidence, payload.subject, user, payload.document_ids)
+    except Exception:
+        refund_ai_request(user.id, cost, "exam_plan")
+        raise
     return result
 
 
@@ -321,7 +375,10 @@ async def geniuspay_webhook(request: Request):
     raw_body = await request.body()
     if not valid_geniuspay_signature(raw_body, request.headers.get("X-Webhook-Signature"), request.headers.get("X-Webhook-Timestamp")):
         raise HTTPException(401, "Notification de paiement invalide.")
-    payload = json.loads(raw_body)
+    try:
+        payload = json.loads(raw_body)
+    except json.JSONDecodeError as error:
+        raise HTTPException(400, "Notification de paiement invalide.") from error
     await apply_geniuspay_webhook(payload)
     return {"status": "ok"}
 
@@ -343,6 +400,8 @@ async def documents(user: UserProfile = Depends(current_user)):
 
 @app.post(f"{settings.api_prefix}/documents", response_model=DocumentsResponse)
 async def upload_documents(files: list[UploadFile] = File(...), user: UserProfile = Depends(current_user)):
+    if not files or len(files) > 5:
+        raise HTTPException(422, "Importez entre 1 et 5 documents à la fois.")
     ensure_document_quota(user.id, len(list_documents(user.id)), len(files))
     for upload in files:
         await save_document(user.id, upload)

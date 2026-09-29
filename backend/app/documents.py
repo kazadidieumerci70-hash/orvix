@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from functools import lru_cache
 from hashlib import sha256
+from io import BytesIO
 import json
 from pathlib import Path
 import re
@@ -14,6 +15,7 @@ from .json_store import atomic_write_json
 from .schemas import DocumentInfo
 
 ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md"}
+MAX_PDF_PAGES = 250
 
 
 def _owners() -> dict[str, str]:
@@ -90,6 +92,8 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
     if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
         raise HTTPException(415, "Formats acceptés : PDF, TXT et Markdown.")
     content = await upload.read(settings.max_upload_bytes + 1)
+    if not content:
+        raise HTTPException(422, "Le fichier est vide.")
     if len(content) > settings.max_upload_bytes:
         raise HTTPException(413, "Ce fichier dépasse la taille maximale autorisée.")
     # Basic content validation prevents disguised executables/HTML from entering
@@ -97,6 +101,15 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
     suffix = Path(filename).suffix.lower()
     if suffix == ".pdf" and not content.startswith(b"%PDF-"):
         raise HTTPException(415, "Le contenu du PDF est invalide.")
+    if suffix == ".pdf":
+        try:
+            reader = PdfReader(BytesIO(content), strict=True)
+            if reader.is_encrypted or len(reader.pages) > MAX_PDF_PAGES:
+                raise HTTPException(422, "Le PDF est chiffré ou dépasse le nombre de pages autorisé.")
+        except HTTPException:
+            raise
+        except Exception as error:
+            raise HTTPException(415, "Le PDF est endommagé ou non lisible.") from error
     if suffix in {".txt", ".md"} and b"\x00" in content:
         raise HTTPException(415, "Le fichier texte est invalide.")
 

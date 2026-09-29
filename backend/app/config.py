@@ -34,7 +34,7 @@ class Settings:
             "FRONTEND_ORIGINS",
             "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://192.168.170.33:5173",
         ).split(",") if origin.strip()]
-        + ["https://app.orvix.work", "https://orvix.work", "https://orvix-ai.pages.dev", "https://orvix-vitrine.pages.dev", "https://orvix-super-admin.pages.dev", "https://orvix-super-admin.nexikarmotor.chatgpt.site"]
+        + ["https://app.orvix.work", "https://banze.orvix.work"]
     ))
     upload_dir = BACKEND_DIR / "data" / "uploads"
     data_dir = BACKEND_DIR / "data"
@@ -51,7 +51,7 @@ class Settings:
     geniuspay_api_secret = os.getenv("GENIUSPAY_API_SECRET", "").strip()
     geniuspay_webhook_secret = os.getenv("GENIUSPAY_WEBHOOK_SECRET", "").strip()
     geniuspay_base_url = os.getenv("GENIUSPAY_BASE_URL", "https://geniuspay.ci/api").rstrip("/")
-    payment_simulation = os.getenv("PAYMENT_SIMULATION", "true").strip().lower() == "true"
+    payment_simulation = os.getenv("PAYMENT_SIMULATION", "false").strip().lower() == "true"
     public_api_url = os.getenv("PUBLIC_API_URL", "http://127.0.0.1:8010").rstrip("/")
     public_frontend_url = os.getenv("PUBLIC_FRONTEND_URL", "http://127.0.0.1:5173").rstrip("/")
     public_app_url = os.getenv("PUBLIC_APP_URL", "https://app.orvix.work").rstrip("/")
