@@ -108,6 +108,7 @@ function App() {
   const [view, setView] = useState<View>(() => (localStorage.getItem("orvix_view") as View) || "chat");
   const [mobileNav, setMobileNav] = useState(false);
   const [accountPlanName, setAccountPlanName] = useState("Gratuit");
+  const [maxDocumentMb, setMaxDocumentMb] = useState(10);
   const [theme, setTheme] = useState<"light" | "dark">(() => localStorage.getItem("orvix_theme") === "dark" ? "dark" : "light");
   const [language, setLanguage] = useState("Français");
   const openedFreshChat = useRef(false);
@@ -224,7 +225,7 @@ function App() {
       setConversations(merged);
       localStorage.setItem(`orvix_conversations_${accountKey}`, JSON.stringify(merged));
     }).catch(() => undefined);
-    getSubscription().then((result) => setAccountPlanName(result.plan.name)).catch(() => undefined);
+    getSubscription().then((result) => { setAccountPlanName(result.plan.name); setMaxDocumentMb(result.plan.max_document_mb || 10); }).catch(() => undefined);
   }, [user?.onboarding_completed, user?.phone]);
 
   if (!authChecked) {
@@ -324,7 +325,7 @@ function App() {
         {view === "chat" && <ChatView language={language} documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} conversationId={activeConversationId} onConversationChange={setActiveConversationId} messages={activeMessages} onMessagesChange={setActiveMessages} onSaved={refreshConversations} />}
         {view === "revision" && <RevisionView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} />}
         {view === "quiz" && <QuizView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} />}
-        {view === "support" && <SupportView documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} />}
+        {view === "support" && <SupportView documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} maxDocumentMb={maxDocumentMb} />}
         {view === "account" && <AccountView user={user} onSaved={(profile) => { localStorage.setItem("orvix_user", JSON.stringify(profile)); setUser(profile); }} documentCount={documents.length} conversationCount={conversations.length} theme={theme} onThemeChange={() => setTheme((current) => current === "dark" ? "light" : "dark")} language={language} onLanguageChange={setLanguage} onLogout={() => { clearToken(); localStorage.removeItem("orvix_user"); setUser(null); }} />}
       </main>
     </div>
@@ -1224,7 +1225,7 @@ function ExamModeView({ documents, activeDocumentId, onActiveDocumentChange, doc
   </section>;
 }
 
-function SupportView({ documents, onDocumentsChange, activeDocumentId, onActiveDocumentChange }: { documents: DocumentInfo[]; onDocumentsChange: (documents: DocumentInfo[]) => void; activeDocumentId: string; onActiveDocumentChange: (id: string) => void }) {
+function SupportView({ documents, onDocumentsChange, activeDocumentId, onActiveDocumentChange, maxDocumentMb }: { documents: DocumentInfo[]; onDocumentsChange: (documents: DocumentInfo[]) => void; activeDocumentId: string; onActiveDocumentChange: (id: string) => void; maxDocumentMb: number }) {
   const [loading, setLoading] = useState(false); const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState("");
   const [search, setSearch] = useState("");
@@ -1245,7 +1246,7 @@ function SupportView({ documents, onDocumentsChange, activeDocumentId, onActiveD
   const visibleDocuments = documents.filter((doc) => `${doc.number} ${doc.name}`.toLowerCase().includes(search.trim().toLowerCase()));
   return <section className="workspace-page support-page">
     <p className="support-lead">Ajoute tes cours une fois, puis utilise-les dans Chat, Révision et Quiz.</p>
-    <label className={dragging ? "upload-zone support-upload dragging" : "upload-zone support-upload"} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={(event) => { event.preventDefault(); setDragging(false); upload(event.dataTransfer.files); }}><UploadCloud size={27} /><span><strong>{loading ? "Import en cours…" : "Dépose tes fichiers ici"}</strong><small>ou clique pour les sélectionner · PDF, TXT, Markdown · 10 Mo max.</small></span><b>{loading ? "Patiente…" : "Ajouter"}</b><input type="file" multiple accept=".pdf,.txt,.md" onChange={(e) => upload(e.target.files)} disabled={loading} /></label>
+    <label className={dragging ? "upload-zone support-upload dragging" : "upload-zone support-upload"} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={(event) => { event.preventDefault(); setDragging(false); upload(event.dataTransfer.files); }}><UploadCloud size={27} /><span><strong>{loading ? "Import en cours…" : "Dépose tes fichiers ici"}</strong><small>ou clique pour les sélectionner · PDF, TXT, Markdown · {maxDocumentMb} Mo max.</small></span><b>{loading ? "Patiente…" : "Ajouter"}</b><input type="file" multiple accept=".pdf,.txt,.md" onChange={(e) => upload(e.target.files)} disabled={loading} /></label>
     {error && <p className="error-banner">{error}</p>}
     <div className="support-library-head"><div><strong>Mes documents</strong><span>{documents.length} support{documents.length > 1 ? "s" : ""}</span></div><input className="document-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher…" /></div>
     <div className="document-grid support-grid">{visibleDocuments.map((doc) => <article className={activeDocumentId === doc.id ? "document-card active" : "document-card"} key={doc.id}><button className="document-select" onClick={() => onActiveDocumentChange(activeDocumentId === doc.id ? "" : doc.id)}><span className="file-icon"><FileText /></span><span className="document-details"><strong>{doc.name}</strong><small>Document {doc.number} · {(doc.size / 1024).toFixed(1)} Ko</small></span>{activeDocumentId === doc.id && <span className="support-active">Utilisé</span>}</button><button className="document-delete" onClick={() => remove(doc)} disabled={deletingId === doc.id} aria-label={`Supprimer ${doc.name}`} title="Supprimer le document"><Trash2 size={16} /></button></article>)}</div>
