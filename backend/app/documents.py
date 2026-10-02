@@ -11,6 +11,7 @@ from fastapi import HTTPException, UploadFile
 from pypdf import PdfReader
 
 from .config import get_settings
+from .document_memory import build_document_memory, forget_document_memory, get_document_memory
 from .json_store import atomic_write_json
 from .schemas import DocumentInfo
 
@@ -126,10 +127,12 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
     owners = _owners()
     owners[target.name] = user_id
     _write_owners(owners)
+    build_document_memory(user_id, target)
 
 
 def delete_document(user_id: str, document_id: str) -> None:
     path = _document_path_from_id(user_id, document_id)
+    forget_document_memory(user_id, document_id)
     owners = _owners()
     owners.pop(path.name, None)
     _write_owners(owners)
@@ -237,17 +240,15 @@ def document_context_with_sources(
             break
         path = settings.upload_dir / info.name
         try:
-            if path.suffix.lower() == ".pdf":
-                with path.open("rb") as pdf_file:
-                    pages = [(page_number, (page.extract_text() or "").strip()) for page_number, page in enumerate(PdfReader(pdf_file).pages, start=1)]
-            else:
-                pages = [(None, path.read_text(encoding="utf-8", errors="ignore").strip())]
+            memory = get_document_memory(user_id, info.id, path)
+            pages = [(chunk.get("page"), int(chunk.get("offset", 0)), chunk.get("text", "")) for chunk in memory.get("chunks", [])]
         except Exception:
             continue
         candidates: list[tuple[int, int | None, int, str]] = []
         query_terms = _terms(query)
-        for page_number, text in pages:
+        for page_number, chunk_offset, text in pages:
             for offset, passage in _ranked_passages(text, query, per_document_limit):
+                offset += chunk_offset
                 score = sum(passage.lower().count(term) for term in query_terms) if query_terms else 1
                 candidates.append((score, page_number, offset, passage))
         candidates.sort(key=lambda item: (item[0], -(item[1] or 0), -item[2]), reverse=True)
