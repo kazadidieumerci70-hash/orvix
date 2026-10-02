@@ -11,7 +11,7 @@ from google import genai
 from google.genai import types
 
 from .config import get_settings
-from .documents import document_context, document_context_with_sources
+from .documents import document_chapters, document_context, document_context_with_sources
 from .schemas import ChatMessage, ExamModeResponse, QuizResponse, UserProfile, MAX_CONTEXT_MESSAGES
 from .subscriptions import document_reading_limits
 
@@ -246,6 +246,14 @@ class OrvixAI:
             return "ORVIX a été créé par DIEU MERCI KAZADI."
         if self._asks_for_presentation(message):
             return ORVIX_PRESENTATION
+        if self._asks_for_summary(message) and len(document_ids) == 1:
+            chapters = document_chapters(user.id, document_ids[0])
+            if chapters:
+                async def summarize_chapter(chapter: str, content: str) -> str:
+                    return await self._generate(f"Résume pédagogiquement cette partie du cours, sans inventer : {chapter}\n\n{content}")
+                chapter_summaries = await asyncio.gather(*(summarize_chapter(chapter, content) for chapter, content in chapters))
+                joined = "\n\n".join(f"{chapter}\n{summary}" for (chapter, _), summary in zip(chapters, chapter_summaries))
+                return await self._generate("Rédige un résumé global clair, structuré comme un professeur, à partir de ces résumés de chapitres. Explique les liens entre les notions et termine par les points à retenir.\n\n" + joined)
         transcript = "\n".join(f"{item.role}: {item.content}" for item in history[-MAX_CONTEXT_MESSAGES:])
         allow_general = self._general_knowledge_authorized(message, history)
         needs_document = self._needs_document_context(message)

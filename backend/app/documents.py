@@ -11,7 +11,7 @@ from fastapi import HTTPException, UploadFile
 from pypdf import PdfReader
 
 from .config import get_settings
-from .document_memory import build_document_memory, forget_document_memory, get_document_memory
+from .document_memory import build_document_memory, chapter_groups, forget_document_memory, get_document_memory
 from .json_store import atomic_write_json
 from .schemas import DocumentInfo
 
@@ -219,6 +219,13 @@ def _extract_document_text(path_value: str, modified_ns: int) -> str:
 def document_context(user_id: str, document_ids: list[str] | None = None, max_chars: int = 24_000, query: str = "", max_sources: int = 5) -> str:
     context, _ = document_context_with_sources(user_id, document_ids, max_chars=max_chars, query=query, max_sources=max_sources)
     return context
+
+
+def document_chapters(user_id: str, document_id: str) -> list[tuple[str, str]]:
+    info = next((item for item in list_documents(user_id) if item.id == document_id), None)
+    if not info:
+        raise HTTPException(404, "Document introuvable.")
+    return chapter_groups(get_document_memory(user_id, info.id, get_settings().upload_dir / info.name))
 
 
 def document_context_with_sources(

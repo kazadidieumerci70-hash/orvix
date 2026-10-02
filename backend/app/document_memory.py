@@ -85,6 +85,21 @@ def get_document_memory(user_id: str, document_id: str, path: Path) -> dict:
     return build_document_memory(user_id, path)
 
 
+def chapter_groups(record: dict, max_chars: int = 12_000) -> list[tuple[str, str]]:
+    """Representative text per chapter for hierarchical AI summaries."""
+    grouped: dict[str, list[str]] = {}
+    for chunk in record.get("chunks", []):
+        grouped.setdefault(chunk.get("chapter") or "Introduction", []).append(chunk.get("text", ""))
+    result = []
+    for chapter, chunks in grouped.items():
+        joined = "\n".join(chunks)
+        if len(joined) > max_chars:
+            step = max(1, len(chunks) // 6)
+            joined = "\n\n".join(chunks[::step])[:max_chars]
+        result.append((chapter, joined))
+    return result
+
+
 def forget_document_memory(user_id: str, document_id: str) -> None:
     settings = get_settings()
     if settings.database_url:
