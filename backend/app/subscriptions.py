@@ -7,12 +7,17 @@ from .config import get_settings
 from .json_store import atomic_write_json
 
 DEFAULT_CREDIT_COSTS = {"chat": 1, "chat_with_documents": 2, "revision": 3, "quiz_short": 5, "quiz_long": 8, "exam_plan": 10}
+DOCUMENT_READING_DEFAULTS = {
+    "free": {"documents_per_request": 1, "document_context_chars": 12_000, "document_sources": 3},
+    "student": {"documents_per_request": 5, "document_context_chars": 24_000, "document_sources": 8},
+    "pro": {"documents_per_request": 15, "document_context_chars": 48_000, "document_sources": 12},
+}
 DEFAULT_PLANS = {
     "currency": "USD", "annual_discount_percent": 16.67, "credit_costs": DEFAULT_CREDIT_COSTS,
     "plans": [
-        {"id": "free", "name": "Free", "tagline": "Découvrir ORVIX", "monthly_price": 0, "annual_price": 0, "documents": 1, "daily_credits": 18, "monthly_credits": 540, "daily_safety_limit": 18, "daily_requests": 18, "features": ["Quiz courts", "Fonctions essentielles"]},
-        {"id": "student", "name": "Étudiant", "tagline": "Étudier avec ORVIX", "monthly_price": 4.99, "annual_price": 49.90, "documents": 10, "daily_credits": 60, "monthly_credits": 1800, "daily_safety_limit": 150, "daily_requests": 150, "features": ["Quiz et révisions", "Outils étudiants", "Export", "Mémoire standard"]},
-        {"id": "pro", "name": "Pro", "tagline": "Utiliser ORVIX intensivement", "monthly_price": 9.99, "annual_price": 99.90, "documents": 30, "daily_credits": 170, "monthly_credits": 5000, "daily_safety_limit": 400, "daily_requests": 400, "features": ["Examens et analyses avancées", "Outils avancés", "Export et rapports", "Mémoire avancée"]},
+        {"id": "free", "name": "Free", "tagline": "Découvrir ORVIX", "monthly_price": 0, "annual_price": 0, "documents": 1, "daily_credits": 18, "monthly_credits": 540, "daily_safety_limit": 18, "daily_requests": 18, **DOCUMENT_READING_DEFAULTS["free"], "features": ["Quiz courts", "Fonctions essentielles"]},
+        {"id": "student", "name": "Étudiant", "tagline": "Étudier avec ORVIX", "monthly_price": 4.99, "annual_price": 49.90, "documents": 10, "daily_credits": 60, "monthly_credits": 1800, "daily_safety_limit": 150, "daily_requests": 150, **DOCUMENT_READING_DEFAULTS["student"], "features": ["Analyse de jusqu’à 5 documents", "Quiz et révisions", "Outils étudiants", "Export", "Mémoire standard"]},
+        {"id": "pro", "name": "Pro", "tagline": "Utiliser ORVIX intensivement", "monthly_price": 9.99, "annual_price": 99.90, "documents": 30, "daily_credits": 170, "monthly_credits": 5000, "daily_safety_limit": 400, "daily_requests": 400, **DOCUMENT_READING_DEFAULTS["pro"], "features": ["Analyse de jusqu’à 15 documents", "Examens et analyses avancées", "Outils avancés", "Export et rapports", "Mémoire avancée"]},
     ],
 }
 
@@ -45,6 +50,12 @@ def plans_config() -> dict:
     config = _read(get_settings().plans_file, DEFAULT_PLANS)
     config.setdefault("credit_costs", DEFAULT_CREDIT_COSTS)
     for plan in config.get("plans", []):
+        reading_defaults = DOCUMENT_READING_DEFAULTS.get(plan.get("id"), DOCUMENT_READING_DEFAULTS["free"])
+        for key, value in reading_defaults.items():
+            plan.setdefault(key, value)
+        reading_feature = f"Analyse de jusqu’à {plan['documents_per_request']} document{'s' if plan['documents_per_request'] > 1 else ''}"
+        if plan["id"] in {"student", "pro"} and reading_feature not in plan.setdefault("features", []):
+            plan["features"].insert(0, reading_feature)
         legacy_daily = int(plan.get("daily_requests", 0))
         plan.setdefault("daily_credits", max(18, legacy_daily))
         plan.setdefault("monthly_credits", max(40, legacy_daily * 12))
@@ -131,6 +142,23 @@ def ensure_document_quota(user_id: str, current_count: int, incoming_count: int 
     limit = int(status["plan"]["documents"])
     if current_count + incoming_count > limit:
         raise HTTPException(403, f"Votre forfait {status['plan']['name']} autorise {limit} document{'s' if limit > 1 else ''}. Supprimez un document ou choisissez un forfait supérieur.")
+
+
+def document_reading_limits(user_id: str, document_ids: list[str]) -> dict:
+    """Return the active plan's reading allowance and reject oversized requests."""
+    status = subscription_status(user_id)
+    plan = status["plan"]
+    selected_count = len(set(document_ids))
+    limit = int(plan["documents_per_request"])
+    if selected_count > limit:
+        raise HTTPException(
+            403,
+            f"Votre forfait {plan['name']} permet d’analyser jusqu’à {limit} document{'s' if limit > 1 else ''} à la fois.",
+        )
+    return {
+        "max_chars": int(plan["document_context_chars"]),
+        "max_sources": int(plan["document_sources"]),
+    }
 
 
 def record_ai_request(user_id: str, cost: int = 1, action: str = "chat") -> None:

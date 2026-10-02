@@ -13,6 +13,7 @@ from google.genai import types
 from .config import get_settings
 from .documents import document_context, document_context_with_sources
 from .schemas import ChatMessage, ExamModeResponse, QuizResponse, UserProfile, MAX_CONTEXT_MESSAGES
+from .subscriptions import document_reading_limits
 
 os.environ.setdefault("SSL_CERT_FILE", certifi.where())
 os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
@@ -129,13 +130,15 @@ class OrvixAI:
         raise HTTPException(503, detail)
 
     @staticmethod
-    def _context(user_id: str, document_ids: list[str], query: str, max_chars: int = 16_000) -> str:
-        context = document_context(user_id, document_ids, query=query, max_chars=max_chars)
+    def _context(user_id: str, document_ids: list[str], query: str, max_chars: int | None = None) -> str:
+        limits = document_reading_limits(user_id, document_ids)
+        context = document_context(user_id, document_ids, query=query, max_chars=max_chars or limits["max_chars"], max_sources=limits["max_sources"])
         return f"\n\nSUPPORTS DE L'ÉTUDIANT :\n{context}" if context else ""
 
     @staticmethod
-    def _context_with_sources(user_id: str, document_ids: list[str], query: str, max_chars: int = 16_000) -> tuple[str, list[dict]]:
-        context, sources = document_context_with_sources(user_id, document_ids, query=query, max_chars=max_chars)
+    def _context_with_sources(user_id: str, document_ids: list[str], query: str, max_chars: int | None = None) -> tuple[str, list[dict]]:
+        limits = document_reading_limits(user_id, document_ids)
+        context, sources = document_context_with_sources(user_id, document_ids, query=query, max_chars=max_chars or limits["max_chars"], max_sources=limits["max_sources"])
         return (f"\n\nSUPPORTS DE L'ÉTUDIANT :\n{context}" if context else "", sources)
 
     @staticmethod
@@ -144,7 +147,7 @@ class OrvixAI:
             return answer
         markers = "\n".join(
             f"[[ORVIX_SOURCE]]{json.dumps(source, ensure_ascii=False)}[[/ORVIX_SOURCE]]"
-            for source in sources[:3]
+            for source in sources
         )
         return f"{answer.rstrip()}\n\n{markers}"
 
@@ -258,7 +261,7 @@ class OrvixAI:
         return self._attach_sources(answer, sources) if context else answer
 
     async def revision(self, topic: str, user: UserProfile, document_ids: list[str]) -> str:
-        prompt = f"Crée une fiche de révision complète mais concise sur : {topic}. Inclus les notions clés, un résumé, les erreurs fréquentes et 3 questions d'auto-évaluation.{self._student_profile(user)}{self._context(user.id, document_ids, topic, 14_000)}"
+        prompt = f"Crée une fiche de révision complète mais concise sur : {topic}. Inclus les notions clés, un résumé, les erreurs fréquentes et 3 questions d'auto-évaluation.{self._student_profile(user)}{self._context(user.id, document_ids, topic)}"
         return await self._generate(prompt)
 
     async def quiz(self, topic: str, count: int, quiz_type: str, user: UserProfile, document_ids: list[str]) -> QuizResponse:
@@ -266,7 +269,7 @@ class OrvixAI:
             instructions = "Chaque question demande une réponse rédigée courte. Laisse choices vide, mets answer_index à -1, fournis expected_answer avec la réponse attendue et une explication brève."
         else:
             instructions = "Chaque question doit avoir exactement 4 choix, une seule bonne réponse indiquée par answer_index, expected_answer vide et une explication brève."
-        context = self._context(user.id, document_ids, topic, 5_500)
+        context = self._context(user.id, document_ids, topic)
 
         async def generate_batch(batch_count: int, batch_index: int) -> QuizResponse:
             start = batch_index * 10 + 1
@@ -313,7 +316,7 @@ Pour les questions traditionnelles, choices doit être [] et answer_index doit �
         return QuizResponse(title=title, questions=questions)
 
     async def exam_mode(self, exam_date: str, minutes_per_day: int, confidence: int, subject: str, user: UserProfile, document_ids: list[str]) -> ExamModeResponse:
-        context = self._context(user.id, document_ids, subject or "notions importantes examen", 14_000)
+        context = self._context(user.id, document_ids, subject or "notions importantes examen")
         if not context:
             raise HTTPException(422, "Aucun contenu exploitable n'a été trouvé dans les supports sélectionnés.")
         prompt = f"""Construis un programme de préparation à un examen strictement à partir des supports fournis.

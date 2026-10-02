@@ -45,7 +45,7 @@ from .schemas import (
     MAX_CONTEXT_MESSAGES,
 )
 from .quiz_word import build_quiz_docx
-from .subscriptions import credit_cost, ensure_ai_quota, ensure_document_quota, join_waitlist, plans_config, record_ai_request, refund_ai_request, subscription_status
+from .subscriptions import credit_cost, document_reading_limits, ensure_ai_quota, ensure_document_quota, join_waitlist, plans_config, record_ai_request, refund_ai_request, subscription_status
 from .payments import create_checkout, apply_geniuspay_webhook, reconcile_user_payments, valid_geniuspay_signature
 from .core_engine import OrvixCoreEngine
 from .model_gateway import ModelGateway, create_model_provider
@@ -272,6 +272,8 @@ async def logout(authorization: str | None = Header(default=None), user: UserPro
 @app.post(f"{settings.api_prefix}/chat", response_model=ChatResponse)
 async def chat(payload: ChatRequest, language: str = Header("Français", alias="X-Orvix-Language"), user: UserProfile = Depends(current_user)):
     action = "chat_with_documents" if payload.document_ids else "chat"
+    if payload.document_ids:
+        document_reading_limits(user.id, payload.document_ids)
     cost = credit_cost(action)
     ensure_ai_quota(user.id, cost)
     record_ai_request(user.id, cost, action)
@@ -306,6 +308,8 @@ async def conversation(conversation_id: str, user: UserProfile = Depends(current
 
 @app.post(f"{settings.api_prefix}/revision", response_model=TextResponse)
 async def revision(payload: TopicRequest, user: UserProfile = Depends(current_user)):
+    if payload.document_ids:
+        document_reading_limits(user.id, payload.document_ids)
     cost = credit_cost("revision")
     ensure_ai_quota(user.id, cost)
     record_ai_request(user.id, cost, "revision")
@@ -319,6 +323,8 @@ async def revision(payload: TopicRequest, user: UserProfile = Depends(current_us
 
 @app.post(f"{settings.api_prefix}/quiz", response_model=QuizResponse)
 async def quiz(payload: QuizRequest, user: UserProfile = Depends(current_user)):
+    if payload.document_ids:
+        document_reading_limits(user.id, payload.document_ids)
     action = "quiz_short" if payload.count <= 5 else "quiz_long"
     cost = credit_cost(action)
     ensure_ai_quota(user.id, cost)
@@ -333,6 +339,7 @@ async def quiz(payload: QuizRequest, user: UserProfile = Depends(current_user)):
 
 @app.post(f"{settings.api_prefix}/exam-mode", response_model=ExamModeResponse)
 async def exam_mode(payload: ExamModeRequest, user: UserProfile = Depends(current_user)):
+    document_reading_limits(user.id, payload.document_ids)
     cost = credit_cost("exam_plan")
     ensure_ai_quota(user.id, cost)
     record_ai_request(user.id, cost, "exam_plan")

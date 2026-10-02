@@ -213,8 +213,8 @@ def _extract_document_text(path_value: str, modified_ns: int) -> str:
     return path.read_text(encoding="utf-8", errors="ignore")
 
 
-def document_context(user_id: str, document_ids: list[str] | None = None, max_chars: int = 24_000, query: str = "") -> str:
-    context, _ = document_context_with_sources(user_id, document_ids, max_chars=max_chars, query=query)
+def document_context(user_id: str, document_ids: list[str] | None = None, max_chars: int = 24_000, query: str = "", max_sources: int = 5) -> str:
+    context, _ = document_context_with_sources(user_id, document_ids, max_chars=max_chars, query=query, max_sources=max_sources)
     return context
 
 
@@ -223,6 +223,7 @@ def document_context_with_sources(
     document_ids: list[str] | None = None,
     max_chars: int = 24_000,
     query: str = "",
+    max_sources: int = 5,
 ) -> tuple[str, list[dict]]:
     settings = get_settings()
     chunks: list[str] = []
@@ -271,8 +272,8 @@ def document_context_with_sources(
             })
             remaining -= len(excerpt)
             used_for_document += len(excerpt)
-            if len(sources) >= 5:
+            if len(sources) >= max_sources:
                 break
-        if len(sources) >= 5:
+        if len(sources) >= max_sources:
             break
     return "\n\n".join(chunks), sources
