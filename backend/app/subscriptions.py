@@ -53,12 +53,16 @@ def plans_config() -> dict:
         reading_defaults = DOCUMENT_READING_DEFAULTS.get(plan.get("id"), DOCUMENT_READING_DEFAULTS["free"])
         for key, value in reading_defaults.items():
             plan.setdefault(key, value)
+        # These limits are a product rule, not a user-specific preference.
+        # Update older persisted plan catalogues when the offer changes.
+        plan["max_document_pages"] = reading_defaults["max_document_pages"]
         reading_feature = f"Analyse de jusqu’à {plan['documents_per_request']} document{'s' if plan['documents_per_request'] > 1 else ''}"
         if plan["id"] in {"student", "pro"} and reading_feature not in plan.setdefault("features", []):
             plan["features"].insert(0, reading_feature)
         size_feature = f"Documents jusqu’à {plan['max_document_mb']} Mo"
         if size_feature not in plan["features"]:
             plan["features"].append(size_feature)
+        plan["features"] = [feature for feature in plan["features"] if not feature.startswith("Jusqu’à ") or " pages par document" not in feature]
         pages_feature = f"Jusqu’à {plan['max_document_pages']} pages par document"
         if pages_feature not in plan["features"]:
             plan["features"].append(pages_feature)
