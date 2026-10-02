@@ -5292,3 +5292,5 @@ select:focus-visible {
   .chat-view > .composer .composer-input-stack > textarea.is-overflowing { overflow-y: auto !important; }
   .chat-view > .composer > button[aria-label="Envoyer"] { width: 40px !important; height: 40px !important; }
 }
+.support-upload-progress { display:block; width:100%; height:5px; margin-top:8px; overflow:hidden; border-radius:999px; background:#dcefed; }
+.support-upload-progress > i { display:block; height:100%; border-radius:inherit; background:#159f95; transition:width .2s ease; }

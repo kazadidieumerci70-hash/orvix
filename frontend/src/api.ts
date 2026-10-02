@@ -245,10 +245,29 @@ export function listDocuments() {
   return request<{ documents: DocumentInfo[] }>("/api/v1/documents");
 }
 
-export async function uploadDocuments(files: File[]) {
+export function uploadDocuments(files: File[], onProgress?: (percent: number) => void) {
   const data = new FormData();
   files.forEach((file) => data.append("files", file));
-  return request<{ documents: DocumentInfo[] }>("/api/v1/documents", { method: "POST", body: data });
+  return new Promise<{ documents: DocumentInfo[] }>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_URL}/api/v1/documents`);
+    const token = getToken();
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    const language = localStorage.getItem("orvix_language");
+    if (language) xhr.setRequestHeader("X-Orvix-Language", language);
+    xhr.upload.onprogress = (event) => { if (event.lengthComputable) onProgress?.(Math.max(1, Math.round((event.loaded / event.total) * 100))); };
+    xhr.onerror = () => reject(new Error("Import impossible. Vérifiez votre connexion puis réessayez."));
+    xhr.onload = () => {
+      let result: unknown = null;
+      try { result = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { /* handled below */ }
+      if (xhr.status < 200 || xhr.status >= 300) {
+        const detail = typeof (result as { detail?: unknown } | null)?.detail === "string" ? (result as { detail: string }).detail : "Import impossible.";
+        reject(new Error(detail)); return;
+      }
+      resolve(result as { documents: DocumentInfo[] });
+    };
+    xhr.send(data);
+  });
 }
 
 export function deleteDocument(documentId: string) {
