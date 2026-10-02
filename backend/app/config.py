@@ -57,7 +57,7 @@ class Settings:
     public_app_url = os.getenv("PUBLIC_APP_URL", "https://app.orvix.work").rstrip("/")
     superadmin_phone = os.getenv("SUPERADMIN_PHONE", "").strip()
     superadmin_password = os.getenv("SUPERADMIN_PASSWORD", "")
-    max_upload_bytes = int(os.getenv("MAX_UPLOAD_MB", "10")) * 1024 * 1024
+    max_upload_bytes = int(os.getenv("MAX_UPLOAD_MB", "50")) * 1024 * 1024
     resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
     resend_from_email = os.getenv("RESEND_FROM_EMAIL", "Orvix <noreply@orvix.work>").strip()
     resend_reply_to = os.getenv("RESEND_REPLY_TO", "").strip()

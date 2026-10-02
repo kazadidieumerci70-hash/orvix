@@ -12,6 +12,7 @@ from pypdf import PdfReader
 
 from .config import get_settings
 from .document_memory import build_document_memory, chapter_groups, forget_document_memory, get_document_memory
+from .subscriptions import document_upload_limit_bytes
 from .json_store import atomic_write_json
 from .schemas import DocumentInfo
 
@@ -92,11 +93,12 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
     filename = _safe_name(upload.filename or "")
     if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
         raise HTTPException(415, "Formats acceptés : PDF, TXT et Markdown.")
-    content = await upload.read(settings.max_upload_bytes + 1)
+    plan_limit = min(settings.max_upload_bytes, document_upload_limit_bytes(user_id))
+    content = await upload.read(plan_limit + 1)
     if not content:
         raise HTTPException(422, "Le fichier est vide.")
-    if len(content) > settings.max_upload_bytes:
-        raise HTTPException(413, "Ce fichier dépasse la taille maximale autorisée.")
+    if len(content) > plan_limit:
+        raise HTTPException(413, f"Ce fichier dépasse la limite de votre forfait ({plan_limit // (1024 * 1024)} Mo par document).")
     # Basic content validation prevents disguised executables/HTML from entering
     # the document store while keeping the existing PDF/TXT/Markdown contract.
     suffix = Path(filename).suffix.lower()

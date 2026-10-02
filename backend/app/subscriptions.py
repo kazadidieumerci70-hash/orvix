@@ -8,9 +8,9 @@ from .json_store import atomic_write_json
 
 DEFAULT_CREDIT_COSTS = {"chat": 1, "chat_with_documents": 2, "revision": 3, "quiz_short": 5, "quiz_long": 8, "exam_plan": 10}
 DOCUMENT_READING_DEFAULTS = {
-    "free": {"documents_per_request": 1, "document_context_chars": 12_000, "document_sources": 3},
-    "student": {"documents_per_request": 5, "document_context_chars": 24_000, "document_sources": 8},
-    "pro": {"documents_per_request": 15, "document_context_chars": 48_000, "document_sources": 12},
+    "free": {"documents_per_request": 1, "document_context_chars": 12_000, "document_sources": 3, "max_document_mb": 10},
+    "student": {"documents_per_request": 5, "document_context_chars": 24_000, "document_sources": 8, "max_document_mb": 25},
+    "pro": {"documents_per_request": 15, "document_context_chars": 48_000, "document_sources": 12, "max_document_mb": 50},
 }
 DEFAULT_PLANS = {
     "currency": "USD", "annual_discount_percent": 16.67, "credit_costs": DEFAULT_CREDIT_COSTS,
@@ -56,6 +56,9 @@ def plans_config() -> dict:
         reading_feature = f"Analyse de jusqu’à {plan['documents_per_request']} document{'s' if plan['documents_per_request'] > 1 else ''}"
         if plan["id"] in {"student", "pro"} and reading_feature not in plan.setdefault("features", []):
             plan["features"].insert(0, reading_feature)
+        size_feature = f"Documents jusqu’à {plan['max_document_mb']} Mo"
+        if size_feature not in plan["features"]:
+            plan["features"].append(size_feature)
         legacy_daily = int(plan.get("daily_requests", 0))
         plan.setdefault("daily_credits", max(18, legacy_daily))
         plan.setdefault("monthly_credits", max(40, legacy_daily * 12))
@@ -142,6 +145,10 @@ def ensure_document_quota(user_id: str, current_count: int, incoming_count: int 
     limit = int(status["plan"]["documents"])
     if current_count + incoming_count > limit:
         raise HTTPException(403, f"Votre forfait {status['plan']['name']} autorise {limit} document{'s' if limit > 1 else ''}. Supprimez un document ou choisissez un forfait supérieur.")
+
+
+def document_upload_limit_bytes(user_id: str) -> int:
+    return int(subscription_status(user_id)["plan"]["max_document_mb"]) * 1024 * 1024
 
 
 def document_reading_limits(user_id: str, document_ids: list[str]) -> dict:
