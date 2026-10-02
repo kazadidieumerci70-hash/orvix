@@ -254,7 +254,7 @@ function App() {
 
   const activeDocumentIds = activeDocumentId === "__all__"
     ? documents.map((document) => document.id)
-    : activeDocumentId ? [activeDocumentId] : [];
+    : activeDocumentId && documents.some((document) => document.id === activeDocumentId) ? [activeDocumentId] : [];
 
   function newChat() {
     setActiveConversationId("");

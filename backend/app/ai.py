@@ -170,6 +170,11 @@ class OrvixAI:
         )
 
     @staticmethod
+    def _user_message(message: str) -> str:
+        """Remove server-only language/memory instructions before intent detection."""
+        return message.rsplit("\n\n", 1)[-1].strip()
+
+    @staticmethod
     def _needs_document_context(message: str) -> bool:
         normalized = " ".join(re.findall(r"[a-zA-ZÀ-ÿ0-9']+", message.lower())).strip()
         social_messages = {
@@ -244,17 +249,23 @@ class OrvixAI:
         return "connaissances générales" in previous or "connaissances generales" in previous or "hors document" in previous
 
     async def chat(self, message: str, history: list[ChatMessage], user: UserProfile, document_ids: list[str]) -> str:
-        social_response = self._social_response(message)
+        user_message = self._user_message(message)
+        social_response = self._social_response(user_message)
         if social_response:
             return social_response
-        if self._asks_about_creator(message):
+        if self._asks_about_creator(user_message):
             return "ORVIX a été créé par DIEU MERCI KAZADI."
-        if self._asks_for_presentation(message):
+        if self._asks_for_presentation(user_message):
             return ORVIX_PRESENTATION
-        if self._asks_for_summary(message) and not document_ids:
+        if self._asks_for_summary(user_message) and not document_ids:
             return "Sélectionne d’abord un document dans le menu en haut de la discussion. Je pourrai ensuite le résumer sans utiliser d’autre support."
-        if self._asks_for_summary(message) and len(document_ids) == 1:
-            chapters = document_chapters(user.id, document_ids[0])
+        if self._asks_for_summary(user_message) and len(document_ids) == 1:
+            try:
+                chapters = document_chapters(user.id, document_ids[0])
+            except HTTPException as error:
+                if error.status_code == 404:
+                    return "Le document choisi n’est plus disponible. Sélectionne un support présent dans ta bibliothèque avant de demander un résumé."
+                raise
             if chapters:
                 async def summarize_chapter(chapter: str, content: str) -> str:
                     return await self._generate(f"Résume pédagogiquement cette partie du cours, sans inventer : {chapter}\n\n{content}")
@@ -263,10 +274,10 @@ class OrvixAI:
                 answer = await self._generate("Rédige un résumé global clair, structuré comme un professeur, à partir de ces résumés de chapitres. Explique les liens entre les notions et termine par les points à retenir.\n\n" + joined)
                 return self._remove_unverified_source_lines(answer)
         transcript = "\n".join(f"{item.role}: {item.content}" for item in history[-MAX_CONTEXT_MESSAGES:])
-        allow_general = self._general_knowledge_authorized(message, history)
-        needs_document = self._needs_document_context(message)
+        allow_general = self._general_knowledge_authorized(user_message, history)
+        needs_document = self._needs_document_context(user_message)
         requested_support = bool(document_ids)
-        context, sources = self._context_with_sources(user.id, document_ids, message) if needs_document and requested_support and not allow_general else ("", [])
+        context, sources = self._context_with_sources(user.id, document_ids, user_message) if needs_document and requested_support and not allow_general else ("", [])
         if allow_general:
             mode = "CONNAISSANCES GENERALES AUTORISEES PAR L'ETUDIANT : réponds hors documents et signale-le clairement."
         elif context:
@@ -278,7 +289,7 @@ class OrvixAI:
         else:
             mode = "ECHANGE SOCIAL : ne prétends pas lire un document."
         summary_instruction = ""
-        if context and self._asks_for_summary(message):
+        if context and self._asks_for_summary(user_message):
             summary_instruction = (
                 "\n\nDEMANDE DE RÉSUMÉ PÉDAGOGIQUE : produis un vrai résumé du support dans un ordre clair. "
                 "Explique chaque idée comme un professeur : notions essentielles, liens logiques, exemples seulement s'ils figurent dans les extraits, "
