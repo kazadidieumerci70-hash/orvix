@@ -246,6 +246,8 @@ class OrvixAI:
             return "ORVIX a été créé par DIEU MERCI KAZADI."
         if self._asks_for_presentation(message):
             return ORVIX_PRESENTATION
+        if self._asks_for_summary(message) and not document_ids:
+            return "Sélectionne d’abord un document dans le menu en haut de la discussion. Je pourrai ensuite le résumer sans utiliser d’autre support."
         if self._asks_for_summary(message) and len(document_ids) == 1:
             chapters = document_chapters(user.id, document_ids[0])
             if chapters:
