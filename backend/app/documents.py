@@ -251,9 +251,19 @@ def document_context_with_sources(
                 score = sum(passage.lower().count(term) for term in query_terms) if query_terms else 1
                 candidates.append((score, page_number, offset, passage))
         candidates.sort(key=lambda item: (item[0], -(item[1] or 0), -item[2]), reverse=True)
+        # "Résume" is a task, not necessarily a word found in the support.
+        # For an overview request with no matching terms, sample the document
+        # from beginning to end instead of only sending its cover page.
+        has_matching_passage = any(score > 0 for score, _, _, _ in candidates)
+        if query_terms and candidates and not has_matching_passage:
+            candidates.sort(key=lambda item: ((item[1] or 0), item[2]))
+            sample_count = min(max_sources, len(candidates))
+            if sample_count > 1:
+                positions = {round(index * (len(candidates) - 1) / (sample_count - 1)) for index in range(sample_count)}
+                candidates = [candidate for index, candidate in enumerate(candidates) if index in positions]
         used_for_document = 0
         for score, page_number, offset, passage in candidates:
-            if query_terms and score == 0 and sources:
+            if query_terms and has_matching_passage and score == 0 and sources:
                 continue
             if not passage or remaining <= 0 or used_for_document >= per_document_limit:
                 break

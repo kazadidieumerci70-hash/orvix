@@ -176,6 +176,11 @@ class OrvixAI:
         return normalized not in social_messages
 
     @staticmethod
+    def _asks_for_summary(message: str) -> bool:
+        normalized = " ".join(re.findall(r"[a-zA-ZÀ-ÿ0-9']+", message.lower())).strip()
+        return any(term in normalized for term in ("résume", "resume", "résumé", "synthèse", "synthese", "récapitulatif", "recapitulatif"))
+
+    @staticmethod
     def _social_response(message: str) -> str | None:
         normalized = " ".join(re.findall(r"[a-zA-ZÀ-ÿ0-9']+", message.lower())).strip()
         if normalized in {"bonjour", "bonsoir", "salut", "coucou", "hello", "hey"}:
@@ -256,7 +261,15 @@ class OrvixAI:
             mode = "QUESTION LIBRE : réponds naturellement avec tes connaissances générales, sans prétendre avoir consulté un document."
         else:
             mode = "ECHANGE SOCIAL : ne prétends pas lire un document."
-        prompt = f"MODE : {mode}\n\nHISTORIQUE DE CETTE DISCUSSION (30 DERNIERS ÉCHANGES, 60 MESSAGES MAXIMUM) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
+        summary_instruction = ""
+        if context and self._asks_for_summary(message):
+            summary_instruction = (
+                "\n\nDEMANDE DE RÉSUMÉ PÉDAGOGIQUE : produis un vrai résumé du support dans un ordre clair. "
+                "Explique chaque idée comme un professeur : notions essentielles, liens logiques, exemples seulement s'ils figurent dans les extraits, "
+                "puis les points à retenir. Pour un long livre, structure le résultat par grandes parties couvertes par les passages. "
+                "Ne réponds pas que le document ne contient pas la réponse lorsque les extraits permettent une synthèse."
+            )
+        prompt = f"MODE : {mode}{summary_instruction}\n\nHISTORIQUE DE CETTE DISCUSSION (30 DERNIERS ÉCHANGES, 60 MESSAGES MAXIMUM) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
         answer = await self._generate(prompt)
         return self._attach_sources(answer, sources) if context else answer
 
