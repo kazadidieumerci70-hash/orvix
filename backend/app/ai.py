@@ -40,14 +40,14 @@ MODE DOCUMENT STRICT : si la réponse n'est pas présente ou ne peut pas être d
 Dans ce cas, arrête la réponse après cette demande. Ne donne aucun élément de connaissance générale avant l'accord explicite de l'étudiant.
 Si l'étudiant accepte ensuite, commence par « Réponse hors documents : » et ne prétends jamais que ces informations proviennent des supports.
 Ne fabrique jamais de citation, de chapitre, de page, de définition, de formule, de chiffre ou d'exemple prétendument issu d'un document.
-Pour une question pédagogique ou documentaire, commence par une courte ligne « Support consulté : Document N — nom » ou « Hors support » selon le cas.
+Ne rédige jamais toi-même une ligne « Support consulté », « Source dans vos documents », un numéro de page ou une citation. Le serveur ajoute uniquement les sources vérifiées.
 Pour une salutation, un remerciement, une prise de contact ou une conversation sociale, réponds naturellement et brièvement sans annoncer la lecture d'un support ni écrire « Hors support ».
 Ne commence pas chaque réponse par la même salutation ou une présentation. Varie naturellement le ton et la formulation selon le contexte. Présente ORVIX uniquement si l'utilisateur le demande explicitement.
 Quand plusieurs documents sont utilisés, indique lesquels. Distingue clairement le contenu du support de ton interprétation pédagogique.
 Quand tu expliques un document, découpe la réponse en parties claires avec des titres courts.
 Évite le Markdown décoratif inutile. N'utilise le gras que pour des mots vraiment importants.
 Structure les explications pour qu'elles soient faciles à réviser et à restituer lors d'un examen.
-RÈGLE « MONTRER D'OÙ VIENT LA RÉPONSE » : pour toute réponse importante fondée sur un support, justifie les affirmations avec les marqueurs SOURCE fournis. Termine la partie factuelle par « 📖 Source dans vos documents » puis indique le nom du document et la page ou le passage. Ne cite que les sources réellement présentes dans le contexte.
+RÈGLE « MONTRER D'OÙ VIENT LA RÉPONSE » : utilise les extraits SOURCE fournis pour fonder ta réponse, mais ne les affiche pas toi-même. Le serveur est le seul à présenter les sources réellement vérifiées.
 RÈGLE « DOCUMENT = ENVIRONNEMENT D'APPRENTISSAGE » : considère chaque document comme un cours exploitable. Selon la demande, transforme-le en conversation guidée, résumé, fiche de révision, questions d'examen, quiz, flashcards, suivi de progression, révision personnalisée ou explication des notions difficiles.
 Lorsqu'un nouveau support est évoqué sans objectif précis, propose brièvement les actions les plus utiles : comprendre le cours, résumer, réviser, générer un quiz, créer des flashcards ou préparer un examen.
 RÈGLE D'UTILITÉ : préfère être utile plutôt que simplement répondre. Après une réponse pédagogique, propose au maximum une prochaine action courte et pertinente, uniquement si elle apporte une vraie valeur dans le contexte. Exemple : proposer 5 questions lorsque l'étudiant est manifestement en train de réviser. N'ajoute pas systématiquement cette proposition aux salutations, remerciements ou réponses très courtes.
@@ -150,6 +150,11 @@ class OrvixAI:
             for source in sources
         )
         return f"{answer.rstrip()}\n\n{markers}"
+
+    @staticmethod
+    def _remove_unverified_source_lines(answer: str) -> str:
+        """Only server-generated source markers may reach the user interface."""
+        return re.sub(r"(?im)^\s*(?:📖\s*)?(?:source dans vos documents|support consulté)\s*:.*(?:\n|$)", "", answer).strip()
 
     @staticmethod
     def _student_profile(user: UserProfile) -> str:
@@ -255,7 +260,8 @@ class OrvixAI:
                     return await self._generate(f"Résume pédagogiquement cette partie du cours, sans inventer : {chapter}\n\n{content}")
                 chapter_summaries = await asyncio.gather(*(summarize_chapter(chapter, content) for chapter, content in chapters))
                 joined = "\n\n".join(f"{chapter}\n{summary}" for (chapter, _), summary in zip(chapters, chapter_summaries))
-                return await self._generate("Rédige un résumé global clair, structuré comme un professeur, à partir de ces résumés de chapitres. Explique les liens entre les notions et termine par les points à retenir.\n\n" + joined)
+                answer = await self._generate("Rédige un résumé global clair, structuré comme un professeur, à partir de ces résumés de chapitres. Explique les liens entre les notions et termine par les points à retenir.\n\n" + joined)
+                return self._remove_unverified_source_lines(answer)
         transcript = "\n".join(f"{item.role}: {item.content}" for item in history[-MAX_CONTEXT_MESSAGES:])
         allow_general = self._general_knowledge_authorized(message, history)
         needs_document = self._needs_document_context(message)
@@ -280,7 +286,7 @@ class OrvixAI:
                 "Ne réponds pas que le document ne contient pas la réponse lorsque les extraits permettent une synthèse."
             )
         prompt = f"MODE : {mode}{summary_instruction}\n\nHISTORIQUE DE CETTE DISCUSSION (30 DERNIERS ÉCHANGES, 60 MESSAGES MAXIMUM) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
-        answer = await self._generate(prompt)
+        answer = self._remove_unverified_source_lines(await self._generate(prompt))
         return self._attach_sources(answer, sources) if context else answer
 
     async def revision(self, topic: str, user: UserProfile, document_ids: list[str]) -> str:
