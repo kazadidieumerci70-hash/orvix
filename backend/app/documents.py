@@ -12,12 +12,12 @@ from pypdf import PdfReader
 
 from .config import get_settings
 from .document_memory import build_document_memory, chapter_groups, forget_document_memory, get_document_memory
-from .subscriptions import document_upload_limit_bytes
+from .subscriptions import document_page_limit, document_upload_limit_bytes
 from .json_store import atomic_write_json
 from .schemas import DocumentInfo
 
 ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md"}
-MAX_PDF_PAGES = 250
+MAX_PDF_PAGES = 1000
 
 
 def _owners() -> dict[str, str]:
@@ -107,8 +107,11 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
     if suffix == ".pdf":
         try:
             reader = PdfReader(BytesIO(content), strict=True)
-            if reader.is_encrypted or len(reader.pages) > MAX_PDF_PAGES:
-                raise HTTPException(422, "Le PDF est chiffré ou dépasse le nombre de pages autorisé.")
+            page_limit = min(MAX_PDF_PAGES, document_page_limit(user_id))
+            if reader.is_encrypted:
+                raise HTTPException(422, "Le PDF est chiffré.")
+            if len(reader.pages) > page_limit:
+                raise HTTPException(422, f"Ce PDF dépasse la limite de votre forfait ({page_limit} pages par document).")
         except HTTPException:
             raise
         except Exception as error:

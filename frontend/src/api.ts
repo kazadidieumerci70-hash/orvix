@@ -25,7 +25,7 @@ export type OnboardingPayload = {
   difficulties: string;
 };
 export type CreditCosts = { chat: number; chat_with_documents: number; revision: number; quiz_short: number; quiz_long: number; exam_plan: number };
-export type SubscriptionPlan = { id: string; name: string; tagline: string; monthly_price: number; annual_price: number; documents: number; documents_per_request: number; document_context_chars: number; document_sources: number; max_document_mb: number; daily_credits: number; monthly_credits: number; daily_safety_limit: number; features: string[] };
+export type SubscriptionPlan = { id: string; name: string; tagline: string; monthly_price: number; annual_price: number; documents: number; documents_per_request: number; document_context_chars: number; document_sources: number; max_document_mb: number; max_document_pages: number; daily_credits: number; monthly_credits: number; daily_safety_limit: number; features: string[] };
 export type SubscriptionStatus = { subscription: { plan_id: string; status: string; billing_cycle: "monthly" | "annual"; expires_at: string | null }; plan: SubscriptionPlan; credits_used_today: number; credits_used_month: number; credits_remaining: number; credits_limit: number; credit_period: "daily" | "monthly"; bonus_credits: number; daily_credits_remaining: number; credit_costs: CreditCosts };
 export type ExamPlan = { title: string; readiness_score: number; summary: string; mastered: string[]; priorities: string[]; plan: { day: number; title: string; tasks: string[]; minutes: number }[]; first_questions: QuizQuestion[] };
 
