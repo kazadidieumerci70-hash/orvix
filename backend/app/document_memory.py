@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from hashlib import sha256
 import json
 from pathlib import Path
+import re
 
 from pypdf import PdfReader
 
@@ -36,11 +37,19 @@ def _chunks(path: Path) -> list[dict]:
         pages = [(None, path.read_text(encoding="utf-8", errors="ignore").strip())]
     chunks: list[dict] = []
     size, overlap = 1800, 180
+    chapter = "Introduction"
     for page, text in pages:
+        # Keep the latest meaningful heading so later synthesis can preserve
+        # the structure of a book instead of mixing unrelated sections.
+        for line in text.splitlines()[:18]:
+            heading = " ".join(line.split())
+            if re.match(r"^(?:chapitre|partie|[IVXLC]+[.-])\s+.{3,120}$", heading, re.IGNORECASE):
+                chapter = heading[:160]
+                break
         for offset in range(0, len(text), size - overlap):
             excerpt = text[offset:offset + size].strip()
             if excerpt:
-                chunks.append({"page": page, "offset": offset, "text": excerpt})
+                chunks.append({"page": page, "offset": offset, "chapter": chapter, "text": excerpt})
     return chunks
 
 
