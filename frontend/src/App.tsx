@@ -113,6 +113,8 @@ function App() {
   const [theme, setTheme] = useState<"light" | "dark">(() => localStorage.getItem("orvix_theme") === "dark" ? "dark" : "light");
   const [language, setLanguage] = useState("Français");
   const openedFreshChat = useRef(false);
+  // A late conversation fetch must never overwrite a support the user just chose.
+  const conversationDocumentHydratedRef = useRef("");
 
   useEffect(() => {
     const authTimeout = window.setTimeout(() => setAuthChecked(true), 8000);
@@ -189,7 +191,10 @@ function App() {
     const cachedMessages = localStorage.getItem(messageKey);
     getConversation(activeConversationId).then((conversation) => {
       setActiveMessages(conversation.messages);
-      setActiveDocumentId(conversation.document_ids.length > 1 ? "__all__" : conversation.document_ids[0] || "");
+      if (conversationDocumentHydratedRef.current !== conversation.id) {
+        setActiveDocumentId(conversation.document_ids.length > 1 ? "__all__" : conversation.document_ids[0] || "");
+        conversationDocumentHydratedRef.current = conversation.id;
+      }
       localStorage.setItem(messageKey, JSON.stringify(conversation.messages));
     }).catch(() => {
       if (cachedMessages) {
@@ -259,6 +264,7 @@ function App() {
     : activeDocumentId && documents.some((document) => document.id === activeDocumentId) ? [activeDocumentId] : [];
 
   function newChat() {
+    conversationDocumentHydratedRef.current = "";
     setActiveConversationId("");
     setActiveMessages([]);
     setView("chat");
@@ -267,6 +273,7 @@ function App() {
   async function openConversation(conversationId: string) {
     try {
       const conversation = await getConversation(conversationId);
+      conversationDocumentHydratedRef.current = conversation.id;
       setActiveConversationId(conversation.id);
       setActiveMessages(conversation.messages);
       setActiveDocumentId(conversation.document_ids.length > 1 ? "__all__" : conversation.document_ids[0] || "");

@@ -11,7 +11,7 @@ from fastapi import HTTPException, UploadFile
 from pypdf import PdfReader
 
 from .config import get_settings
-from .document_memory import build_document_memory, chapter_groups, forget_document_memory, get_document_memory
+from .document_memory import build_document_memory, build_document_memory_from_content, chapter_groups, forget_document_memory, get_document_memory, get_document_memory_from_content
 from .subscriptions import document_page_limit, document_upload_limit_bytes
 from .json_store import atomic_write_json
 from .schemas import DocumentInfo
@@ -57,8 +57,43 @@ def _safe_name(name: str) -> str:
     return stem[:150] or "document.txt"
 
 
+def _ensure_database_documents() -> None:
+    """Keep files with the user data, not on Railway's ephemeral disk."""
+    import psycopg
+    with psycopg.connect(get_settings().database_url) as connection:
+        connection.execute(
+            "CREATE TABLE IF NOT EXISTS uploaded_documents ("
+            "user_id TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, content BYTEA NOT NULL, "
+            "size INTEGER NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), "
+            "PRIMARY KEY(user_id, id), UNIQUE(user_id, name))"
+        )
+        connection.commit()
+
+
+def _database_document(user_id: str, document_id: str) -> tuple[str, bytes]:
+    import psycopg
+    _ensure_database_documents()
+    with psycopg.connect(get_settings().database_url) as connection:
+        row = connection.execute(
+            "SELECT name, content FROM uploaded_documents WHERE user_id=%s AND id=%s",
+            (user_id, document_id),
+        ).fetchone()
+    if not row:
+        raise HTTPException(404, "Document introuvable.")
+    return row[0], bytes(row[1])
+
+
 def list_documents(user_id: str) -> list[DocumentInfo]:
     settings = get_settings()
+    if settings.database_url:
+        import psycopg
+        _ensure_database_documents()
+        with psycopg.connect(settings.database_url) as connection:
+            rows = connection.execute(
+                "SELECT id, name, size, created_at FROM uploaded_documents WHERE user_id=%s ORDER BY created_at, name",
+                (user_id,),
+            ).fetchall()
+        return [DocumentInfo(id=row[0], number=index, name=row[1], size=row[2], created_at=row[3].isoformat()) for index, row in enumerate(rows, 1)]
     result = []
     deleted = _deleted_names()
     owners = _owners()
@@ -119,6 +154,29 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
     if suffix in {".txt", ".md"} and b"\x00" in content:
         raise HTTPException(415, "Le fichier texte est invalide.")
 
+    if settings.database_url:
+        import psycopg
+        _ensure_database_documents()
+        with psycopg.connect(settings.database_url) as connection:
+            existing_names = {row[0] for row in connection.execute("SELECT name FROM uploaded_documents WHERE user_id=%s", (user_id,)).fetchall()}
+            candidate = filename
+            stem, extension, index = Path(filename).stem, Path(filename).suffix, 2
+            while candidate in existing_names:
+                candidate = f"{stem}_{index}{extension}"
+                index += 1
+            document_id = sha256(f"{user_id}:{candidate}".encode()).hexdigest()[:16]
+            connection.execute(
+                "INSERT INTO uploaded_documents(user_id,id,name,content,size) VALUES(%s,%s,%s,%s,%s)",
+                (user_id, document_id, candidate, content, len(content)),
+            )
+            connection.commit()
+        try:
+            build_document_memory_from_content(user_id, document_id, candidate, content)
+        except Exception:
+            # The upload is durable even if indexing must be retried later.
+            pass
+        return
+
     target = settings.upload_dir / filename
     if target.exists():
         stem = target.stem
@@ -136,6 +194,16 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
 
 
 def delete_document(user_id: str, document_id: str) -> None:
+    if get_settings().database_url:
+        import psycopg
+        _ensure_database_documents()
+        with psycopg.connect(get_settings().database_url) as connection:
+            deleted = connection.execute("DELETE FROM uploaded_documents WHERE user_id=%s AND id=%s", (user_id, document_id)).rowcount
+            connection.commit()
+        if not deleted:
+            raise HTTPException(404, "Document introuvable.")
+        forget_document_memory(user_id, document_id)
+        return
     path = _document_path_from_id(user_id, document_id)
     forget_document_memory(user_id, document_id)
     owners = _owners()
@@ -230,6 +298,9 @@ def document_chapters(user_id: str, document_id: str) -> list[tuple[str, str]]:
     info = next((item for item in list_documents(user_id) if item.id == document_id), None)
     if not info:
         raise HTTPException(404, "Document introuvable.")
+    if get_settings().database_url:
+        name, content = _database_document(user_id, info.id)
+        return chapter_groups(get_document_memory_from_content(user_id, info.id, name, content))
     return chapter_groups(get_document_memory(user_id, info.id, get_settings().upload_dir / info.name))
 
 
@@ -250,9 +321,12 @@ def document_context_with_sources(
     for info in documents:
         if remaining <= 0:
             break
-        path = settings.upload_dir / info.name
         try:
-            memory = get_document_memory(user_id, info.id, path)
+            if settings.database_url:
+                name, content = _database_document(user_id, info.id)
+                memory = get_document_memory_from_content(user_id, info.id, name, content)
+            else:
+                memory = get_document_memory(user_id, info.id, settings.upload_dir / info.name)
             pages = [(chunk.get("page"), int(chunk.get("offset", 0)), chunk.get("text", "")) for chunk in memory.get("chunks", [])]
         except Exception:
             continue
