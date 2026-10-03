@@ -3015,17 +3015,17 @@ html[data-theme="dark"] .orvix-functional-writing textarea {
   }
 }
 
-/* Lift the chat composer slightly on phones without changing desktop geometry. */
+/* Keep the mobile composer close to the safe bottom edge, like a native chat. */
 @media (max-width: 900px) {
   .main-content.chat-main .orvix-functional-composer {
-    bottom: max(73px, calc(env(safe-area-inset-bottom) + 65px)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
     z-index: 300 !important;
     pointer-events: auto !important;
     touch-action: manipulation !important;
   }
 
   .main-content.chat-main .orvix-chat-messages {
-    bottom: calc(135px + env(safe-area-inset-bottom)) !important;
+    bottom: calc(80px + env(safe-area-inset-bottom)) !important;
   }
 
   .main-content.chat-main .orvix-functional-writing,
