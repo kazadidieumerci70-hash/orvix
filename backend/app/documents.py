@@ -83,11 +83,31 @@ def _database_document(user_id: str, document_id: str) -> tuple[str, bytes]:
     return row[0], bytes(row[1])
 
 
+def _migrate_legacy_documents(user_id: str) -> None:
+    """Copy any pre-Postgres uploads once, while the old volume is still available."""
+    settings = get_settings()
+    owners = _owners()
+    legacy = [path for path in settings.upload_dir.iterdir() if path.is_file() and path.suffix.lower() in ALLOWED_EXTENSIONS and owners.get(path.name) == user_id]
+    if not legacy:
+        return
+    import psycopg
+    with psycopg.connect(settings.database_url) as connection:
+        for path in legacy:
+            content = path.read_bytes()
+            document_id = sha256(path.name.encode()).hexdigest()[:16]
+            connection.execute(
+                "INSERT INTO uploaded_documents(user_id,id,name,content,size,created_at) VALUES(%s,%s,%s,%s,%s,%s) ON CONFLICT(user_id, name) DO NOTHING",
+                (user_id, document_id, path.name, content, len(content), datetime.fromtimestamp(path.stat().st_mtime, timezone.utc)),
+            )
+        connection.commit()
+
+
 def list_documents(user_id: str) -> list[DocumentInfo]:
     settings = get_settings()
     if settings.database_url:
         import psycopg
         _ensure_database_documents()
+        _migrate_legacy_documents(user_id)
         with psycopg.connect(settings.database_url) as connection:
             rows = connection.execute(
                 "SELECT id, name, size, created_at FROM uploaded_documents WHERE user_id=%s ORDER BY created_at, name",
