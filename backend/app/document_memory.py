@@ -85,11 +85,11 @@ def get_document_memory(user_id: str, document_id: str, path: Path) -> dict:
         with psycopg.connect(settings.database_url) as connection:
             connection.execute("CREATE TABLE IF NOT EXISTS document_memories (user_id TEXT NOT NULL, document_id TEXT NOT NULL, record JSONB NOT NULL, PRIMARY KEY(user_id, document_id))")
             row = connection.execute("SELECT record FROM document_memories WHERE user_id=%s AND document_id=%s", (user_id, document_id)).fetchone()
-        if row:
+        if row and row[0].get("chunks"):
             return row[0]
     else:
         record = _read().get("documents", {}).get(f"{user_id}:{document_id}")
-        if record:
+        if record and record.get("chunks"):
             return record
     return build_document_memory(user_id, path)
 
@@ -101,11 +101,13 @@ def get_document_memory_from_content(user_id: str, document_id: str, name: str, 
         with psycopg.connect(settings.database_url) as connection:
             connection.execute("CREATE TABLE IF NOT EXISTS document_memories (user_id TEXT NOT NULL, document_id TEXT NOT NULL, record JSONB NOT NULL, PRIMARY KEY(user_id, document_id))")
             row = connection.execute("SELECT record FROM document_memories WHERE user_id=%s AND document_id=%s", (user_id, document_id)).fetchone()
-        if row:
+        # An interrupted or older import may have left an empty index.  Do not
+        # treat that as a readable document: rebuild it from the durable bytes.
+        if row and row[0].get("chunks"):
             return row[0]
     else:
         record = _read().get("documents", {}).get(f"{user_id}:{document_id}")
-        if record:
+        if record and record.get("chunks"):
             return record
     return build_document_memory_from_content(user_id, document_id, name, content)
 
