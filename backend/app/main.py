@@ -49,7 +49,7 @@ from .subscriptions import credit_cost, document_reading_limits, ensure_ai_quota
 from .payments import create_checkout, apply_geniuspay_webhook, reconcile_user_payments, valid_geniuspay_signature
 from .core_engine import OrvixCoreEngine
 from .model_gateway import ModelGateway, create_model_provider
-from .memory import remember, relevant
+from .memory import forget as forget_learning_memory, remember, relevant, reset as reset_learning_memory, snapshot as learning_memory_snapshot
 from .admin import admin_login, dashboard, require_superadmin
 from .email_service import send_password_reset_email, send_verification_email, send_welcome_email
 
@@ -281,7 +281,6 @@ async def chat(payload: ChatRequest, language: str = Header("Français", alias="
     if payload.conversation_id:
         history = get_conversation(user.id, payload.conversation_id).messages[-MAX_CONTEXT_MESSAGES:]
     language_instruction = {"English": "Respond in English.", "Italiano": "Rispondi in italiano.", "Español": "Responde en español."}.get(language, "Réponds en français.")
-    remember(user.id, payload.message)
     try:
         answer = await get_ai().chat(
             f"{language_instruction}{relevant(user.id, payload.message)}\n\n{payload.message}",
@@ -293,6 +292,7 @@ async def chat(payload: ChatRequest, language: str = Header("Français", alias="
         refund_ai_request(user.id, cost, action)
         raise
     conversation = append_exchange(user.id, payload.conversation_id, payload.message, answer, payload.document_ids)
+    remember(user.id, payload.message, payload.document_ids)
     return ChatResponse(conversation_id=conversation.id, answer=answer)
 
 
@@ -304,6 +304,27 @@ async def conversations(user: UserProfile = Depends(current_user)):
 @app.get(f"{settings.api_prefix}/conversations/{{conversation_id}}", response_model=ConversationDetail)
 async def conversation(conversation_id: str, user: UserProfile = Depends(current_user)):
     return get_conversation(user.id, conversation_id)
+
+
+@app.get(f"{settings.api_prefix}/learning-memory")
+async def learning_memory(user: UserProfile = Depends(current_user)):
+    """Only structured, user-controlled learning information; never chat history."""
+    return learning_memory_snapshot(user.id)
+
+
+@app.delete(f"{settings.api_prefix}/learning-memory/{{category}}/{{memory_key}}")
+async def delete_learning_memory(category: str, memory_key: str, user: UserProfile = Depends(current_user)):
+    try:
+        forget_learning_memory(user.id, category, memory_key)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
+    return {"status": "deleted"}
+
+
+@app.delete(f"{settings.api_prefix}/learning-memory")
+async def clear_learning_memory(user: UserProfile = Depends(current_user)):
+    reset_learning_memory(user.id)
+    return {"status": "cleared"}
 
 
 @app.post(f"{settings.api_prefix}/revision", response_model=TextResponse)
