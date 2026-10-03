@@ -139,7 +139,7 @@
     position: absolute !important;
     top: 0 !important;
     right: 0 !important;
-    bottom: calc(144px + env(safe-area-inset-bottom)) !important;
+    bottom: calc(80px + env(safe-area-inset-bottom)) !important;
     left: 0 !important;
     height: auto !important;
     max-height: none !important;
@@ -164,7 +164,7 @@
   }
 
   .app-shell > .main-content.chat-main .orvix-chat-shell.empty-chat .orvix-chat-messages {
-    bottom: calc(144px + env(safe-area-inset-bottom)) !important;
+    bottom: calc(80px + env(safe-area-inset-bottom)) !important;
     overflow: hidden !important;
   }
 
@@ -308,7 +308,7 @@
 
   .main-content.chat-main .orvix-functional-composer {
     width: calc(100% - 24px) !important;
-    bottom: max(83px, calc(env(safe-area-inset-bottom) + 75px)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
   }
 
   html[data-theme="dark"] .app-shell.theme-dark .orvix-chat-shell.has-messages .orvix-chat-message-row.assistant .orvix-chat-message {
