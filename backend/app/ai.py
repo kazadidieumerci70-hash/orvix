@@ -12,6 +12,7 @@ from google.genai import types
 
 from .config import get_settings
 from .documents import document_chapters, document_context, document_context_with_sources
+from .learning_engines import analyze_intent, pedagogical_strategy, verify_answer
 from .schemas import ChatMessage, ExamModeResponse, QuizResponse, UserProfile, MAX_CONTEXT_MESSAGES
 from .subscriptions import document_reading_limits
 
@@ -250,6 +251,7 @@ class OrvixAI:
 
     async def chat(self, message: str, history: list[ChatMessage], user: UserProfile, document_ids: list[str]) -> str:
         user_message = self._user_message(message)
+        intent = analyze_intent(user_message)
         social_response = self._social_response(user_message)
         if social_response:
             return social_response
@@ -296,8 +298,9 @@ class OrvixAI:
                 "puis les points à retenir. Pour un long livre, structure le résultat par grandes parties couvertes par les passages. "
                 "Ne réponds pas que le document ne contient pas la réponse lorsque les extraits permettent une synthèse."
             )
-        prompt = f"MODE : {mode}{summary_instruction}\n\nHISTORIQUE DE CETTE DISCUSSION (30 DERNIERS ÉCHANGES, 60 MESSAGES MAXIMUM) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
-        answer = self._remove_unverified_source_lines(await self._generate(prompt))
+        strategy = pedagogical_strategy(intent, user)
+        prompt = f"MODE : {mode}\n\nINTENTION DÉTECTÉE : {intent.name} ({intent.complexity}).\nSTRATÉGIE PÉDAGOGIQUE :\n{strategy}{summary_instruction}\n\nHISTORIQUE DE CETTE DISCUSSION (30 DERNIERS ÉCHANGES, 60 MESSAGES MAXIMUM) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
+        answer = verify_answer(self._remove_unverified_source_lines(await self._generate(prompt)), document_mode=needs_document and requested_support and not allow_general, sources_found=bool(sources))
         return self._attach_sources(answer, sources) if context else answer
 
     async def revision(self, topic: str, user: UserProfile, document_ids: list[str]) -> str:
