@@ -283,10 +283,11 @@ async def chat(payload: ChatRequest, language: str = Header("Français", alias="
     language_instruction = {"English": "Respond in English.", "Italiano": "Rispondi in italiano.", "Español": "Responde en español."}.get(language, "Réponds en français.")
     try:
         answer = await get_ai().chat(
-            f"{language_instruction}{relevant(user.id, payload.message)}\n\n{payload.message}",
+            payload.message,
             history,
             user,
             payload.document_ids,
+            response_instructions=f"{language_instruction}{relevant(user.id, payload.message)}",
         )
     except Exception:
         refund_ai_request(user.id, cost, action)

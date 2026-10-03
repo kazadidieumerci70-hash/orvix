@@ -12,10 +12,10 @@ class MemoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "memory.json"
             with patch.object(memory, "_path", return_value=path):
-                memory.remember("a", "Je m'appelle Alice.")
-                self.assertIn("Alice", memory.relevant("a", "Comment je m'appelle ?"))
+                memory.remember("a", "Je préfère apprendre avec des exemples.")
+                self.assertIn("examples", memory.relevant("a", "Comment je m'appelle ?"))
                 self.assertEqual(memory.relevant("b", "Comment je m'appelle ?"), "")
-                self.assertEqual(json.loads(path.read_text())["a"]["prenom"], "Alice")
+                self.assertEqual(json.loads(path.read_text())["a"]["preference:examples"], "examples")
 
 
 if __name__ == "__main__":

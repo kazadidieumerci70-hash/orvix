@@ -11,6 +11,10 @@ from google import genai
 from google.genai import types
 
 from .config import get_settings
+from .response_rules import RESPONSE_RULES
+from .conversation_context import conversation_context
+from .retrieval import retrieval_query
+from .memory import relevant
 from .documents import document_chapters, document_context, document_context_with_sources
 from .learning_engines import analyze_intent, pedagogical_strategy, verify_answer
 from .schemas import ChatMessage, ExamModeResponse, QuizResponse, UserProfile, MAX_CONTEXT_MESSAGES
@@ -78,7 +82,7 @@ class OrvixAI:
         if not self.client:
             raise HTTPException(503, "Le serveur Orvix n'a pas encore de clé Gemini configurée.")
         config = types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
+            system_instruction=SYSTEM_PROMPT + "\n\n" + RESPONSE_RULES,
             temperature=0.2,
             response_mime_type="application/json" if json_schema else "text/plain",
         )
@@ -249,8 +253,8 @@ class OrvixAI:
         previous = history[-1].content.lower() if history[-1].role == "assistant" else ""
         return "connaissances générales" in previous or "connaissances generales" in previous or "hors document" in previous
 
-    async def chat(self, message: str, history: list[ChatMessage], user: UserProfile, document_ids: list[str]) -> str:
-        user_message = self._user_message(message)
+    async def chat(self, message: str, history: list[ChatMessage], user: UserProfile, document_ids: list[str], *, response_instructions: str = "") -> str:
+        user_message = message.strip()
         intent = analyze_intent(user_message)
         social_response = self._social_response(user_message)
         if social_response:
@@ -275,11 +279,11 @@ class OrvixAI:
                 joined = "\n\n".join(f"{chapter}\n{summary}" for (chapter, _), summary in zip(chapters, chapter_summaries))
                 answer = await self._generate("Rédige un résumé global clair, structuré comme un professeur, à partir de ces résumés de chapitres. Explique les liens entre les notions et termine par les points à retenir.\n\n" + joined)
                 return self._remove_unverified_source_lines(answer)
-        transcript = "\n".join(f"{item.role}: {item.content}" for item in history[-MAX_CONTEXT_MESSAGES:])
+        transcript = conversation_context(history[-MAX_CONTEXT_MESSAGES:])
         allow_general = self._general_knowledge_authorized(user_message, history)
         needs_document = self._needs_document_context(user_message)
         requested_support = bool(document_ids)
-        context, sources = self._context_with_sources(user.id, document_ids, user_message) if needs_document and requested_support and not allow_general else ("", [])
+        context, sources = self._context_with_sources(user.id, document_ids, retrieval_query(user_message, history)) if needs_document and requested_support and not allow_general else ("", [])
         if allow_general:
             mode = "CONNAISSANCES GENERALES AUTORISEES PAR L'ETUDIANT : réponds hors documents et signale-le clairement."
         elif context:
@@ -299,12 +303,12 @@ class OrvixAI:
                 "Ne réponds pas que le document ne contient pas la réponse lorsque les extraits permettent une synthèse."
             )
         strategy = pedagogical_strategy(intent, user)
-        prompt = f"MODE : {mode}\n\nINTENTION DÉTECTÉE : {intent.name} ({intent.complexity}).\nSTRATÉGIE PÉDAGOGIQUE :\n{strategy}{summary_instruction}\n\nHISTORIQUE DE CETTE DISCUSSION (30 DERNIERS ÉCHANGES, 60 MESSAGES MAXIMUM) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
+        prompt = f"CONSIGNES DE RÉPONSE : {response_instructions}\n\nMODE : {mode}\n\nINTENTION DÉTECTÉE (indicative) : {intent.name} ({intent.complexity}).\nSTRATÉGIE PÉDAGOGIQUE :\n{strategy}{summary_instruction}\n\nHISTORIQUE RÉCENT (MESSAGES JSON, ÉVENTUELLEMENT ABRÉGÉS) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
         answer = verify_answer(self._remove_unverified_source_lines(await self._generate(prompt)), document_mode=needs_document and requested_support and not allow_general, sources_found=bool(sources))
         return self._attach_sources(answer, sources) if context else answer
 
     async def revision(self, topic: str, user: UserProfile, document_ids: list[str]) -> str:
-        prompt = f"Crée une fiche de révision complète mais concise sur : {topic}. Inclus les notions clés, un résumé, les erreurs fréquentes et 3 questions d'auto-évaluation.{self._student_profile(user)}{self._context(user.id, document_ids, topic)}"
+        prompt = f"Crée une fiche de révision complète mais concise sur : {topic}. Inclus les notions clés, un résumé, les erreurs fréquentes et 3 questions d'auto-évaluation.{self._student_profile(user)}{relevant(user.id, topic)}{self._context(user.id, document_ids, topic)}"
         return await self._generate(prompt)
 
     async def quiz(self, topic: str, count: int, quiz_type: str, user: UserProfile, document_ids: list[str]) -> QuizResponse:
@@ -313,6 +317,7 @@ class OrvixAI:
         else:
             instructions = "Chaque question doit avoir exactement 4 choix, une seule bonne réponse indiquée par answer_index, expected_answer vide et une explication brève."
         context = self._context(user.id, document_ids, topic)
+        learning_memory = relevant(user.id, topic)
 
         async def generate_batch(batch_count: int, batch_index: int) -> QuizResponse:
             start = batch_index * 10 + 1
@@ -320,6 +325,7 @@ class OrvixAI:
             prompt = f"""Crée le lot {batch_index + 1} d'un quiz pédagogique sur : {topic}.
 Génère exactement {batch_count} questions, correspondant aux numéros {start} à {end}.
 Varie les notions et évite les formulations répétitives.
+Adapte les questions aux difficultés pertinentes disponibles et au profil. Fais progresser la difficulté sans inventer de résultats antérieurs.
 {instructions}
 Utilise uniquement les notions réellement présentes dans les extraits.
 Réponds de façon concise.
@@ -339,7 +345,7 @@ Retourne uniquement un JSON valide avec cette forme :
 }}
 
 Pour les questions traditionnelles, choices doit être [] et answer_index doit être -1.
-{self._student_profile(user)}{context}"""
+{self._student_profile(user)}{learning_memory}{context}"""
             raw = await self._generate(prompt, json_schema=QuizResponse)
             try:
                 return QuizResponse.model_validate(json.loads(raw))

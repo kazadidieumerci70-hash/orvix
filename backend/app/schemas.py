@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 MAX_CONTEXT_MESSAGES = 60  # 30 échanges utilisateur/assistant au maximum
 
@@ -10,11 +10,23 @@ class ChatMessage(BaseModel):
     content: str = Field(min_length=1, max_length=12_000)
 
 
+class StoredChatMessage(ChatMessage):
+    """Server-owned answers can contain long explanations and source metadata."""
+    content: str = Field(min_length=1)
+
+
 class ChatRequest(BaseModel):
     conversation_id: str = ""
     message: str = Field(min_length=1, max_length=8_000)
     history: list[ChatMessage] = Field(default_factory=list, max_length=MAX_CONTEXT_MESSAGES)
     document_ids: list[str] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="before")
+    @classmethod
+    def use_saved_history(cls, values):
+        if isinstance(values, dict) and isinstance(values.get("conversation_id"), str) and values["conversation_id"]:
+            return {**values, "history": []}
+        return values
 
 
 class TopicRequest(BaseModel):
@@ -100,7 +112,7 @@ class ConversationSummary(BaseModel):
 
 
 class ConversationDetail(ConversationSummary):
-    messages: list[ChatMessage]
+    messages: list[StoredChatMessage]
     document_ids: list[str] = Field(default_factory=list)
 
 

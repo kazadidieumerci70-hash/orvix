@@ -10,6 +10,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import uuid4
+from .response_rules import RESPONSE_RULES
 
 
 @dataclass(frozen=True)
@@ -29,7 +30,7 @@ class OrvixCoreEngine:
     async def generate(self, *, user_id: str, session_id: str, message: str, language: str = "Français", context: str = "") -> dict:
         result = self.process(user_id=user_id, session_id=session_id, message=message, language=language)
         if self.gateway:
-            result["response"]["content"] = await self.gateway.generate(f"{context}\n\n{message}", system="Tu es ORVIX, assistant local. Ne te présente jamais comme un service cloud.")
+            result["response"]["content"] = await self.gateway.generate(f"CONTEXTE À ANALYSER :\n{context}\n\nDEMANDE :\n{message}", system=f"Tu es ORVIX, assistant pédagogique. Langue de réponse : {language}.\n{RESPONSE_RULES}")
         return result
     def process(self, *, user_id: str, session_id: str, message: str, language: str = "Français") -> dict:
         cleaned = re.sub(r"\s+", " ", message).strip()

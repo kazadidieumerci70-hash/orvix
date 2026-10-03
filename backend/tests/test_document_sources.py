@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from app import documents
+from app import documents, document_memory
 
 
 class DocumentSourceTests(unittest.TestCase):
@@ -15,12 +15,12 @@ class DocumentSourceTests(unittest.TestCase):
             source = upload_dir / "anatomie.txt"
             source.write_text("Le néphron participe à la filtration du sang.", encoding="utf-8")
             settings = type("S", (), {
-                "upload_dir": upload_dir,
+                "upload_dir": upload_dir, "database_url": "", "data_dir": root,
                 "document_owners_file": root / "owners.json",
                 "deleted_documents_file": root / "deleted.json",
             })()
             settings.document_owners_file.write_text('{"owners":{"anatomie.txt":"student"}}', encoding="utf-8")
-            with patch.object(documents, "get_settings", return_value=settings):
+            with patch.object(documents, "get_settings", return_value=settings), patch.object(document_memory, "get_settings", return_value=settings), patch.object(documents, "document_upload_limit_bytes", return_value=10000):
                 document = documents.list_documents("student")[0]
                 context, sources = documents.document_context_with_sources(
                     "student", [document.id], query="néphron filtration"

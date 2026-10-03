@@ -8,7 +8,7 @@ from fastapi import HTTPException
 
 from .config import get_settings
 from .json_store import atomic_write_json
-from .schemas import ChatMessage, ConversationDetail, ConversationSummary
+from .schemas import StoredChatMessage, ConversationDetail, ConversationSummary
 
 
 def _now() -> str:
@@ -85,7 +85,7 @@ def get_conversation(user_id: str, conversation_id: str) -> ConversationDetail:
             id=row[0],
             title=row[1],
             updated_at=row[2].isoformat() if hasattr(row[2], "isoformat") else str(row[2]),
-            messages=[ChatMessage(role=item[0], content=item[1]) for item in messages],
+            messages=[StoredChatMessage(role=item[0], content=item[1]) for item in messages],
             document_ids=row[3] or [],
         )
     for item in _read_data()["conversations"]:
@@ -94,7 +94,7 @@ def get_conversation(user_id: str, conversation_id: str) -> ConversationDetail:
                 id=item["id"],
                 title=item["title"],
                 updated_at=item["updated_at"],
-                messages=[ChatMessage(**message) for message in item.get("messages", [])],
+                messages=[StoredChatMessage(**message) for message in item.get("messages", [])],
                 document_ids=item.get("document_ids", []),
             )
     raise HTTPException(404, "Discussion introuvable.")

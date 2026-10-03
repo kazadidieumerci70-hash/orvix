@@ -14,8 +14,14 @@ class Intent:
 
 def analyze_intent(message: str) -> Intent:
     text = message.lower()
-    if re.search(r"\b(?:bonjour|salut|merci|au revoir)\b", text) and len(text.split()) <= 5:
+    if re.fullmatch(r"\s*(?:bonjour|salut|merci(?: beaucoup)?|au revoir)[.!\s]*", text):
         return Intent("social", "simple", False)
+    if re.search(r"(?:ne comprends? (?:pas|rien)|n[’']ai pas compris|plus simple|c[’']est compliqué|simplifie)", text):
+        return Intent("simplify", "medium", False)
+    if re.search(r"(?:en bref|seulement l[’']essentiel)", text):
+        return Intent("concise", "simple", False)
+    if re.search(r"(?:va plus loin|techniquement|approfondis)", text):
+        return Intent("deepen", "complex", True)
     if re.search(r"\b(?:résume|resume|synthèse|synthese)\b", text):
         return Intent("summarize", "complex", True)
     if re.search(r"\b(?:quiz|qcm|questions? d.examen)\b", text):
@@ -36,6 +42,9 @@ def pedagogical_strategy(intent: Intent, user) -> str:
     if "exemple" in style: directives.append("Utilise un exemple concret après l'idée principale.")
     if "pas" in style or "étape" in style: directives.append("Explique étape par étape, sans sauter de raisonnement.")
     if intent.name == "explain": directives.append("Commence par l'idée centrale, puis développe seulement les points nécessaires.")
+    if intent.name == "simplify": directives.append("Cible le blocage ; change de méthode par rapport à l'historique, réduis les concepts et donne une étape ou un exemple adapté. Ne répète pas la même explication.")
+    if intent.name == "concise": directives.append("Donne uniquement l'essentiel demandé, sans cours complet ni invitation automatique.")
+    if intent.name == "deepen": directives.append("Approfondis le point demandé, sans reprendre les bases déjà comprises ; justifie les étapes utiles.")
     if intent.name == "summarize": directives.append("Organise la synthèse dans l'ordre du cours : notions, liens logiques, puis points à retenir.")
     if intent.needs_plan: directives.append("Prépare mentalement une stratégie avant de rédiger ; ne l'affiche que si elle aide réellement l'étudiant.")
     return "\n".join(f"- {item}" for item in directives)

@@ -14,7 +14,7 @@ def credit_settings(tmp_path):
     subscription_file.write_text('{"subscriptions": {}}', encoding="utf-8")
     usage = tmp_path / "usage.json"
     usage.write_text('{"days": {}, "months": {}, "ledger": []}', encoding="utf-8")
-    return SimpleNamespace(plans_file=plans, subscriptions_file=subscription_file, usage_file=usage)
+    return SimpleNamespace(database_url="", plans_file=plans, subscriptions_file=subscription_file, usage_file=usage)
 
 
 def test_credit_usage_is_recorded_daily_monthly_and_in_ledger(monkeypatch, tmp_path):
