@@ -159,10 +159,10 @@ export function joinSubscriptionWaitlist(planId: "student" | "pro") {
   });
 }
 
-export function createSubscriptionCheckout(planId: "student" | "pro", billingCycle: "monthly" | "annual", customerEmail: string) {
+export function createSubscriptionCheckout(planId: "student" | "pro", billingCycle: "monthly" | "annual", customerEmail: string, paymentMethod: "airtel_money" | "orange_money" | "card", customerPhone = "") {
   return request<{ transaction_id: string; payment_url: string; simulation: boolean }>("/api/v1/subscription/checkout", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ plan_id: planId, billing_cycle: billingCycle, customer_email: customerEmail }),
+    body: JSON.stringify({ plan_id: planId, billing_cycle: billingCycle, customer_email: customerEmail, payment_method: paymentMethod, customer_phone: customerPhone }),
   });
 }
 

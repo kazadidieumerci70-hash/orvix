@@ -391,7 +391,7 @@ async def subscription_waitlist(payload: WaitlistRequest, user: UserProfile = De
 
 @app.post(f"{settings.api_prefix}/subscription/checkout", response_model=CheckoutResponse)
 async def subscription_checkout(payload: CheckoutRequest, user: UserProfile = Depends(current_user)):
-    return await create_checkout(user, payload.plan_id, payload.billing_cycle, payload.customer_email)
+    return await create_checkout(user, payload.plan_id, payload.billing_cycle, payload.customer_email, payload.payment_method, payload.customer_phone)
 
 
 @app.get(f"{settings.api_prefix}/payments/geniuspay/webhook")

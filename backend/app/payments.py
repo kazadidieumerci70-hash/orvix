@@ -94,10 +94,11 @@ def ensure_checkout_allowed(user_id: str, plan_id: str) -> None:
         raise HTTPException(409, f"Ton forfait Pro est encore actif{until}. Tu pourras choisir le forfait Étudiant après son expiration. Aucun paiement n’a été lancé.")
 
 
-def _pending_checkout(user_id: str, plan_id: str, billing_cycle: str) -> dict | None:
+def _pending_checkout(user_id: str, plan_id: str, billing_cycle: str, payment_method: str, customer_phone: str) -> dict | None:
     for record in _read_payments()["payments"].values():
         if (record.get("user_id") == user_id and record.get("plan_id") == plan_id
-                and record.get("billing_cycle") == billing_cycle and record.get("status") == "PENDING"):
+                and record.get("billing_cycle") == billing_cycle and record.get("payment_method") == payment_method
+                and record.get("customer_phone", "") == customer_phone and record.get("status") == "PENDING"):
             return record
     return None
 
@@ -115,16 +116,21 @@ def _fail_checkout(record: dict) -> None:
     _write_payments({"payments": {record["transaction_id"]: record}})
 
 
-async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email: str) -> dict:
+async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email: str, payment_method: str, customer_phone: str = "") -> dict:
     ensure_checkout_allowed(user.id, plan_id)
     customer_email = customer_email.strip().lower()
     if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", customer_email):
         raise HTTPException(422, "Indiquez une adresse e-mail valide pour recevoir votre confirmation de paiement.")
+    customer_phone = customer_phone.strip().replace(" ", "").replace("-", "")
+    if payment_method in {"airtel_money", "orange_money"} and not re.fullmatch(r"\+[1-9]\d{7,14}", customer_phone):
+        raise HTTPException(422, "Indique un numéro Mobile Money valide au format international, par exemple +243XXXXXXXXX.")
+    if payment_method == "card":
+        customer_phone = ""
     config = plans_config()
     plan = next((item for item in config["plans"] if item["id"] == plan_id), None)
     if not plan or plan_id == "free":
         raise HTTPException(422, "Forfait payant invalide.")
-    pending = _pending_checkout(user.id, plan_id, billing_cycle)
+    pending = _pending_checkout(user.id, plan_id, billing_cycle, payment_method, customer_phone)
     # If Genius Pay has already given us a secure checkout URL, resume that
     # exact payment instead of making the user wait or exposing a duplicate.
     if pending and pending.get("payment_url"):
@@ -145,14 +151,18 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
         return {"transaction_id": transaction_id, "payment_url": "", "simulation": True}
     if not _configured():
         raise HTTPException(503, "Le paiement n'est pas encore configuré.")
-    record = {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle, "amount": amount, "currency": config["currency"], "customer_email": customer_email, "customer_name": user.name, "status": "PENDING", "simulation": False, "created_at": datetime.now(timezone.utc).isoformat()}
+    record = {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle, "amount": amount, "currency": config["currency"], "customer_email": customer_email, "customer_name": user.name, "customer_phone": customer_phone, "payment_method": payment_method, "status": "PENDING", "simulation": False, "created_at": datetime.now(timezone.utc).isoformat()}
     _write_payments({"payments": {transaction_id: record}})
     customer = {"name": user.name, "email": customer_email}
-    if user.phone and "@" not in user.phone:
+    if customer_phone:
+        customer["phone"] = customer_phone
+        customer["country"] = "CD"
+    elif user.phone and "@" not in user.phone:
         customer["phone"] = user.phone
     payload = {
         "amount": amount,
         "currency": config["currency"],
+        "payment_method": payment_method,
         "description": f"ORVIX {plan['name']} - {billing_cycle}",
         "customer": customer,
         "success_url": f"{settings.public_app_url}/?payment=success&transaction_id={transaction_id}",

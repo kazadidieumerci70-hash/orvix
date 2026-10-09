@@ -409,7 +409,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [waitlistedPlans, setWaitlistedPlans] = useState<Set<string>>(new Set());
   const [paymentLoading, setPaymentLoading] = useState("");
-  const [checkout, setCheckout] = useState<{ url: string; planName: string; amountLabel: string; billingCycle: "monthly" | "annual" } | null>(null);
+  const [checkout, setCheckout] = useState<{ planId: "student" | "pro"; planName: string; amountLabel: string; billingCycle: "monthly" | "annual" } | null>(null);
 
   useEffect(() => {
     void loadSubscriptionData();
@@ -469,8 +469,26 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     }
   }
 
-  async function startCheckout(planId: "student" | "pro") {
+  function selectCheckout(planId: "student" | "pro") {
+    const selectedPlan = plans.find((plan) => plan.id === planId);
+    if (!selectedPlan) {
+      setError("Ce forfait n’est plus disponible. Actualise la page puis réessaie.");
+      return;
+    }
+    setError("");
+    setMessage("");
+    setCheckout({
+      planId,
+      planName: selectedPlan.name,
+      amountLabel: `${(billingCycle === "annual" ? selectedPlan.annual_price : selectedPlan.monthly_price).toFixed(2).replace(".", ",")} $`,
+      billingCycle,
+    });
+  }
+
+  async function startCheckout(paymentMethod: "airtel_money" | "orange_money" | "card", customerPhone = "") {
     if (paymentLoading) return;
+    if (!checkout) return;
+    const planId = checkout.planId;
     if (planId === "student" && subscription?.plan.id === "pro") {
       setError("Ton forfait Pro est encore actif. Le forfait Étudiant sera disponible après son expiration.");
       return;
@@ -482,23 +500,13 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
       setError("Indique une adresse e-mail valide pour le paiement.");
       return;
     }
-    const selectedPlan = plans.find((plan) => plan.id === planId);
-    if (!selectedPlan) {
-      setError("Ce forfait n’est plus disponible. Actualise la page puis réessaie.");
-      return;
-    }
     setPaymentLoading(planId);
     setError("");
     setMessage("");
     try {
-      const result = await createSubscriptionCheckout(planId, billingCycle, customerEmail);
+      const result = await createSubscriptionCheckout(planId, checkout.billingCycle, customerEmail, paymentMethod, customerPhone);
       if (result.payment_url) {
-        setCheckout({
-          url: result.payment_url,
-          planName: selectedPlan.name,
-          amountLabel: `${(billingCycle === "annual" ? selectedPlan.annual_price : selectedPlan.monthly_price).toFixed(2).replace(".", ",")} $`,
-          billingCycle,
-        });
+        window.location.assign(result.payment_url);
       } else if (result.simulation) {
         const refreshed = await getSubscription();
         setSubscription(refreshed);
@@ -551,7 +559,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     {settingsSection === "language" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Langue de l’interface</h2><p>Le français est disponible maintenant. Les autres langues arrivent bientôt.</p></div><div className="setting-options">{["Français", "English", "Italiano", "Español"].map((item) => <button type="button" key={item} className={language === item ? "selected" : ""} disabled={item !== "Français"} onClick={() => item === "Français" && onLanguageChange("Français")}>{item}{item !== "Français" && <small>Bientôt</small>}</button>)}</div></section></section>}
     {settingsSection === "help" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Besoin d’aide ?</h2><p>Importe un document, sélectionne-le puis pose ta question à ORVIX. Si un problème survient, actualise la page puis réessaie.</p></div></section></section>}
     {settingsSection === "about" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>À propos d’ORVIX</h2><p>ORVIX est une intelligence artificielle créée par DIEU MERCI KAZADI pour aider les étudiants à comprendre leurs documents.</p></div></section></section>}
-    {settingsSection === "subscription" && checkout && <PaymentTransition checkout={checkout} onBack={() => setCheckout(null)} />}
+    {settingsSection === "subscription" && checkout && <PaymentChoice checkout={checkout} loading={!!paymentLoading} onPay={startCheckout} onBack={() => setCheckout(null)} />}
     {settingsSection === "subscription" && !checkout && <section className="subscription-panel">
       <div className="subscription-heading"><div><span>ABONNEMENT · CRÉDITS ORVIX</span><h2>Choisis ton forfait ORVIX</h2><p>Choisis l’offre qui correspond à tes besoins.</p></div><div className="billing-switch"><button className={billingCycle === "monthly" ? "active" : ""} onClick={() => setBillingCycle("monthly")}>Mensuel</button><button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Annuel <small>2 mois offerts</small></button></div></div>
       {subscription && <div className="quota-summary"><span>Forfait actuel : <strong>{subscription.plan.name}</strong></span><span>Crédits disponibles {subscription.credit_period === "daily" ? "aujourd’hui" : "ce mois"} : <strong>{subscription.credits_remaining}/{subscription.credits_limit}</strong></span><span>{subscription.credit_period === "daily" ? "Renouvelés chaque jour" : "Renouvelés chaque mois"}</span><span>Documents autorisés : <strong>{subscription.plan.documents}</strong></span></div>}
@@ -568,7 +576,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
           {plan.id === "student" && <em>RECOMMANDÉ</em>}<h3>{plan.name}</h3><p className="plan-tagline">{plan.tagline}</p><p className="plan-price"><strong>{price === 0 ? "Gratuit" : `${price.toFixed(2).replace(".", ",")} $`}</strong><small>{price > 0 ? (billingCycle === "annual" ? "/an" : "/mois") : ""}</small></p>{billingCycle === "annual" && price > 0 && <p className="annual-comparison"><s>{(plan.monthly_price * 12).toFixed(2).replace(".", ",")} $</s><span>2 mois offerts</span></p>}
           <ul><li><Check size={17} />{plan.id === "free" ? `Environ ${plan.daily_credits} crédits/jour` : plan.id === "student" ? "Environ 1 500–2 000 crédits/mois" : "Environ 4 000–6 000 crédits/mois"}</li><li><Check size={17} />{plan.documents} document{plan.documents > 1 ? "s" : ""}</li>{plan.features.map((feature) => <li key={feature}><Check size={17} />{feature}</li>)}</ul>
           {downgradeBlocked && <p role="note">Tu conserves tes avantages Pro{subscription?.subscription.expires_at ? ` jusqu’au ${new Date(subscription.subscription.expires_at).toLocaleDateString("fr-FR")}` : ""}. Tu pourras choisir Étudiant après son expiration.</p>}
-          <button type="button" disabled={plansLoading || !!subscriptionError || !subscription || active || downgradeBlocked || plan.id === "free" || !!paymentLoading} onClick={() => !active && !downgradeBlocked && plan.id !== "free" && startCheckout(plan.id as "student" | "pro")}>{active ? "Forfait actuel" : downgradeBlocked ? "Disponible après Pro" : plan.id === "free" ? "Gratuit pour toujours" : paymentLoading === plan.id ? "Ouverture du paiement…" : "Payer maintenant"}</button>
+          <button type="button" disabled={plansLoading || !!subscriptionError || !subscription || active || downgradeBlocked || plan.id === "free" || !!paymentLoading} onClick={() => !active && !downgradeBlocked && plan.id !== "free" && selectCheckout(plan.id as "student" | "pro")}>{active ? "Forfait actuel" : downgradeBlocked ? "Disponible après Pro" : plan.id === "free" ? "Gratuit pour toujours" : paymentLoading === plan.id ? "Ouverture du paiement…" : "Payer maintenant"}</button>
         </article>;
       })}</div>
     </section>}
@@ -576,16 +584,31 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
   </section>;
 }
 
-function PaymentTransition({ checkout, onBack }: { checkout: { url: string; planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; onBack: () => void }) {
-  return <section className="payment-transition" aria-labelledby="payment-transition-title">
-    <div className="payment-transition-icon"><ShieldCheck size={31} /></div>
+function PaymentChoice({ checkout, loading, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; onPay: (method: "airtel_money" | "orange_money" | "card", phone?: string) => void; onBack: () => void }) {
+  const [method, setMethod] = useState<"airtel_money" | "orange_money" | "card">("airtel_money");
+  const [phone, setPhone] = useState("+243");
+  const isMobileMoney = method !== "card";
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (isMobileMoney && !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, ""))) return;
+    onPay(method, phone.replace(/[\s-]/g, ""));
+  };
+  return <section className="payment-choice" aria-labelledby="payment-choice-title">
+    <div className="payment-choice-icon"><ShieldCheck size={29} /></div>
     <span>PAIEMENT SÉCURISÉ</span>
-    <h2 id="payment-transition-title">Tu vas finaliser ton paiement</h2>
-    <p>Choisis ton moyen de paiement Mobile Money sur la page sécurisée, puis reviens automatiquement dans ORVIX.</p>
-    <div className="payment-transition-summary"><div><small>FORFAIT</small><strong>{checkout.planName} · {checkout.billingCycle === "annual" ? "Annuel" : "Mensuel"}</strong></div><div><small>MONTANT</small><strong>{checkout.amountLabel}</strong></div></div>
-    <button type="button" className="payment-transition-primary" onClick={() => window.location.assign(checkout.url)}><LockKeyhole size={18} />Continuer vers le paiement sécurisé</button>
-    <button type="button" className="payment-transition-back" onClick={onBack}>Retour aux forfaits</button>
-    <small className="payment-transition-note">Ne ferme pas ORVIX pendant la confirmation de ton paiement.</small>
+    <h2 id="payment-choice-title">Comment veux-tu payer ?</h2>
+    <p className="payment-choice-intro">Choisis ton moyen de paiement. La confirmation et le code restent sécurisés chez ton opérateur ou ta banque.</p>
+    <div className="payment-choice-summary"><div><small>FORFAIT</small><strong>{checkout.planName} · {checkout.billingCycle === "annual" ? "Annuel" : "Mensuel"}</strong></div><div><small>MONTANT</small><strong>{checkout.amountLabel}</strong></div></div>
+    <form onSubmit={submit} className="payment-choice-form">
+      <div className="payment-methods" role="radiogroup" aria-label="Moyen de paiement">
+        <button type="button" className={method === "airtel_money" ? "selected" : ""} onClick={() => setMethod("airtel_money")} aria-pressed={method === "airtel_money"}><b>Airtel Money</b><small>Payer avec ton numéro Airtel</small></button>
+        <button type="button" className={method === "orange_money" ? "selected" : ""} onClick={() => setMethod("orange_money")} aria-pressed={method === "orange_money"}><b>Orange Money</b><small>Payer avec ton numéro Orange</small></button>
+        <button type="button" className={method === "card" ? "selected" : ""} onClick={() => setMethod("card")} aria-pressed={method === "card"}><CreditCard size={20} /><b>Carte bancaire</b><small>Visa ou Mastercard</small></button>
+      </div>
+      {isMobileMoney ? <label className="payment-phone"><span>Numéro {method === "airtel_money" ? "Airtel" : "Orange"}</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+243 000 000 000" required /><small>Utilise le format international. Tu recevras ensuite la confirmation sur ton téléphone.</small></label> : <p className="payment-card-note"><LockKeyhole size={18} />Après confirmation, tu renseigneras les informations de ta carte uniquement dans l’espace sécurisé de ta banque.</p>}
+      <button className="payment-choice-primary" disabled={loading || (isMobileMoney && !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, "")))}><LockKeyhole size={18} />{loading ? "Préparation du paiement…" : isMobileMoney ? "Continuer" : "Payer par carte"}</button>
+    </form>
+    <button type="button" className="payment-choice-back" onClick={onBack} disabled={loading}>Retour aux forfaits</button>
   </section>;
 }
 
