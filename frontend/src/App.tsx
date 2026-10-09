@@ -57,9 +57,12 @@ import {
   clearToken,
   confirmPasswordReset,
   completeOnboarding,
+  createCardSetup,
   createQuiz,
   createExamPlan,
   createSubscriptionCheckout,
+  attachCardSetup,
+  type CardSetup,
   createRevision,
   deleteDocument,
   exportQuizWord,
@@ -82,7 +85,24 @@ import {
 } from "./api";
 
 type View = "chat" | "revision" | "quiz" | "exam" | "support" | "account";
-declare global { interface Window { google?: any; } }
+type StripeCard = { mount: (element: HTMLElement) => void; destroy: () => void };
+type StripeElements = { create: (kind: "card", options?: object) => StripeCard };
+type StripeInstance = { elements: () => StripeElements; confirmCardSetup: (secret: string, options: object) => Promise<{ error?: { message?: string }; setupIntent?: { payment_method?: string | { id?: string } } }> };
+declare global { interface Window { google?: any; Stripe?: (key: string) => StripeInstance; } }
+
+let stripeLoader: Promise<(key: string) => StripeInstance> | undefined;
+function loadStripeJs() {
+  if (window.Stripe) return Promise.resolve(window.Stripe);
+  if (!stripeLoader) stripeLoader = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://js.stripe.com/v3/";
+    script.async = true;
+    script.onload = () => window.Stripe ? resolve(window.Stripe) : reject(new Error("Le formulaire sécurisé de carte est indisponible."));
+    script.onerror = () => reject(new Error("Le formulaire sécurisé de carte est indisponible."));
+    document.head.appendChild(script);
+  });
+  return stripeLoader;
+}
 const nav = [
   { id: "chat" as View, label: "Chat", icon: MessageCircle },
   { id: "revision" as View, label: "Révision", icon: BookOpenText },
@@ -519,6 +539,35 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     }
   }
 
+  async function prepareCard(customerEmail: string, customerPhone: string) {
+    if (paymentLoading || !checkout) throw new Error("Le paiement est déjà en préparation.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) throw new Error("Indique une adresse e-mail valide pour le paiement.");
+    setPaymentLoading(checkout.planId); setError(""); setMessage("");
+    try {
+      return await createCardSetup(checkout.planId, checkout.billingCycle, customerEmail.trim(), customerPhone);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Impossible de préparer le paiement par carte.");
+      throw e;
+    } finally {
+      setPaymentLoading("");
+    }
+  }
+
+  async function confirmCard(setup: CardSetup, paymentMethodId: string) {
+    if (paymentLoading) throw new Error("Le paiement est déjà en cours.");
+    setPaymentLoading(checkout?.planId || "card"); setError("");
+    try {
+      const result = await attachCardSetup(setup.transaction_id, setup.setup_intent_id, paymentMethodId);
+      setMessage(result.message);
+      setCheckout(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Impossible de confirmer la carte.");
+      throw e;
+    } finally {
+      setPaymentLoading("");
+    }
+  }
+
   function confirmLogout() {
     const confirmed = window.confirm(
       "Voulez-vous vraiment vous déconnecter d’ORVIX ?\n\nVos documents et vos conversations resteront enregistrés dans votre compte."
@@ -557,7 +606,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     {settingsSection === "language" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Langue de l’interface</h2><p>Le français est disponible maintenant. Les autres langues arrivent bientôt.</p></div><div className="setting-options">{["Français", "English", "Italiano", "Español"].map((item) => <button type="button" key={item} className={language === item ? "selected" : ""} disabled={item !== "Français"} onClick={() => item === "Français" && onLanguageChange("Français")}>{item}{item !== "Français" && <small>Bientôt</small>}</button>)}</div></section></section>}
     {settingsSection === "help" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Besoin d’aide ?</h2><p>Importe un document, sélectionne-le puis pose ta question à ORVIX. Si un problème survient, actualise la page puis réessaie.</p></div></section></section>}
     {settingsSection === "about" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>À propos d’ORVIX</h2><p>ORVIX est une intelligence artificielle créée par DIEU MERCI KAZADI pour aider les étudiants à comprendre leurs documents.</p></div></section></section>}
-    {settingsSection === "subscription" && checkout && <PaymentChoice checkout={checkout} loading={!!paymentLoading} emailHint={user.phone.includes("@") ? user.phone : ""} onPay={startCheckout} onBack={() => setCheckout(null)} />}
+    {settingsSection === "subscription" && checkout && <PaymentChoice checkout={checkout} loading={!!paymentLoading} emailHint={user.phone.includes("@") ? user.phone : ""} phoneHint={user.phone.includes("@") ? "" : user.phone} onPay={startCheckout} onPrepareCard={prepareCard} onConfirmCard={confirmCard} onBack={() => setCheckout(null)} />}
     {settingsSection === "subscription" && !checkout && <section className="subscription-panel">
       <div className="subscription-heading"><div><span>ABONNEMENT · CRÉDITS ORVIX</span><h2>Choisis ton forfait ORVIX</h2><p>Choisis l’offre qui correspond à tes besoins.</p></div><div className="billing-switch"><button className={billingCycle === "monthly" ? "active" : ""} onClick={() => setBillingCycle("monthly")}>Mensuel</button><button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Annuel <small>2 mois offerts</small></button></div></div>
       {subscription && <div className="quota-summary"><span>Forfait actuel : <strong>{subscription.plan.name}</strong></span><span>Crédits disponibles {subscription.credit_period === "daily" ? "aujourd’hui" : "ce mois"} : <strong>{subscription.credits_remaining}/{subscription.credits_limit}</strong></span><span>{subscription.credit_period === "daily" ? "Renouvelés chaque jour" : "Renouvelés chaque mois"}</span><span>Documents autorisés : <strong>{subscription.plan.documents}</strong></span></div>}
@@ -596,11 +645,14 @@ function suggestedPaymentCountry(): PaymentCountry {
   return "CD";
 }
 
-function PaymentChoice({ checkout, loading, emailHint, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; emailHint: string; onPay: (method: MobileMethod | "card", phone?: string, country?: PaymentCountry, email?: string) => void; onBack: () => void }) {
+function PaymentChoice({ checkout, loading, emailHint, phoneHint, onPay, onPrepareCard, onConfirmCard, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; emailHint: string; phoneHint: string; onPay: (method: MobileMethod | "card", phone?: string, country?: PaymentCountry, email?: string) => void; onPrepareCard: (email: string, phone: string) => Promise<CardSetup>; onConfirmCard: (setup: CardSetup, paymentMethodId: string) => Promise<void>; onBack: () => void }) {
   const [country, setCountry] = useState<PaymentCountry>(suggestedPaymentCountry);
   const [method, setMethod] = useState<MobileMethod | "card">("card");
   const [phone, setPhone] = useState(paymentCountries[suggestedPaymentCountry()].prefix);
   const [email, setEmail] = useState(emailHint);
+  const [cardPhone, setCardPhone] = useState(phoneHint || paymentCountries[suggestedPaymentCountry()].prefix);
+  const [cardSetup, setCardSetup] = useState<CardSetup | null>(null);
+  const [cardError, setCardError] = useState("");
   const [showCountries, setShowCountries] = useState(false);
   const isMobileMoney = method !== "card";
   const countryInfo = paymentCountries[country];
@@ -608,11 +660,18 @@ function PaymentChoice({ checkout, loading, emailHint, onPay, onBack }: { checko
     const firstMethod = paymentCountries[nextCountry].methods[0].id;
     setCountry(nextCountry); setMethod(firstMethod); setPhone(paymentCountries[nextCountry].prefix);
   };
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (isMobileMoney && !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, ""))) return;
+    if (method === "card") {
+      setCardError("");
+      try { setCardSetup(await onPrepareCard(email, cardPhone.replace(/[\s-]/g, ""))); }
+      catch (error) { setCardError(error instanceof Error ? error.message : "Impossible d’ouvrir le formulaire carte."); }
+      return;
+    }
     onPay(method, phone.replace(/[\s-]/g, ""), country, email);
   };
+  if (cardSetup) return <SecureCardForm checkout={checkout} email={email} setup={cardSetup} loading={loading} onConfirm={onConfirmCard} onBack={() => setCardSetup(null)} />;
   return <section className="payment-choice" aria-labelledby="payment-choice-title">
     <header className="payment-sheet-head"><button type="button" aria-label="Fermer" onClick={onBack}><X size={21} /></button><div><h2 id="payment-choice-title">Mode de paiement</h2><p><ShieldCheck size={13} /> Le paiement et tes données sont sécurisés</p></div><ShieldCheck className="payment-sheet-mark" size={20} /></header>
     <form onSubmit={submit} className="payment-choice-form">
@@ -621,13 +680,44 @@ function PaymentChoice({ checkout, loading, emailHint, onPay, onBack }: { checko
         <label className={isMobileMoney ? "selected" : ""}><input type="radio" name="payment-method" checked={isMobileMoney} onChange={() => setMethod(countryInfo.methods[0].id)} /><Smartphone className="mobile-money-icon" size={21} /><span><b>Argent mobile</b><small>{countryInfo.methods.map((item) => item.label).join(" · ")}</small></span><strong>›</strong></label>
       </fieldset>
       {isMobileMoney && <section className="mobile-money-details"><div className="network-radios">{countryInfo.methods.map((item) => <label key={item.id} className={method === item.id ? "selected" : ""}><input type="radio" name="network" checked={method === item.id} onChange={() => setMethod(item.id)} /><span>{item.label}</span></label>)}</div><label className="payment-phone"><span>Numéro de téléphone portable</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={`${countryInfo.prefix} 000 000 000`} required /><small>Le code de confirmation arrivera sur ce numéro.</small></label></section>}
-      {method === "card" && <p className="payment-card-note"><LockKeyhole size={18} />Après « Payer », la saisie de la carte et la confirmation se feront sur l’espace sécurisé de la banque.</p>}
+      {method === "card" && <section className="payment-card-note"><LockKeyhole size={18} /><div><b>Carte bancaire sécurisée</b><span>Après « Payer », tu renseigneras ta carte dans le formulaire sécurisé Stripe, sans quitter ORVIX.</span></div><label className="payment-phone compact"><span>Téléphone pour le paiement</span><input inputMode="tel" autoComplete="tel" value={cardPhone} onChange={(event) => setCardPhone(event.target.value)} placeholder={`${countryInfo.prefix} 000 000 000`} required /></label></section>}
       <label className="payment-email"><span>Adresse e-mail pour le reçu</span><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nom@email.com" required /></label>
+      {cardError && <p className="subscription-error">{cardError}</p>}
       <div className="payment-location"><span>📍</span><div>Pays détecté : <b>{countryInfo.label}</b>{showCountries ? <div className="payment-country-options">{(Object.keys(paymentCountries) as PaymentCountry[]).map((id) => <button type="button" key={id} onClick={() => { chooseCountry(id); setShowCountries(false); }}>{paymentCountries[id].label}</button>)}</div> : <button type="button" onClick={() => setShowCountries(true)}>Modifier</button>}</div></div>
       <section className="payment-security-note"><strong><ShieldCheck size={16} /> Payez en toute sécurité</strong><p>Vos données financières sont protégées par chiffrement. ORVIX ne stocke ni ton numéro de carte ni ton code de confirmation.</p></section>
       <footer className="payment-sheet-footer"><div><small>{checkout.planName} · {checkout.billingCycle === "annual" ? "Annuel" : "Mensuel"}</small><strong>{checkout.amountLabel}</strong></div><button className="payment-choice-primary" disabled={loading || !email.trim() || (isMobileMoney && !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, "")))}><LockKeyhole size={17} />{loading ? "Préparation…" : "Payer"}</button></footer>
     </form>
   </section>;
+}
+
+function SecureCardForm({ checkout, email, setup, loading, onConfirm, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; email: string; setup: CardSetup; loading: boolean; onConfirm: (setup: CardSetup, paymentMethodId: string) => Promise<void>; onBack: () => void }) {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const stripeRef = useRef<StripeInstance | null>(null);
+  const cardRef = useRef<StripeCard | null>(null);
+  const [ready, setReady] = useState(false);
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    void loadStripeJs().then((Stripe) => {
+      if (!active || !mountRef.current) return;
+      const stripe = Stripe(setup.stripe_public_key);
+      const card = stripe.elements().create("card", { style: { base: { fontSize: "16px", color: "#1f2a37", "::placeholder": { color: "#82909d" } } } });
+      stripeRef.current = stripe; cardRef.current = card; card.mount(mountRef.current); setReady(true);
+    }).catch((reason: Error) => active && setError(reason.message));
+    return () => { active = false; cardRef.current?.destroy(); cardRef.current = null; };
+  }, [setup]);
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!stripeRef.current || !cardRef.current || !name.trim()) { setError("Indique le nom inscrit sur la carte."); return; }
+    setError("");
+    const result = await stripeRef.current.confirmCardSetup(setup.client_secret, { payment_method: { card: cardRef.current, billing_details: { name: name.trim(), email } } });
+    if (result.error) { setError(result.error.message || "La carte n’a pas pu être vérifiée."); return; }
+    const paymentMethod = typeof result.setupIntent?.payment_method === "string" ? result.setupIntent.payment_method : result.setupIntent?.payment_method?.id;
+    if (!paymentMethod) { setError("La carte n’a pas pu être vérifiée."); return; }
+    try { await onConfirm(setup, paymentMethod); } catch (reason) { setError(reason instanceof Error ? reason.message : "Impossible de confirmer la carte."); }
+  };
+  return <section className="payment-choice" aria-labelledby="secure-card-title"><header className="payment-sheet-head"><button type="button" aria-label="Retour" onClick={onBack}><ArrowLeft size={21} /></button><div><h2 id="secure-card-title">Ajouter une carte</h2><p><ShieldCheck size={13} /> Tes données de carte sont protégées par Stripe</p></div><ShieldCheck className="payment-sheet-mark" size={20} /></header><form onSubmit={submit} className="payment-choice-form secure-card-form"><p className="card-form-intro">Renseigne les informations de ta carte. ORVIX ne voit ni ne conserve ton numéro de carte ou ton CVV.</p><label className="payment-email"><span>Nom inscrit sur la carte</span><input autoComplete="cc-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Prénom et nom" required /></label><div className="stripe-card-field" ref={mountRef} aria-label="Informations de carte sécurisées" />{!ready && !error && <p className="card-loading">Chargement du formulaire sécurisé…</p>}{error && <p className="subscription-error">{error}</p>}<section className="payment-security-note"><strong><ShieldCheck size={16} /> Payez en toute sécurité</strong><p>Le numéro, la date d’expiration et le CVV sont saisis dans les champs sécurisés de Stripe. Une validation bancaire peut être demandée.</p></section><footer className="payment-sheet-footer"><div><small>{checkout.planName} · {checkout.billingCycle === "annual" ? "Annuel" : "Mensuel"}</small><strong>{checkout.amountLabel}</strong></div><button className="payment-choice-primary" disabled={loading || !ready || !name.trim()}><LockKeyhole size={17} />{loading ? "Validation…" : "Confirmer la carte"}</button></footer></form></section>;
 }
 
 function ProfileMenuGroup({ title, children }: { title: string; children: ReactNode }) {

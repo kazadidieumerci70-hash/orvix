@@ -25,6 +25,9 @@ from .schemas import (
     AuthResponse,
     CheckoutRequest,
     CheckoutResponse,
+    CardSetupRequest,
+    CardSetupResponse,
+    CardAttachRequest,
     ChatRequest,
     ChatResponse,
     CoreProcessRequest,
@@ -46,7 +49,7 @@ from .schemas import (
 )
 from .quiz_word import build_quiz_docx
 from .subscriptions import credit_cost, document_reading_limits, ensure_ai_quota, ensure_document_quota, join_waitlist, plans_config, record_ai_request, refund_ai_request, subscription_status
-from .payments import create_checkout, apply_geniuspay_webhook, reconcile_user_payments, valid_geniuspay_signature
+from .payments import create_checkout, create_card_setup, attach_card_setup, apply_geniuspay_webhook, reconcile_user_payments, valid_geniuspay_signature
 from .core_engine import OrvixCoreEngine
 from .model_gateway import ModelGateway, create_model_provider
 from .memory import forget as forget_learning_memory, remember, relevant, reset as reset_learning_memory, snapshot as learning_memory_snapshot
@@ -65,7 +68,7 @@ def _rate_limit(request: Request) -> tuple[int, int] | None:
         return (12, 60)
     if path in {f"{settings.api_prefix}/chat", f"{settings.api_prefix}/revision", f"{settings.api_prefix}/quiz", f"{settings.api_prefix}/exam-mode", "/core/process"}:
         return (30, 60)
-    if path == f"{settings.api_prefix}/subscription/checkout":
+    if path in {f"{settings.api_prefix}/subscription/checkout", f"{settings.api_prefix}/subscription/card/setup", f"{settings.api_prefix}/subscription/card/attach"}:
         return (5, 600)
     if path == f"{settings.api_prefix}/documents":
         return (20, 600)
@@ -392,6 +395,16 @@ async def subscription_waitlist(payload: WaitlistRequest, user: UserProfile = De
 @app.post(f"{settings.api_prefix}/subscription/checkout", response_model=CheckoutResponse)
 async def subscription_checkout(payload: CheckoutRequest, user: UserProfile = Depends(current_user)):
     return await create_checkout(user, payload.plan_id, payload.billing_cycle, payload.customer_email, payload.payment_method, payload.customer_phone, payload.customer_country)
+
+
+@app.post(f"{settings.api_prefix}/subscription/card/setup", response_model=CardSetupResponse)
+async def subscription_card_setup(payload: CardSetupRequest, user: UserProfile = Depends(current_user)):
+    return await create_card_setup(user, payload.plan_id, payload.billing_cycle, payload.customer_email, payload.customer_phone)
+
+
+@app.post(f"{settings.api_prefix}/subscription/card/attach")
+async def subscription_card_attach(payload: CardAttachRequest, user: UserProfile = Depends(current_user)):
+    return await attach_card_setup(user, payload.transaction_id, payload.setup_intent_id, payload.payment_method_id)
 
 
 @app.get(f"{settings.api_prefix}/payments/geniuspay/webhook")

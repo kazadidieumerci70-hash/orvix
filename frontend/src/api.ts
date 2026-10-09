@@ -166,6 +166,22 @@ export function createSubscriptionCheckout(planId: "student" | "pro", billingCyc
   });
 }
 
+export type CardSetup = { transaction_id: string; subscription_uuid: string; setup_intent_id: string; client_secret: string; stripe_public_key: string };
+
+export function createCardSetup(planId: "student" | "pro", billingCycle: "monthly" | "annual", customerEmail: string, customerPhone = "") {
+  return request<CardSetup>("/api/v1/subscription/card/setup", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plan_id: planId, billing_cycle: billingCycle, customer_email: customerEmail, customer_phone: customerPhone }),
+  });
+}
+
+export function attachCardSetup(transactionId: string, setupIntentId: string, paymentMethodId: string) {
+  return request<{ status: string; message: string }>("/api/v1/subscription/card/attach", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ transaction_id: transactionId, setup_intent_id: setupIntentId, payment_method_id: paymentMethodId }),
+  });
+}
+
 export function sendChat(message: string, history: ChatMessage[], documentIds: string[], conversationId: string, signal?: AbortSignal) {
   const controller = new AbortController();
   let timedOut = false;

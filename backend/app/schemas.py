@@ -207,3 +207,24 @@ class CheckoutResponse(BaseModel):
     transaction_id: str
     payment_url: str
     simulation: bool = False
+
+
+class CardSetupRequest(BaseModel):
+    plan_id: Literal["student", "pro"]
+    billing_cycle: Literal["monthly", "annual"]
+    customer_email: str
+    customer_phone: str = ""
+
+
+class CardSetupResponse(BaseModel):
+    transaction_id: str
+    subscription_uuid: str
+    setup_intent_id: str
+    client_secret: str
+    stripe_public_key: str
+
+
+class CardAttachRequest(BaseModel):
+    transaction_id: str
+    setup_intent_id: str
+    payment_method_id: str

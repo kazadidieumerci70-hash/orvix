@@ -72,6 +72,17 @@ def _configured() -> bool:
     return bool(s.geniuspay_api_key and s.geniuspay_api_secret)
 
 
+def _provider_headers() -> dict[str, str]:
+    """Keep provider credentials on the server; the browser only receives a Stripe publishable key."""
+    settings = get_settings()
+    return {
+        "Authorization": f"Bearer {settings.geniuspay_api_key}",
+        "X-API-Key": settings.geniuspay_api_key,
+        "X-API-Secret": settings.geniuspay_api_secret,
+        "Accept": "application/json",
+    }
+
+
 def valid_geniuspay_signature(raw_body: bytes, signature: str | None, timestamp: str | None) -> bool:
     secret = get_settings().geniuspay_webhook_secret
     if not secret:
@@ -185,7 +196,7 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
         payload["mmo_provider"] = mmo_provider
     try:
         async with httpx.AsyncClient(timeout=25) as client:
-            response = await client.post(f"{settings.geniuspay_base_url}/v1/merchant/payments", json=payload, headers={"X-API-Key": settings.geniuspay_api_key, "X-API-Secret": settings.geniuspay_api_secret, "Accept": "application/json"})
+            response = await client.post(f"{settings.geniuspay_base_url}/v1/merchant/payments", json=payload, headers=_provider_headers())
             try:
                 result = response.json()
             except ValueError:
@@ -232,6 +243,103 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
         raise HTTPException(502, "Connexion au service de paiement impossible.") from error
 
 
+async def create_card_setup(user, plan_id: str, billing_cycle: str, customer_email: str, customer_phone: str = "") -> dict:
+    """Create a GeniusPay subscription then obtain a Stripe SetupIntent for hosted card fields.
+
+    PAN and CVC are deliberately never accepted by this API.  Stripe.js owns the
+    iframe fields and returns only a PaymentMethod token to this service.
+    """
+    ensure_checkout_allowed(user.id, plan_id)
+    email = customer_email.strip().lower()
+    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+        raise HTTPException(422, "Indiquez une adresse e-mail valide pour recevoir votre confirmation de paiement.")
+    phone = (customer_phone or user.phone or "").strip().replace(" ", "").replace("-", "")
+    if not re.fullmatch(r"\+[1-9]\d{7,14}", phone):
+        raise HTTPException(422, "Indique un numéro de téléphone valide au format international avant d’ajouter une carte.")
+    if not _configured():
+        raise HTTPException(503, "Le paiement par carte n'est pas encore configuré.")
+    config = plans_config()
+    plan = next((item for item in config["plans"] if item["id"] == plan_id), None)
+    if not plan or plan_id == "free":
+        raise HTTPException(422, "Forfait payant invalide.")
+    amount = plan["annual_price"] if billing_cycle == "annual" else plan["monthly_price"]
+    transaction_id = f"ORVIX{datetime.now(timezone.utc):%Y%m%d%H%M%S}{secrets.token_hex(4).upper()}"
+    settings = get_settings()
+    record = {
+        "transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id,
+        "billing_cycle": billing_cycle, "amount": amount, "currency": config["currency"],
+        "customer_email": email, "customer_name": user.name, "customer_phone": phone,
+        "payment_method": "card", "provider_type": "subscription", "status": "PENDING",
+        "simulation": False, "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    payload = {
+        "customer_phone": phone, "customer_name": user.name, "customer_email": email,
+        "plan_name": f"ORVIX {plan['name']}", "amount": amount,
+        "currency": config["currency"], "billing_cycle": billing_cycle,
+        "payment_method": "stripe_card",
+        "metadata": {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle},
+    }
+    try:
+        async with httpx.AsyncClient(timeout=25) as client:
+            created = await client.post(f"{settings.geniuspay_base_url}/v1/merchant/subscriptions", json=payload, headers={**_provider_headers(), "Idempotency-Key": transaction_id})
+            result = created.json()
+            if created.status_code >= 400 or not result.get("success"):
+                logger.error("GeniusPay subscription creation failed (status %s)", created.status_code)
+                raise HTTPException(502, result.get("message") or "La préparation du paiement par carte a échoué.")
+            subscription = (result.get("data") or {}).get("subscription") or {}
+            subscription_uuid = subscription.get("uuid")
+            if not subscription_uuid:
+                raise HTTPException(502, "Le service de paiement n’a pas fourni la référence de l’abonnement.")
+            record["provider_reference"] = subscription_uuid
+            _write_payments({"payments": {transaction_id: record}})
+            setup = await client.post(f"{settings.geniuspay_base_url}/v1/merchant/subscriptions/{subscription_uuid}/payment-methods/setup", headers=_provider_headers())
+            setup_data = (setup.json().get("data") or {}) if setup.content else {}
+            if setup.status_code >= 400 or not all(setup_data.get(key) for key in ("setup_intent_id", "client_secret", "stripe_public_key")):
+                logger.error("GeniusPay card setup failed (status %s)", setup.status_code)
+                _fail_checkout(record)
+                raise HTTPException(502, "Le formulaire carte sécurisé est temporairement indisponible.")
+        record["setup_intent_id"] = setup_data["setup_intent_id"]
+        _write_payments({"payments": {transaction_id: record}})
+        return {"transaction_id": transaction_id, "subscription_uuid": subscription_uuid, **setup_data}
+    except HTTPException:
+        raise
+    except (httpx.HTTPError, ValueError) as error:
+        logger.error("GeniusPay card setup connection failed: %s", type(error).__name__)
+        _fail_checkout(record)
+        raise HTTPException(502, "Connexion au service de paiement impossible.") from error
+
+
+async def attach_card_setup(user, transaction_id: str, setup_intent_id: str, payment_method_id: str) -> dict:
+    record = _read_payments()["payments"].get(transaction_id)
+    if not record or record.get("user_id") != user.id or record.get("provider_type") != "subscription":
+        raise HTTPException(404, "Préparation de paiement introuvable.")
+    if record.get("status") != "PENDING" or record.get("setup_intent_id") != setup_intent_id:
+        raise HTTPException(409, "Cette préparation de paiement n’est plus valide. Recommencez le paiement.")
+    if not re.fullmatch(r"pm_[A-Za-z0-9_]+", payment_method_id):
+        raise HTTPException(422, "La carte sécurisée n’a pas pu être validée.")
+    settings = get_settings()
+    try:
+        async with httpx.AsyncClient(timeout=25) as client:
+            response = await client.post(
+                f"{settings.geniuspay_base_url}/v1/merchant/subscriptions/{record['provider_reference']}/payment-methods/attach",
+                json={"setup_intent_id": setup_intent_id, "payment_method_id": payment_method_id},
+                headers={**_provider_headers(), "Content-Type": "application/json"},
+            )
+            result = response.json()
+        if response.status_code >= 400 or not result.get("success"):
+            logger.error("GeniusPay card attach failed (status %s)", response.status_code)
+            raise HTTPException(502, result.get("message") or "Impossible de confirmer cette carte.")
+        record["status"] = "CARD_ATTACHED"
+        record["card_attached_at"] = datetime.now(timezone.utc).isoformat()
+        _write_payments({"payments": {transaction_id: record}})
+        return {"status": "pending", "message": "Carte enregistrée de manière sécurisée. La confirmation arrive après validation du paiement."}
+    except HTTPException:
+        raise
+    except (httpx.HTTPError, ValueError) as error:
+        logger.error("GeniusPay card attach connection failed: %s", type(error).__name__)
+        raise HTTPException(502, "Connexion au service de paiement impossible.") from error
+
+
 async def _send_confirmation(record: dict) -> None:
     if record.get("status") != "ACCEPTED" or record.get("confirmation_sent_at"):
         return
@@ -249,6 +357,24 @@ async def _send_confirmation(record: dict) -> None:
 
 async def apply_geniuspay_webhook(payload: dict) -> dict:
     data = payload.get("data") or {}
+    # Stripe subscription events do not necessarily repeat our metadata. Match
+    # them to the server-side GeniusPay subscription UUID instead.
+    subscription = data.get("subscription") or {}
+    subscription_uuid = subscription.get("uuid")
+    if subscription_uuid:
+        matching = next((record for record in _read_payments()["payments"].values()
+                         if record.get("provider_type") == "subscription" and record.get("provider_reference") == subscription_uuid), None)
+        if matching:
+            event = payload.get("event")
+            if event == "subscription.payment_succeeded" and (data.get("invoice") or {}).get("status") == "paid":
+                accepted = _accept_payment(matching)
+                await _send_confirmation(accepted)
+                return accepted
+            if event in {"subscription.payment_failed", "subscription.cancelled", "subscription.expired"}:
+                matching["status"] = "FAILED"
+                matching["verified_at"] = datetime.now(timezone.utc).isoformat()
+                _write_payments({"payments": {matching["transaction_id"]: matching}})
+            return matching
     metadata = data.get("metadata") or {}
     transaction_id = metadata.get("transaction_id")
     if not transaction_id:
