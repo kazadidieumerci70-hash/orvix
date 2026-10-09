@@ -79,6 +79,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       ? payload.detail
       : Array.isArray(payload?.detail)
         ? payload.detail.map((item: { msg?: string }) => item?.msg).filter(Boolean).join(" ")
+        : typeof payload?.message === "string"
+          ? payload.message
         : "ORVIX est momentanément indisponible. Réessayez dans quelques instants.";
     throw new Error(detail);
   }

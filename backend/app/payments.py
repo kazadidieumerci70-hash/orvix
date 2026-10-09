@@ -293,7 +293,11 @@ async def create_card_setup(user, plan_id: str, billing_cycle: str, customer_ema
             record["provider_reference"] = subscription_uuid
             _write_payments({"payments": {transaction_id: record}})
             setup = await client.post(f"{settings.geniuspay_base_url}/v1/merchant/subscriptions/{subscription_uuid}/payment-methods/setup", headers=_provider_headers())
-            setup_data = (setup.json().get("data") or {}) if setup.content else {}
+            # GeniusPay documents this endpoint with a direct object, while
+            # some gateway versions wrap it in {data: ...}. Accept both
+            # formats so a valid SetupIntent is never discarded locally.
+            setup_result = setup.json() if setup.content else {}
+            setup_data = (setup_result.get("data") or setup_result) if isinstance(setup_result, dict) else {}
             if setup.status_code >= 400 or not all(setup_data.get(key) for key in ("setup_intent_id", "client_secret", "stripe_public_key")):
                 logger.error("GeniusPay card setup failed (status %s)", setup.status_code)
                 _fail_checkout(record)
