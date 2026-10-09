@@ -1,25 +1,35 @@
-# Vérification visuelle — Header mobile sombre
+# Design QA — Paiement mobile ORVIX
 
-- Source : `C:/Users/LENOVO~1/AppData/Local/Temp/codex-clipboard-c93458bd-26f9-42d6-ae24-a1a858edc4f4.png`
-- Source : 310 × 583 px; cible mobile, thème sombre, conversation active
-- Implémentation : `https://orvix-ai.pages.dev`
-- Capture d’implémentation : indisponible sans session authentifiée dans le navigateur de contrôle
+Source visual truth: `C:\Users\LENOVO~1\AppData\Local\Temp\codex-clipboard-fc119397-30db-478c-93e9-a0839f900ef5.png`.
 
-## Constat et correction
+Implementation: paiement dans `frontend/src/App.tsx` et `frontend/src/styles.css`.
 
-- P1 initial : le header redevenait clair uniquement quand `.orvix-chat-shell.has-messages` était présent.
-- Correction : surcharge mobile explicite de l’état conversation active, suppression de toute image de fond et neutralisation des pseudo-éléments du header.
-- Portée : règles strictement limitées à `max-width: 900px`; desktop verrouillé et inchangé.
+Viewport/state: feuille de paiement mobile, Argent mobile sélectionné.
 
-## Vérification technique
+## Evidence
 
-- Compilation TypeScript/Vite réussie.
-- Feuille générée : `assets/index-CX1fM_ly.css`.
-- Production confirmée : la règle sombre ciblant `.chat-main:has(.orvix-chat-shell.has-messages) > .page-actions` est présente dans le bundle publié.
-- Comparaison visuelle finale bloquée par l’absence d’une session authentifiée dans le navigateur de contrôle.
+- Source dimensions: 447 × 774 px (capture fournie par l’utilisateur).
+- Implementation screenshot: indisponible.
+- Browser verification: bloquée. L’accès à `https://app.orvix.work/` depuis le navigateur automatisé a été refusé par la politique de navigateur de cette session.
+- Build: `npm run build` réussi le 2026-10-09.
 
-## Résultat
+## Required fidelity surfaces
 
-`final result: blocked`
+- Fonts and typography: à vérifier visuellement.
+- Spacing and layout rhythm: à vérifier visuellement.
+- Colors and visual tokens: à vérifier visuellement.
+- Image quality and asset fidelity: l’interface utilise des icônes de la bibliothèque existante; à vérifier visuellement.
+- Copy and content: adapté à ORVIX, sans Wave, wallet, PayPal, Apple Pay ni virement.
 
-Blocage : impossible de capturer le même écran Révision authentifié pour une comparaison visuelle finale.
+## Findings
+
+- [P1] Comparaison visuelle bloquée : aucune capture navigateur de l’implémentation n’est disponible dans cette session.
+
+## Implementation checklist
+
+1. Ouvrir le paiement ORVIX sur mobile.
+2. Vérifier les états Carte et Argent mobile.
+3. Vérifier que le pays détecté peut être modifié.
+4. Comparer l’espacement et les tailles au visuel de référence.
+
+final result: blocked
