@@ -194,8 +194,9 @@ class CheckoutRequest(BaseModel):
     plan_id: Literal["student", "pro"]
     billing_cycle: Literal["monthly", "annual"]
     customer_email: str
-    payment_method: Literal["airtel_money", "orange_money", "card"]
+    payment_method: Literal["airtel_money", "orange_money", "mtn_money", "card"]
     customer_phone: str = ""
+    customer_country: Literal["CD", "CM", "CI"]
 
 
 class WaitlistRequest(BaseModel):

@@ -117,13 +117,13 @@ def _fail_checkout(record: dict) -> None:
     _write_payments({"payments": {record["transaction_id"]: record}})
 
 
-async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email: str, payment_method: str, customer_phone: str = "") -> dict:
+async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email: str, payment_method: str, customer_phone: str = "", customer_country: str = "CD") -> dict:
     ensure_checkout_allowed(user.id, plan_id)
     customer_email = customer_email.strip().lower()
     if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", customer_email):
         raise HTTPException(422, "Indiquez une adresse e-mail valide pour recevoir votre confirmation de paiement.")
     customer_phone = customer_phone.strip().replace(" ", "").replace("-", "")
-    if payment_method in {"airtel_money", "orange_money"} and not re.fullmatch(r"\+[1-9]\d{7,14}", customer_phone):
+    if payment_method in {"airtel_money", "orange_money", "mtn_money"} and not re.fullmatch(r"\+[1-9]\d{7,14}", customer_phone):
         raise HTTPException(422, "Indique un numéro Mobile Money valide au format international, par exemple +243XXXXXXXXX.")
     if payment_method == "card":
         customer_phone = ""
@@ -157,14 +157,20 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
     customer = {"name": user.name, "email": customer_email}
     if customer_phone:
         customer["phone"] = customer_phone
-        customer["country"] = "CD"
+        customer["country"] = customer_country
     elif user.phone and "@" not in user.phone:
         customer["phone"] = user.phone
-    # Force the exact RDC Mobile Money operator selected in ORVIX.  The
-    # provider's generic checkout may otherwise pick a different gateway
-    # (for example Wave) based on its own routing preferences.
-    provider_method = "pawapay" if payment_method in {"airtel_money", "orange_money"} else payment_method
-    mmo_provider = {"airtel_money": "AIRTEL_COD", "orange_money": "ORANGE_COD"}.get(payment_method)
+    # Force the exact network selected in ORVIX. This prevents generic
+    # routing from replacing the customer's choice with another wallet.
+    mobile_providers = {
+        ("CD", "airtel_money"): "AIRTEL_COD", ("CD", "orange_money"): "ORANGE_COD",
+        ("CM", "orange_money"): "ORANGE_CMR", ("CM", "mtn_money"): "MTN_MOMO_CMR",
+        ("CI", "orange_money"): "ORANGE_CIV", ("CI", "mtn_money"): "MTN_MOMO_CIV",
+    }
+    mmo_provider = mobile_providers.get((customer_country, payment_method))
+    if payment_method != "card" and not mmo_provider:
+        raise HTTPException(422, "Ce réseau Mobile Money n’est pas disponible dans le pays sélectionné.")
+    provider_method = "pawapay" if mmo_provider else payment_method
     payload = {
         "amount": amount,
         "currency": config["currency"],

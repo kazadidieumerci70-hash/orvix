@@ -485,7 +485,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     });
   }
 
-  async function startCheckout(paymentMethod: "airtel_money" | "orange_money" | "card", customerPhone = "") {
+  async function startCheckout(paymentMethod: "airtel_money" | "orange_money" | "mtn_money" | "card", customerPhone = "", customerCountry: "CD" | "CM" | "CI" = "CD") {
     if (paymentLoading) return;
     if (!checkout) return;
     const planId = checkout.planId;
@@ -504,7 +504,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     setError("");
     setMessage("");
     try {
-      const result = await createSubscriptionCheckout(planId, checkout.billingCycle, customerEmail, paymentMethod, customerPhone);
+      const result = await createSubscriptionCheckout(planId, checkout.billingCycle, customerEmail, paymentMethod, customerPhone, customerCountry);
       if (result.payment_url) {
         window.location.assign(result.payment_url);
       } else if (result.simulation) {
@@ -584,28 +584,48 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
   </section>;
 }
 
-function PaymentChoice({ checkout, loading, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; onPay: (method: "airtel_money" | "orange_money" | "card", phone?: string) => void; onBack: () => void }) {
-  const [method, setMethod] = useState<"airtel_money" | "orange_money" | "card">("airtel_money");
-  const [phone, setPhone] = useState("+243");
+type PaymentCountry = "CD" | "CM" | "CI";
+type MobileMethod = "airtel_money" | "orange_money" | "mtn_money";
+const paymentCountries: Record<PaymentCountry, { label: string; prefix: string; methods: { id: MobileMethod; label: string }[] }> = {
+  CD: { label: "RDC", prefix: "+243", methods: [{ id: "airtel_money", label: "Airtel Money" }, { id: "orange_money", label: "Orange Money" }] },
+  CM: { label: "Cameroun", prefix: "+237", methods: [{ id: "orange_money", label: "Orange Money" }, { id: "mtn_money", label: "MTN MoMo" }] },
+  CI: { label: "Côte d’Ivoire", prefix: "+225", methods: [{ id: "orange_money", label: "Orange Money" }, { id: "mtn_money", label: "MTN MoMo" }] },
+};
+function suggestedPaymentCountry(): PaymentCountry {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (zone === "Africa/Douala") return "CM";
+  if (zone === "Africa/Abidjan") return "CI";
+  return "CD";
+}
+
+function PaymentChoice({ checkout, loading, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; onPay: (method: MobileMethod | "card", phone?: string, country?: PaymentCountry) => void; onBack: () => void }) {
+  const [country, setCountry] = useState<PaymentCountry>(suggestedPaymentCountry);
+  const [method, setMethod] = useState<MobileMethod | "card">(paymentCountries[suggestedPaymentCountry()].methods[0].id);
+  const [phone, setPhone] = useState(paymentCountries[suggestedPaymentCountry()].prefix);
   const isMobileMoney = method !== "card";
+  const countryInfo = paymentCountries[country];
+  const chooseCountry = (nextCountry: PaymentCountry) => {
+    const firstMethod = paymentCountries[nextCountry].methods[0].id;
+    setCountry(nextCountry); setMethod(firstMethod); setPhone(paymentCountries[nextCountry].prefix);
+  };
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (isMobileMoney && !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, ""))) return;
-    onPay(method, phone.replace(/[\s-]/g, ""));
+    onPay(method, phone.replace(/[\s-]/g, ""), country);
   };
   return <section className="payment-choice" aria-labelledby="payment-choice-title">
     <div className="payment-choice-icon"><ShieldCheck size={29} /></div>
     <span>PAIEMENT SÉCURISÉ</span>
     <h2 id="payment-choice-title">Comment veux-tu payer ?</h2>
-    <p className="payment-choice-intro">Choisis ton moyen de paiement. La confirmation et le code restent sécurisés chez ton opérateur ou ta banque.</p>
+    <p className="payment-choice-intro">Ton pays est proposé automatiquement. Choisis-le si nécessaire, puis sélectionne ton réseau ou ta carte.</p>
     <div className="payment-choice-summary"><div><small>FORFAIT</small><strong>{checkout.planName} · {checkout.billingCycle === "annual" ? "Annuel" : "Mensuel"}</strong></div><div><small>MONTANT</small><strong>{checkout.amountLabel}</strong></div></div>
     <form onSubmit={submit} className="payment-choice-form">
-      <div className="payment-methods" role="radiogroup" aria-label="Moyen de paiement">
-        <button type="button" className={method === "airtel_money" ? "selected" : ""} onClick={() => setMethod("airtel_money")} aria-pressed={method === "airtel_money"}><b>Airtel Money</b><small>Payer avec ton numéro Airtel</small></button>
-        <button type="button" className={method === "orange_money" ? "selected" : ""} onClick={() => setMethod("orange_money")} aria-pressed={method === "orange_money"}><b>Orange Money</b><small>Payer avec ton numéro Orange</small></button>
-        <button type="button" className={method === "card" ? "selected" : ""} onClick={() => setMethod("card")} aria-pressed={method === "card"}><CreditCard size={20} /><b>Carte bancaire</b><small>Visa ou Mastercard</small></button>
-      </div>
-      {isMobileMoney ? <label className="payment-phone"><span>Numéro {method === "airtel_money" ? "Airtel" : "Orange"}</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+243 000 000 000" required /><small>Utilise le format international. Tu recevras ensuite la confirmation sur ton téléphone.</small></label> : <p className="payment-card-note"><LockKeyhole size={18} />Après confirmation, tu renseigneras les informations de ta carte uniquement dans l’espace sécurisé de ta banque.</p>}
+      <fieldset className="payment-country"><legend>Pays</legend><div>{(Object.keys(paymentCountries) as PaymentCountry[]).map((id) => <label key={id}><input type="radio" name="country" checked={country === id} onChange={() => chooseCountry(id)} /><span>{paymentCountries[id].label}</span></label>)}</div></fieldset>
+      <fieldset className="payment-methods"><legend>Moyen de paiement</legend>
+        {countryInfo.methods.map((item) => <label key={item.id} className={method === item.id ? "selected" : ""}><input type="radio" name="payment-method" checked={method === item.id} onChange={() => setMethod(item.id)} /><span><b>{item.label}</b><small>Payer avec ton numéro {item.label.replace(" Money", "").replace(" MoMo", "")}</small></span></label>)}
+        <label className={method === "card" ? "selected" : ""}><input type="radio" name="payment-method" checked={method === "card"} onChange={() => setMethod("card")} /><CreditCard size={20} /><span><b>Carte bancaire</b><small>Visa ou Mastercard</small></span></label>
+      </fieldset>
+      {isMobileMoney ? <label className="payment-phone"><span>Numéro {countryInfo.methods.find((item) => item.id === method)?.label}</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={`${countryInfo.prefix} 000 000 000`} required /><small>Utilise le format international. La confirmation arrivera sur ce numéro.</small></label> : <p className="payment-card-note"><LockKeyhole size={18} />Les informations de carte et la confirmation restent dans l’espace sécurisé de la banque.</p>}
       <button className="payment-choice-primary" disabled={loading || (isMobileMoney && !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, "")))}><LockKeyhole size={18} />{loading ? "Préparation du paiement…" : isMobileMoney ? "Continuer" : "Payer par carte"}</button>
     </form>
     <button type="button" className="payment-choice-back" onClick={onBack} disabled={loading}>Retour aux forfaits</button>

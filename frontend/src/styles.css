@@ -628,10 +628,17 @@ button { cursor: pointer; }
 .payment-choice-summary small { color: #75828c; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
 .payment-choice-summary strong { color: #18313b; font-size: 15px; }
 .payment-choice-form { width: 100%; text-align: left; }
+.payment-country, .payment-methods { margin: 0; padding: 0; border: 0; }
+.payment-country legend, .payment-methods legend { margin-bottom: 9px; color: #43575f; font-size: 12px; font-weight: 800; }
+.payment-country > div { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 17px; }
+.payment-country label { display: inline-flex; align-items: center; gap: 7px; padding: 9px 11px; border: 1px solid #d4e2e0; border-radius: 999px; color: #38535a; background: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
+.payment-country input, .payment-methods input { accent-color: #168f85; }
+.payment-country label:has(input:checked) { border-color: #249e94; background: #e9f8f5; }
 .payment-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.payment-methods button { display: grid; min-height: 98px; align-content: center; gap: 5px; padding: 13px; border: 1px solid #d4e2e0; border-radius: 14px; color: #29424a; background: #fff; text-align: left; font: inherit; cursor: pointer; }
-.payment-methods button:hover { border-color: #76c9c0; }
-.payment-methods button.selected { border-color: #249e94; background: #e9f8f5; box-shadow: inset 0 0 0 1px #249e94; }
+.payment-methods label { display: grid; grid-template-columns: auto 1fr; min-height: 98px; align-content: center; align-items: start; gap: 9px; padding: 13px; border: 1px solid #d4e2e0; border-radius: 14px; color: #29424a; background: #fff; text-align: left; font: inherit; cursor: pointer; }
+.payment-methods label:hover { border-color: #76c9c0; }
+.payment-methods label.selected { border-color: #249e94; background: #e9f8f5; box-shadow: inset 0 0 0 1px #249e94; }
+.payment-methods label > span { display: grid; gap: 5px; }
 .payment-methods b { color: #17343a; font-size: 14px; }
 .payment-methods small { color: #72818a; font-size: 11px; line-height: 1.35; }
 .payment-phone { display: grid; gap: 7px; margin-top: 16px; color: #284149; font-size: 13px; font-weight: 750; }
@@ -664,7 +671,7 @@ button { cursor: pointer; }
 .plan-card > button:disabled { color: #74817f; background: #e8efee; }
 @media (max-width: 720px) { .settings-page { width: calc(100% - 28px); padding-top: 74px; } .settings-tabs { display: grid; grid-template-columns: 1fr 1fr; width: 100%; box-sizing: border-box; } .settings-tabs button { justify-content: center; padding-inline: 8px; } .settings-form,.subscription-panel { padding: 20px; } .settings-form { grid-template-columns: 1fr; } .settings-field { grid-column: 1 / -1; } .settings-validation { align-items: stretch; flex-direction: column; } .settings-validation button { justify-content: center; } }
 @media (max-width: 850px) { .subscription-heading { align-items: stretch; flex-direction: column; } .billing-switch { align-self: flex-start; } .plans-grid { grid-template-columns: 1fr; } }
-@media (max-width: 560px) { .payment-choice { margin: 10px 0; padding: 30px 20px; border-radius: 19px; } .payment-choice-summary, .payment-methods { grid-template-columns: 1fr; } .payment-choice-summary > div + div { border-top: 1px solid #d7e7e4; border-left: 0; } .payment-methods button { min-height: 72px; } }
+@media (max-width: 560px) { .payment-choice { margin: 10px 0; padding: 30px 20px; border-radius: 19px; } .payment-choice-summary, .payment-methods { grid-template-columns: 1fr; } .payment-choice-summary > div + div { border-top: 1px solid #d7e7e4; border-left: 0; } .payment-methods label { min-height: 72px; } }
 
 /* Paramètres : proportions compactes et alignements stables. */
 .settings-page {
