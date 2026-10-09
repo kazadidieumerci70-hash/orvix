@@ -194,7 +194,11 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
             logger.error("Genius Pay checkout failed (status %s)", response.status_code)
             raise HTTPException(502, "Le service de paiement est temporairement indisponible.")
         data = result.get("data") or {}
-        payment_url = data.get("checkout_url") or data.get("payment_url") or data.get("redirect_url")
+        # A direct method can be accompanied by both URLs.  The generic
+        # checkout_url is allowed to auto-select another gateway, whereas
+        # payment_url is the URL for the method explicitly requested by the
+        # customer.  Always prefer the latter.
+        payment_url = data.get("payment_url") or data.get("redirect_url") or data.get("checkout_url")
         if not result.get("success") or not payment_url:
             raise HTTPException(502, result.get("message") or "Le paiement n'a pas pu être créé.")
         record["provider_reference"] = data.get("reference")
