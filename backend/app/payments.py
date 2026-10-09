@@ -5,6 +5,7 @@ import hmac
 import logging
 import re
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import HTTPException
@@ -201,6 +202,16 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
         payment_url = data.get("payment_url") or data.get("redirect_url") or data.get("checkout_url")
         if not result.get("success") or not payment_url:
             raise HTTPException(502, result.get("message") or "Le paiement n'a pas pu être créé.")
+        # Do not silently substitute Wave for another choice.  A merchant
+        # account without the requested gateway must be fixed in its payment
+        # configuration, not hidden behind a different payment journey.
+        target = " ".join([
+            str(data.get("gateway", "")),
+            str(data.get("payment_provider", "")),
+            urlparse(payment_url).netloc,
+        ]).lower()
+        if "wave" in target:
+            raise HTTPException(503, "Le moyen de paiement choisi n’est pas encore activé pour ORVIX. Choisis Airtel/Orange ou réessaie plus tard.")
         record["provider_reference"] = data.get("reference")
         record["payment_url"] = payment_url
         _write_payments({"payments": {transaction_id: record}})
