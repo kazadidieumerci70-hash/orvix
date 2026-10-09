@@ -159,16 +159,23 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
         customer["country"] = "CD"
     elif user.phone and "@" not in user.phone:
         customer["phone"] = user.phone
+    # Force the exact RDC Mobile Money operator selected in ORVIX.  The
+    # provider's generic checkout may otherwise pick a different gateway
+    # (for example Wave) based on its own routing preferences.
+    provider_method = "pawapay" if payment_method in {"airtel_money", "orange_money"} else payment_method
+    mmo_provider = {"airtel_money": "AIRTEL_COD", "orange_money": "ORANGE_COD"}.get(payment_method)
     payload = {
         "amount": amount,
         "currency": config["currency"],
-        "payment_method": payment_method,
+        "payment_method": provider_method,
         "description": f"ORVIX {plan['name']} - {billing_cycle}",
         "customer": customer,
         "success_url": f"{settings.public_app_url}/?payment=success&transaction_id={transaction_id}",
         "error_url": f"{settings.public_app_url}/?payment=cancelled&transaction_id={transaction_id}",
         "metadata": {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle},
     }
+    if mmo_provider:
+        payload["mmo_provider"] = mmo_provider
     try:
         async with httpx.AsyncClient(timeout=25) as client:
             response = await client.post(f"{settings.geniuspay_base_url}/v1/merchant/payments", json=payload, headers={"X-API-Key": settings.geniuspay_api_key, "X-API-Secret": settings.geniuspay_api_secret, "Accept": "application/json"})
