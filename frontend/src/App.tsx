@@ -409,6 +409,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [waitlistedPlans, setWaitlistedPlans] = useState<Set<string>>(new Set());
   const [paymentLoading, setPaymentLoading] = useState("");
+  const [checkout, setCheckout] = useState<{ url: string; planName: string; amountLabel: string; billingCycle: "monthly" | "annual" } | null>(null);
 
   useEffect(() => {
     void loadSubscriptionData();
@@ -481,13 +482,23 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
       setError("Indique une adresse e-mail valide pour le paiement.");
       return;
     }
+    const selectedPlan = plans.find((plan) => plan.id === planId);
+    if (!selectedPlan) {
+      setError("Ce forfait n’est plus disponible. Actualise la page puis réessaie.");
+      return;
+    }
     setPaymentLoading(planId);
     setError("");
     setMessage("");
     try {
       const result = await createSubscriptionCheckout(planId, billingCycle, customerEmail);
       if (result.payment_url) {
-        window.location.assign(result.payment_url);
+        setCheckout({
+          url: result.payment_url,
+          planName: selectedPlan.name,
+          amountLabel: `${(billingCycle === "annual" ? selectedPlan.annual_price : selectedPlan.monthly_price).toFixed(2).replace(".", ",")} $`,
+          billingCycle,
+        });
       } else if (result.simulation) {
         const refreshed = await getSubscription();
         setSubscription(refreshed);
@@ -540,7 +551,8 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     {settingsSection === "language" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Langue de l’interface</h2><p>Le français est disponible maintenant. Les autres langues arrivent bientôt.</p></div><div className="setting-options">{["Français", "English", "Italiano", "Español"].map((item) => <button type="button" key={item} className={language === item ? "selected" : ""} disabled={item !== "Français"} onClick={() => item === "Français" && onLanguageChange("Français")}>{item}{item !== "Français" && <small>Bientôt</small>}</button>)}</div></section></section>}
     {settingsSection === "help" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Besoin d’aide ?</h2><p>Importe un document, sélectionne-le puis pose ta question à ORVIX. Si un problème survient, actualise la page puis réessaie.</p></div></section></section>}
     {settingsSection === "about" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>À propos d’ORVIX</h2><p>ORVIX est une intelligence artificielle créée par DIEU MERCI KAZADI pour aider les étudiants à comprendre leurs documents.</p></div></section></section>}
-    {settingsSection === "subscription" && <section className="subscription-panel">
+    {settingsSection === "subscription" && checkout && <PaymentTransition checkout={checkout} onBack={() => setCheckout(null)} />}
+    {settingsSection === "subscription" && !checkout && <section className="subscription-panel">
       <div className="subscription-heading"><div><span>ABONNEMENT · CRÉDITS ORVIX</span><h2>Choisis ton forfait ORVIX</h2><p>Choisis l’offre qui correspond à tes besoins.</p></div><div className="billing-switch"><button className={billingCycle === "monthly" ? "active" : ""} onClick={() => setBillingCycle("monthly")}>Mensuel</button><button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Annuel <small>2 mois offerts</small></button></div></div>
       {subscription && <div className="quota-summary"><span>Forfait actuel : <strong>{subscription.plan.name}</strong></span><span>Crédits disponibles {subscription.credit_period === "daily" ? "aujourd’hui" : "ce mois"} : <strong>{subscription.credits_remaining}/{subscription.credits_limit}</strong></span><span>{subscription.credit_period === "daily" ? "Renouvelés chaque jour" : "Renouvelés chaque mois"}</span><span>Documents autorisés : <strong>{subscription.plan.documents}</strong></span></div>}
       {subscription && <div className="quota-progress"><span style={{ width: `${Math.min(100, ((subscription.credits_limit - subscription.credits_remaining) / Math.max(1, subscription.credits_limit)) * 100)}%` }} /></div>}
@@ -561,6 +573,19 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
       })}</div>
     </section>}
     {settingsSection === "appearance" && <AppSettingsView />}
+  </section>;
+}
+
+function PaymentTransition({ checkout, onBack }: { checkout: { url: string; planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; onBack: () => void }) {
+  return <section className="payment-transition" aria-labelledby="payment-transition-title">
+    <div className="payment-transition-icon"><ShieldCheck size={31} /></div>
+    <span>PAIEMENT SÉCURISÉ</span>
+    <h2 id="payment-transition-title">Tu vas finaliser ton paiement</h2>
+    <p>Choisis ton moyen de paiement Mobile Money sur la page sécurisée, puis reviens automatiquement dans ORVIX.</p>
+    <div className="payment-transition-summary"><div><small>FORFAIT</small><strong>{checkout.planName} · {checkout.billingCycle === "annual" ? "Annuel" : "Mensuel"}</strong></div><div><small>MONTANT</small><strong>{checkout.amountLabel}</strong></div></div>
+    <button type="button" className="payment-transition-primary" onClick={() => window.location.assign(checkout.url)}><LockKeyhole size={18} />Continuer vers le paiement sécurisé</button>
+    <button type="button" className="payment-transition-back" onClick={onBack}>Retour aux forfaits</button>
+    <small className="payment-transition-note">Ne ferme pas ORVIX pendant la confirmation de ton paiement.</small>
   </section>;
 }
 

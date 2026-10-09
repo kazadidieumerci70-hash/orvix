@@ -617,6 +617,20 @@ button { cursor: pointer; }
 .credit-costs strong { width: 100%; color: #22312f; font-size: 13px; }
 .credit-costs span { padding: 7px 10px; border: 1px solid #dce8e6; border-radius: 999px; background: #f8fbfa; }
 .subscription-error { margin: 0 0 18px; padding: 13px 15px; border: 1px solid #f0c5ba; border-radius: 13px; color: #a74431; background: #fff3ef; }
+.payment-transition { display: grid; justify-items: center; max-width: 620px; margin: 20px auto; padding: 46px 42px; border: 1px solid #d8e8e5; border-radius: 24px; background: linear-gradient(145deg, #fff 0%, #f2fbf9 100%); box-shadow: 0 22px 64px #173f3614; text-align: center; }
+.payment-transition-icon { display: grid; width: 64px; height: 64px; place-items: center; border-radius: 20px; color: #168d84; background: #dff5f1; }
+.payment-transition > span { margin-top: 20px; color: #168d84; font-size: 11px; font-weight: 850; letter-spacing: .14em; }
+.payment-transition h2 { margin: 8px 0 10px; color: #182631; font-size: clamp(24px, 3vw, 31px); }
+.payment-transition > p { max-width: 470px; margin: 0; color: #667582; line-height: 1.6; }
+.payment-transition-summary { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin: 26px 0 18px; overflow: hidden; border: 1px solid #d7e7e4; border-radius: 15px; background: #fff; text-align: left; }
+.payment-transition-summary > div { display: grid; gap: 5px; padding: 15px 17px; }
+.payment-transition-summary > div + div { border-left: 1px solid #d7e7e4; }
+.payment-transition-summary small { color: #75828c; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.payment-transition-summary strong { color: #18313b; font-size: 15px; }
+.payment-transition-primary { display: inline-flex; width: 100%; min-height: 52px; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(135deg, #168f85, #36b7a9); font: inherit; font-weight: 800; cursor: pointer; box-shadow: 0 12px 20px #168f8526; }
+.payment-transition-primary:hover { filter: brightness(1.04); transform: translateY(-1px); }
+.payment-transition-back { margin-top: 11px; border: 0; color: #58716e; background: transparent; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.payment-transition-note { margin-top: 18px; color: #87949b; font-size: 12px; }
 .plans-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 22px; }
 .plan-card { position: relative; display: flex; flex-direction: column; min-height: 292px; padding: 22px; border: 1px solid #dbe5e4; border-radius: 18px; background: #fff; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
 .plan-card:hover { transform: translateY(-2px); border-color: #9fcac5; box-shadow: 0 14px 30px #174e4710; }
@@ -637,6 +651,7 @@ button { cursor: pointer; }
 .plan-card > button:disabled { color: #74817f; background: #e8efee; }
 @media (max-width: 720px) { .settings-page { width: calc(100% - 28px); padding-top: 74px; } .settings-tabs { display: grid; grid-template-columns: 1fr 1fr; width: 100%; box-sizing: border-box; } .settings-tabs button { justify-content: center; padding-inline: 8px; } .settings-form,.subscription-panel { padding: 20px; } .settings-form { grid-template-columns: 1fr; } .settings-field { grid-column: 1 / -1; } .settings-validation { align-items: stretch; flex-direction: column; } .settings-validation button { justify-content: center; } }
 @media (max-width: 850px) { .subscription-heading { align-items: stretch; flex-direction: column; } .billing-switch { align-self: flex-start; } .plans-grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .payment-transition { margin: 10px 0; padding: 32px 20px; border-radius: 19px; } .payment-transition-summary { grid-template-columns: 1fr; } .payment-transition-summary > div + div { border-top: 1px solid #d7e7e4; border-left: 0; } }
 
 /* Paramètres : proportions compactes et alignements stables. */
 .settings-page {
