@@ -94,16 +94,29 @@ def ensure_checkout_allowed(user_id: str, plan_id: str) -> None:
         raise HTTPException(409, f"Ton forfait Pro est encore actif{until}. Tu pourras choisir le forfait Étudiant après son expiration. Aucun paiement n’a été lancé.")
 
 
-def ensure_no_pending_checkout(user_id: str, plan_id: str, billing_cycle: str) -> None:
+def _pending_checkout(user_id: str, plan_id: str, billing_cycle: str) -> dict | None:
     for record in _read_payments()["payments"].values():
         if (record.get("user_id") == user_id and record.get("plan_id") == plan_id
                 and record.get("billing_cycle") == billing_cycle and record.get("status") == "PENDING"):
-            raise HTTPException(409, "Un paiement pour ce forfait est déjà en attente. Termine-le ou attends son expiration avant d’en créer un autre.")
+            return record
+    return None
+
+
+def _replace_pending_checkout(record: dict) -> None:
+    """Close an unusable checkout so it can never lock a customer out."""
+    record["status"] = "REPLACED"
+    record["replaced_at"] = datetime.now(timezone.utc).isoformat()
+    _write_payments({"payments": {record["transaction_id"]: record}})
+
+
+def _fail_checkout(record: dict) -> None:
+    record["status"] = "FAILED"
+    record["failed_at"] = datetime.now(timezone.utc).isoformat()
+    _write_payments({"payments": {record["transaction_id"]: record}})
 
 
 async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email: str) -> dict:
     ensure_checkout_allowed(user.id, plan_id)
-    ensure_no_pending_checkout(user.id, plan_id, billing_cycle)
     customer_email = customer_email.strip().lower()
     if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", customer_email):
         raise HTTPException(422, "Indiquez une adresse e-mail valide pour recevoir votre confirmation de paiement.")
@@ -111,18 +124,29 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
     plan = next((item for item in config["plans"] if item["id"] == plan_id), None)
     if not plan or plan_id == "free":
         raise HTTPException(422, "Forfait payant invalide.")
+    pending = _pending_checkout(user.id, plan_id, billing_cycle)
+    # If Genius Pay has already given us a secure checkout URL, resume that
+    # exact payment instead of making the user wait or exposing a duplicate.
+    if pending and pending.get("payment_url"):
+        return {"transaction_id": pending["transaction_id"], "payment_url": pending["payment_url"], "simulation": False, "reused": True}
+    # A record created before Genius Pay returned a URL is incomplete. It must
+    # never block another attempt, including after a network/provider error.
+    if pending:
+        _replace_pending_checkout(pending)
     amount = plan["annual_price"] if billing_cycle == "annual" else plan["monthly_price"]
     transaction_id = f"ORVIX{datetime.now(timezone.utc):%Y%m%d%H%M%S}{secrets.token_hex(4).upper()}"
     settings = get_settings()
     simulation = get_settings().payment_simulation
-    record = {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle, "amount": amount, "currency": config["currency"], "customer_email": customer_email, "customer_name": user.name, "status": "SIMULATED" if simulation else "PENDING", "simulation": simulation, "created_at": datetime.now(timezone.utc).isoformat()}
-    payments = {"payments": {transaction_id: record}}; _write_payments(payments)
     if simulation:
+        record = {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle, "amount": amount, "currency": config["currency"], "customer_email": customer_email, "customer_name": user.name, "status": "SIMULATED", "simulation": True, "created_at": datetime.now(timezone.utc).isoformat()}
+        _write_payments({"payments": {transaction_id: record}})
         activate_subscription(user.id, plan_id, billing_cycle, transaction_id)
         await send_payment_email(email=customer_email, name=user.name, plan_name=plan["name"], amount=amount, currency=config["currency"], transaction_id=transaction_id, paid=False)
         return {"transaction_id": transaction_id, "payment_url": "", "simulation": True}
     if not _configured():
         raise HTTPException(503, "Le paiement n'est pas encore configuré.")
+    record = {"transaction_id": transaction_id, "user_id": user.id, "plan_id": plan_id, "billing_cycle": billing_cycle, "amount": amount, "currency": config["currency"], "customer_email": customer_email, "customer_name": user.name, "status": "PENDING", "simulation": False, "created_at": datetime.now(timezone.utc).isoformat()}
+    _write_payments({"payments": {transaction_id: record}})
     customer = {"name": user.name, "email": customer_email}
     if user.phone and "@" not in user.phone:
         customer["phone"] = user.phone
@@ -157,12 +181,16 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
         if not result.get("success") or not payment_url:
             raise HTTPException(502, result.get("message") or "Le paiement n'a pas pu être créé.")
         record["provider_reference"] = data.get("reference")
+        record["payment_url"] = payment_url
         _write_payments({"payments": {transaction_id: record}})
         return {"transaction_id": transaction_id, "payment_url": payment_url, "simulation": False}
     except HTTPException:
+        if record.get("status") == "PENDING":
+            _fail_checkout(record)
         raise
     except httpx.HTTPError as error:
         logger.error("Genius Pay connection failed: %s", type(error).__name__)
+        _fail_checkout(record)
         raise HTTPException(502, "Connexion au service de paiement impossible.") from error
 
 
