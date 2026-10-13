@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import secrets
+from typing import Any
 
 from fastapi import HTTPException, UploadFile
 from pypdf import PdfReader
@@ -18,6 +19,59 @@ from .schemas import DocumentInfo
 
 ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md"}
 MAX_PDF_PAGES = 1000
+
+
+@lru_cache(maxsize=1)
+def _r2_client() -> Any:
+    """Create the private S3-compatible Cloudflare R2 client lazily."""
+    settings = get_settings()
+    if not settings.r2_enabled:
+        raise RuntimeError("Cloudflare R2 n'est pas configuré.")
+    import boto3
+    return boto3.client(
+        service_name="s3",
+        endpoint_url=settings.r2_s3_endpoint,
+        aws_access_key_id=settings.r2_access_key_id,
+        aws_secret_access_key=settings.r2_secret_access_key,
+        region_name="auto",
+    )
+
+
+def _r2_key(user_id: str, document_id: str, suffix: str) -> str:
+    # Do not expose account identifiers or original filenames in object keys.
+    owner = sha256(user_id.encode()).hexdigest()[:32]
+    return f"documents/{owner}/{document_id}{suffix.lower()}"
+
+
+def _r2_put(key: str, content: bytes, filename: str) -> None:
+    import mimetypes
+    from botocore.exceptions import BotoCoreError, ClientError
+    try:
+        _r2_client().put_object(
+            Bucket=get_settings().r2_bucket_name,
+            Key=key,
+            Body=content,
+            ContentType=mimetypes.guess_type(filename)[0] or "application/octet-stream",
+        )
+    except (BotoCoreError, ClientError) as error:
+        raise HTTPException(503, "Le stockage des documents est temporairement indisponible.") from error
+
+
+def _r2_get(key: str) -> bytes:
+    from botocore.exceptions import BotoCoreError, ClientError
+    try:
+        response = _r2_client().get_object(Bucket=get_settings().r2_bucket_name, Key=key)
+        return response["Body"].read()
+    except (BotoCoreError, ClientError) as error:
+        raise HTTPException(404, "Document introuvable dans le stockage sécurisé.") from error
+
+
+def _r2_delete(key: str) -> None:
+    from botocore.exceptions import BotoCoreError, ClientError
+    try:
+        _r2_client().delete_object(Bucket=get_settings().r2_bucket_name, Key=key)
+    except (BotoCoreError, ClientError) as error:
+        raise HTTPException(503, "La suppression du document est temporairement indisponible.") from error
 
 
 def _owners() -> dict[str, str]:
@@ -63,10 +117,12 @@ def _ensure_database_documents() -> None:
     with psycopg.connect(get_settings().database_url) as connection:
         connection.execute(
             "CREATE TABLE IF NOT EXISTS uploaded_documents ("
-            "user_id TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, content BYTEA NOT NULL, "
+            "user_id TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, content BYTEA, object_key TEXT, "
             "size INTEGER NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), "
             "PRIMARY KEY(user_id, id), UNIQUE(user_id, name))"
         )
+        connection.execute("ALTER TABLE uploaded_documents ADD COLUMN IF NOT EXISTS object_key TEXT")
+        connection.execute("ALTER TABLE uploaded_documents ALTER COLUMN content DROP NOT NULL")
         connection.commit()
 
 
@@ -75,12 +131,26 @@ def _database_document(user_id: str, document_id: str) -> tuple[str, bytes]:
     _ensure_database_documents()
     with psycopg.connect(get_settings().database_url) as connection:
         row = connection.execute(
-            "SELECT name, content FROM uploaded_documents WHERE user_id=%s AND id=%s",
+            "SELECT name, content, object_key FROM uploaded_documents WHERE user_id=%s AND id=%s",
             (user_id, document_id),
         ).fetchone()
     if not row:
         raise HTTPException(404, "Document introuvable.")
-    return row[0], bytes(row[1])
+    name, content, object_key = row
+    if object_key:
+        return name, _r2_get(object_key)
+    if content is None:
+        raise HTTPException(404, "Document introuvable.")
+    raw_content = bytes(content)
+    # Existing PostgreSQL documents are migrated only when read, avoiding a
+    # disruptive all-at-once transfer.
+    if get_settings().r2_enabled:
+        key = _r2_key(user_id, document_id, Path(name).suffix)
+        _r2_put(key, raw_content, name)
+        with psycopg.connect(get_settings().database_url) as connection:
+            connection.execute("UPDATE uploaded_documents SET object_key=%s, content=NULL WHERE user_id=%s AND id=%s", (key, user_id, document_id))
+            connection.commit()
+    return name, raw_content
 
 
 def _migrate_legacy_documents(user_id: str) -> None:
@@ -184,12 +254,24 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
             while candidate in existing_names:
                 candidate = f"{stem}_{index}{extension}"
                 index += 1
-            document_id = sha256(f"{user_id}:{candidate}".encode()).hexdigest()[:16]
-            connection.execute(
-                "INSERT INTO uploaded_documents(user_id,id,name,content,size) VALUES(%s,%s,%s,%s,%s)",
-                (user_id, document_id, candidate, content, len(content)),
-            )
-            connection.commit()
+            document_id = secrets.token_hex(16)
+            object_key = _r2_key(user_id, document_id, Path(candidate).suffix) if settings.r2_enabled else ""
+            if settings.r2_enabled:
+                _r2_put(object_key, content, candidate)
+            try:
+                connection.execute(
+                    "INSERT INTO uploaded_documents(user_id,id,name,content,object_key,size) VALUES(%s,%s,%s,%s,%s,%s)",
+                    (user_id, document_id, candidate, None if settings.r2_enabled else content, object_key or None, len(content)),
+                )
+                connection.commit()
+            except Exception:
+                connection.rollback()
+                if object_key:
+                    try:
+                        _r2_delete(object_key)
+                    except HTTPException:
+                        pass
+                raise
         try:
             build_document_memory_from_content(user_id, document_id, candidate, content)
         except Exception:
@@ -218,6 +300,11 @@ def delete_document(user_id: str, document_id: str) -> None:
         import psycopg
         _ensure_database_documents()
         with psycopg.connect(get_settings().database_url) as connection:
+            row = connection.execute("SELECT object_key FROM uploaded_documents WHERE user_id=%s AND id=%s", (user_id, document_id)).fetchone()
+            if not row:
+                raise HTTPException(404, "Document introuvable.")
+            if row[0]:
+                _r2_delete(row[0])
             deleted = connection.execute("DELETE FROM uploaded_documents WHERE user_id=%s AND id=%s", (user_id, document_id)).rowcount
             connection.commit()
         if not deleted:

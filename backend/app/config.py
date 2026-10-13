@@ -61,6 +61,20 @@ class Settings:
     resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
     resend_from_email = os.getenv("RESEND_FROM_EMAIL", "Orvix <noreply@orvix.work>").strip()
     resend_reply_to = os.getenv("RESEND_REPLY_TO", "").strip()
+    # Cloudflare R2 is S3-compatible. These values must remain server-only.
+    r2_account_id = os.getenv("R2_ACCOUNT_ID", "").strip()
+    r2_access_key_id = os.getenv("R2_ACCESS_KEY_ID", "").strip()
+    r2_secret_access_key = os.getenv("R2_SECRET_ACCESS_KEY", "").strip()
+    r2_bucket_name = os.getenv("R2_BUCKET_NAME", "").strip()
+    r2_endpoint_url = os.getenv("R2_ENDPOINT_URL", "").strip()
+
+    @property
+    def r2_enabled(self) -> bool:
+        return bool(self.r2_bucket_name and self.r2_access_key_id and self.r2_secret_access_key and (self.r2_endpoint_url or self.r2_account_id))
+
+    @property
+    def r2_s3_endpoint(self) -> str:
+        return self.r2_endpoint_url or f"https://{self.r2_account_id}.r2.cloudflarestorage.com"
 
 
 @lru_cache

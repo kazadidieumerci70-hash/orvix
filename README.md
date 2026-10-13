@@ -55,6 +55,23 @@ MAX_UPLOAD_MB=10
 
 Le serveur FastAPI doit être placé derrière HTTPS. La clé Gemini ne doit jamais être ajoutée à une variable `VITE_*` ni au frontend.
 
+## Stockage privé des documents avec Cloudflare R2
+
+Les documents utilisateurs sont envoyés au backend, validés, puis stockés dans un bucket R2 privé. PostgreSQL conserve uniquement le nom, la taille, la date et la clé objet ; aucune clé R2 ne doit être placée dans Cloudflare Pages ou une variable `VITE_*`.
+
+1. Dans Cloudflare, créez le bucket privé `orvix-documents`.
+2. Créez un jeton R2 **Object Read & Write**, limité à ce bucket.
+3. Ajoutez ces variables au service backend Railway :
+
+```env
+R2_ACCOUNT_ID=votre_account_id
+R2_ACCESS_KEY_ID=votre_access_key_id
+R2_SECRET_ACCESS_KEY=votre_secret_access_key
+R2_BUCKET_NAME=orvix-documents
+```
+
+`R2_ENDPOINT_URL` est optionnelle ; sinon ORVIX utilise l’endpoint officiel `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`. Les documents existants dans PostgreSQL sont déplacés vers R2 progressivement à leur prochaine lecture.
+
 Commande simple pour lancer sur un VPS :
 
 ```bash
