@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import asyncio
 import json
 import logging
 import re
@@ -14,7 +15,7 @@ from .auth import begin_email_registration, complete_onboarding, create_password
 from .ai import OrvixAI
 from .config import get_settings
 from .conversations import append_exchange, get_conversation, list_conversations
-from .documents import delete_document, list_documents, prepare_document, save_document, update_document_library_metadata
+from .documents import delete_document, list_documents, prepare_document, prepare_existing_documents, save_document, update_document_library_metadata
 from .schemas import (
     AdminLoginRequest,
     AuthRequest,
@@ -80,7 +81,14 @@ def _rate_limit(request: Request) -> tuple[int, int] | None:
 async def lifespan(app: FastAPI):
     init_auth_database()
     app.state.ai = OrvixAI()
-    yield
+    # Existing libraries are prepared after startup so a deployment never
+    # delays the app while old documents are made ready for AI use.
+    preparation_task = asyncio.create_task(asyncio.to_thread(prepare_existing_documents))
+    try:
+        yield
+    finally:
+        if not preparation_task.done():
+            preparation_task.cancel()
 
 
 def get_ai() -> OrvixAI:

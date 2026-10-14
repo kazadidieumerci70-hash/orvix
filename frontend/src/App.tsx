@@ -592,26 +592,22 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
   </section>;
 }
 
-type PaymentCountry = "CD" | "CM" | "CI";
+type PaymentCountry = "CD" | "CM";
 type MobileMethod = "airtel_money" | "orange_money" | "mtn_money";
 const paymentCountries: Record<PaymentCountry, { label: string; prefix: string; methods: { id: MobileMethod; label: string }[] }> = {
   CD: { label: "RDC", prefix: "+243", methods: [{ id: "airtel_money", label: "Airtel Money" }, { id: "orange_money", label: "Orange Money" }] },
   CM: { label: "Cameroun", prefix: "+237", methods: [{ id: "orange_money", label: "Orange Money" }, { id: "mtn_money", label: "MTN MoMo" }] },
-  CI: { label: "Côte d’Ivoire", prefix: "+225", methods: [{ id: "orange_money", label: "Orange Money" }, { id: "mtn_money", label: "MTN MoMo" }] },
 };
 function suggestedPaymentCountry(): PaymentCountry {
-  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  if (zone === "Africa/Douala") return "CM";
-  if (zone === "Africa/Abidjan") return "CI";
-  return "CD";
+  return Intl.DateTimeFormat().resolvedOptions().timeZone === "Africa/Douala" ? "CM" : "CD";
 }
 
 function PaymentChoice({ checkout, loading, emailHint, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; emailHint: string; onPay: (method: MobileMethod | "card", phone?: string, country?: PaymentCountry, email?: string) => void; onBack: () => void }) {
-  const [country, setCountry] = useState<PaymentCountry>(suggestedPaymentCountry);
-  const [method, setMethod] = useState<MobileMethod | "card">("card");
-  const [phone, setPhone] = useState(paymentCountries[suggestedPaymentCountry()].prefix);
+  const initialCountry = suggestedPaymentCountry();
+  const [country, setCountry] = useState<PaymentCountry>(initialCountry);
+  const [method, setMethod] = useState<MobileMethod | "card">(paymentCountries[initialCountry].methods[0].id);
+  const [phone, setPhone] = useState(paymentCountries[initialCountry].prefix);
   const [email, setEmail] = useState(emailHint);
-  const [showCountries, setShowCountries] = useState(false);
   const isMobileMoney = method !== "card";
   const countryInfo = paymentCountries[country];
   const chooseCountry = (nextCountry: PaymentCountry) => {
@@ -624,18 +620,19 @@ function PaymentChoice({ checkout, loading, emailHint, onPay, onBack }: { checko
     onPay(method, phone.replace(/[\s-]/g, ""), country, email);
   };
   return <section className="payment-choice" aria-labelledby="payment-choice-title">
-    <header className="payment-sheet-head"><button type="button" aria-label="Fermer" onClick={onBack}><X size={21} /></button><div><h2 id="payment-choice-title">Mode de paiement</h2><p><ShieldCheck size={13} /> Le paiement et tes données sont sécurisés</p></div><ShieldCheck className="payment-sheet-mark" size={20} /></header>
+    <header className="payment-sheet-head"><button type="button" aria-label="Retour aux forfaits" onClick={onBack}><X size={21} /></button><div><h2 id="payment-choice-title">Finaliser ton forfait</h2><p><ShieldCheck size={13} /> Paiement sécurisé</p></div><ShieldCheck className="payment-sheet-mark" size={20} /></header>
     <form onSubmit={submit} className="payment-choice-form">
-      <fieldset className="payment-methods payment-methods-list"><legend>Choisis un moyen de paiement</legend>
-        <label className={method === "card" ? "selected" : ""}><input type="radio" name="payment-method" checked={method === "card"} onChange={() => setMethod("card")} /><CreditCard size={21} /><span><b>Carte bancaire</b><small>Visa ou Mastercard · ajout sécurisé</small></span><strong>›</strong></label>
+      <div className="payment-steps" aria-label="Étapes du paiement"><span className="active">1. Pays</span><span>2. Moyen</span><span>3. Confirmation</span></div>
+      <fieldset className="payment-country-picker"><legend>Dans quel pays paies-tu ?</legend><div>{(Object.keys(paymentCountries) as PaymentCountry[]).map((id) => <button type="button" key={id} className={country === id ? "selected" : ""} onClick={() => chooseCountry(id)}>{paymentCountries[id].label}</button>)}</div></fieldset>
+      <fieldset className="payment-methods payment-methods-list"><legend>Choisis ton moyen de paiement</legend>
         <label className={isMobileMoney ? "selected" : ""}><input type="radio" name="payment-method" checked={isMobileMoney} onChange={() => setMethod(countryInfo.methods[0].id)} /><Smartphone className="mobile-money-icon" size={21} /><span><b>Argent mobile</b><small>{countryInfo.methods.map((item) => item.label).join(" · ")}</small></span><strong>›</strong></label>
+        <label className={method === "card" ? "selected" : ""}><input type="radio" name="payment-method" checked={method === "card"} onChange={() => setMethod("card")} /><CreditCard size={21} /><span><b>Carte bancaire</b><small>Visa ou Mastercard</small></span><strong>›</strong></label>
       </fieldset>
-      {isMobileMoney && <section className="mobile-money-details"><div className="network-radios">{countryInfo.methods.map((item) => <label key={item.id} className={method === item.id ? "selected" : ""}><input type="radio" name="network" checked={method === item.id} onChange={() => setMethod(item.id)} /><span>{item.label}</span></label>)}</div><label className="payment-phone"><span>Numéro de téléphone portable</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={`${countryInfo.prefix} 000 000 000`} required /><small>Le code de confirmation arrivera sur ce numéro.</small></label></section>}
-      {method === "card" && <section className="payment-card-note"><LockKeyhole size={18} /><div><b>Carte bancaire sécurisée</b><span>Après « Payer », tu seras redirigé vers Stripe pour saisir une vraie Visa ou Mastercard et valider le paiement.</span></div></section>}
+      {isMobileMoney && <section className="mobile-money-details"><div className="network-radios" aria-label="Réseau mobile">{countryInfo.methods.map((item) => <label key={item.id} className={method === item.id ? "selected" : ""}><input type="radio" name="network" checked={method === item.id} onChange={() => setMethod(item.id)} /><span>{item.label}</span></label>)}</div><label className="payment-phone"><span>Numéro lié à {countryInfo.methods.find((item) => item.id === method)?.label}</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={`${countryInfo.prefix} 000 000 000`} required /><small>Tu confirmeras la demande depuis ton téléphone.</small></label></section>}
+      {method === "card" && <section className="payment-card-note"><LockKeyhole size={18} /><div><b>Carte bancaire sécurisée</b><span>Après validation, une étape sécurisée te permettra de saisir les informations de ta carte.</span></div></section>}
       <label className="payment-email"><span>Adresse e-mail pour le reçu</span><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nom@email.com" required /></label>
-      <div className="payment-location"><span>📍</span><div>Pays détecté : <b>{countryInfo.label}</b>{showCountries ? <div className="payment-country-options">{(Object.keys(paymentCountries) as PaymentCountry[]).map((id) => <button type="button" key={id} onClick={() => { chooseCountry(id); setShowCountries(false); }}>{paymentCountries[id].label}</button>)}</div> : <button type="button" onClick={() => setShowCountries(true)}>Modifier</button>}</div></div>
-      <section className="payment-security-note"><strong><ShieldCheck size={16} /> Payez en toute sécurité</strong><p>Vos données financières sont protégées par chiffrement. ORVIX ne stocke ni ton numéro de carte ni ton code de confirmation.</p></section>
-      <footer className="payment-sheet-footer"><div><small>{checkout.planName} · {checkout.billingCycle === "annual" ? "Annuel" : "Mensuel"}</small><strong>{checkout.amountLabel}</strong></div><button className="payment-choice-primary" disabled={loading || !email.trim() || (isMobileMoney && !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, "")))}><LockKeyhole size={17} />{loading ? "Préparation…" : "Payer"}</button></footer>
+      <section className="payment-security-note"><strong><ShieldCheck size={16} /> Tes informations restent protégées</strong><p>ORVIX ne stocke ni ton numéro de carte ni ton code de confirmation.</p></section>
+      <footer className="payment-sheet-footer"><div><small>{checkout.planName} · {checkout.billingCycle === "annual" ? "Annuel" : "Mensuel"}</small><strong>{checkout.amountLabel}</strong></div><button className="payment-choice-primary" disabled={loading || !email.trim() || (isMobileMoney && !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, "")))}><LockKeyhole size={17} />{loading ? "Préparation…" : isMobileMoney ? "Continuer" : "Payer"}</button></footer>
     </form>
   </section>;
 }

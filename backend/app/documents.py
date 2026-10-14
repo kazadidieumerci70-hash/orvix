@@ -351,6 +351,36 @@ def prepare_document(user_id: str, document_id: str) -> None:
         raise HTTPException(422, "La préparation de ce document a échoué. Vérifie qu'il contient du texte, puis réessaie.") from error
 
 
+def prepare_existing_documents() -> None:
+    """Bring documents uploaded before automatic preparation up to date."""
+    settings = get_settings()
+    if settings.database_url:
+        _ensure_database_documents()
+        import psycopg
+        with psycopg.connect(settings.database_url) as connection:
+            rows = connection.execute("SELECT user_id, id, name FROM uploaded_documents ORDER BY created_at").fetchall()
+        for user_id, document_id, name in rows:
+            if document_preparation(user_id, document_id).get("status") == "ready":
+                continue
+            try:
+                stored_name, content = _database_document(user_id, document_id)
+                build_document_memory_from_content(user_id, document_id, stored_name, content)
+            except Exception:
+                mark_document_preparation_error(user_id, document_id, name)
+        return
+    for name, owner in _owners().items():
+        path = settings.upload_dir / name
+        if not path.is_file() or path.suffix.lower() not in ALLOWED_EXTENSIONS:
+            continue
+        document_id = sha256(name.encode()).hexdigest()[:16]
+        if document_preparation(owner, document_id).get("status") == "ready":
+            continue
+        try:
+            build_document_memory(owner, path)
+        except Exception:
+            mark_document_preparation_error(owner, document_id, name)
+
+
 def delete_document(user_id: str, document_id: str) -> None:
     if get_settings().database_url:
         import psycopg

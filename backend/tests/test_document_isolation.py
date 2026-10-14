@@ -54,6 +54,21 @@ class DocumentIsolationTests(unittest.TestCase):
                 self.assertNotIn("Cellule", cards["histoire.txt"]["overview"])
         asyncio.run(run())
 
+    def test_existing_documents_are_prepared_without_crossing_owners(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); upload_dir = root / "uploads"; upload_dir.mkdir()
+            (upload_dir / "cours_a.txt").write_text("Cellule et membrane.", encoding="utf-8")
+            (upload_dir / "cours_b.txt").write_text("Révolution et chronologie.", encoding="utf-8")
+            settings = type("S", (), {"upload_dir": upload_dir, "database_url": "", "data_dir": root, "document_owners_file": root / "owners.json", "deleted_documents_file": root / "deleted.json"})()
+            settings.document_owners_file.write_text('{"owners":{"cours_a.txt":"a","cours_b.txt":"b"}}', encoding="utf-8")
+            with patch.object(documents, "get_settings", return_value=settings), patch.object(document_memory, "get_settings", return_value=settings):
+                documents.prepare_existing_documents()
+                a = documents.list_documents("a")[0]
+                b = documents.list_documents("b")[0]
+            self.assertEqual(a.preparation["status"], "ready")
+            self.assertIn("cellule", a.preparation["keywords"])
+            self.assertNotIn("cellule", b.preparation["keywords"])
+
 
 if __name__ == "__main__":
     unittest.main()
