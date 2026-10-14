@@ -1,5 +1,5 @@
 export type ChatMessage = { role: "user" | "assistant"; content: string };
-export type DocumentPreparation = { status: "preparing" | "ready" | "error"; chunks?: number; pages?: number; headings?: string[]; keywords?: string[] };
+export type DocumentPreparation = { status: "preparing" | "ready" | "error"; chunks?: number; pages?: number; overview?: string; headings?: string[]; keywords?: string[] };
 export type DocumentInfo = { id: string; number: number; name: string; size: number; created_at: string; preparation?: DocumentPreparation; subject?: string; favorite?: boolean };
 export type ConversationSummary = { id: string; title: string; updated_at: string };
 export type ConversationDetail = ConversationSummary & { messages: ChatMessage[]; document_ids: string[] };

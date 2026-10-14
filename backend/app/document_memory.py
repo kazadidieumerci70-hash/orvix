@@ -59,6 +59,10 @@ def _preparation(chunks: list[dict]) -> dict:
     terms: dict[str, int] = {}
     pages = {chunk.get("page") for chunk in chunks if chunk.get("page")}
     ignored = {"avec", "dans", "pour", "mais", "sont", "cette", "document", "chapitre", "cours", "vous", "plus"}
+    opening = " ".join(chunk.get("text", "") for chunk in chunks[:2])
+    opening = re.sub(r"\s+", " ", opening).strip()
+    sentences = re.split(r"(?<=[.!?])\s+", opening)
+    overview = " ".join(sentence for sentence in sentences[:2] if sentence)[:420].strip()
     for chunk in chunks:
         heading = (chunk.get("chapter") or "").strip()
         if heading and heading != "Introduction" and heading not in headings:
@@ -70,6 +74,7 @@ def _preparation(chunks: list[dict]) -> dict:
         "status": "ready",
         "chunks": len(chunks),
         "pages": len(pages) or 1,
+        "overview": overview,
         "headings": headings[:6],
         "keywords": [term for term, _ in sorted(terms.items(), key=lambda item: (-item[1], item[0]))[:8]],
     }

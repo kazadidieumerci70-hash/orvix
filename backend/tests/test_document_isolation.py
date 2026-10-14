@@ -50,6 +50,8 @@ class DocumentIsolationTests(unittest.TestCase):
                 self.assertEqual(cards["biologie.txt"]["status"], "ready")
                 self.assertIn("cellule", cards["biologie.txt"]["keywords"])
                 self.assertNotIn("cellule", cards["histoire.txt"]["keywords"])
+                self.assertIn("Cellule", cards["biologie.txt"]["overview"])
+                self.assertNotIn("Cellule", cards["histoire.txt"]["overview"])
         asyncio.run(run())
 
 
