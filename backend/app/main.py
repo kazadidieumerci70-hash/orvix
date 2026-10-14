@@ -408,12 +408,12 @@ async def subscription_checkout(payload: CheckoutRequest, user: UserProfile = De
 
 @app.post(f"{settings.api_prefix}/subscription/card/setup", response_model=CardSetupResponse)
 async def subscription_card_setup(payload: CardSetupRequest, user: UserProfile = Depends(current_user)):
-    return await create_card_setup(user, payload.plan_id, payload.billing_cycle, payload.customer_email, payload.customer_phone)
+    raise HTTPException(410, "Le paiement par carte est temporairement indisponible.")
 
 
 @app.post(f"{settings.api_prefix}/subscription/card/attach")
 async def subscription_card_attach(payload: CardAttachRequest, user: UserProfile = Depends(current_user)):
-    return await attach_card_setup(user, payload.transaction_id, payload.setup_intent_id, payload.payment_method_id)
+    raise HTTPException(410, "Le paiement par carte est temporairement indisponible.")
 
 
 @app.get(f"{settings.api_prefix}/payments/geniuspay/webhook")

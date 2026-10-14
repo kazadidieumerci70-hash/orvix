@@ -134,10 +134,10 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
     if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", customer_email):
         raise HTTPException(422, "Indiquez une adresse e-mail valide pour recevoir votre confirmation de paiement.")
     customer_phone = customer_phone.strip().replace(" ", "").replace("-", "")
-    if payment_method in {"airtel_money", "orange_money", "mtn_money"} and not re.fullmatch(r"\+[1-9]\d{7,14}", customer_phone):
+    if payment_method not in {"airtel_money", "orange_money", "mtn_money"}:
+        raise HTTPException(422, "Seul le paiement Mobile Money est disponible actuellement.")
+    if not re.fullmatch(r"\+[1-9]\d{7,14}", customer_phone):
         raise HTTPException(422, "Indique un numéro Mobile Money valide au format international, par exemple +243XXXXXXXXX.")
-    if payment_method == "card":
-        customer_phone = ""
     config = plans_config()
     plan = next((item for item in config["plans"] if item["id"] == plan_id), None)
     if not plan or plan_id == "free":
@@ -179,7 +179,7 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
         ("CI", "orange_money"): "ORANGE_CIV", ("CI", "mtn_money"): "MTN_MOMO_CIV",
     }
     mmo_provider = mobile_providers.get((customer_country, payment_method))
-    if payment_method != "card" and not mmo_provider:
+    if not mmo_provider:
         raise HTTPException(422, "Ce réseau Mobile Money n’est pas disponible dans le pays sélectionné.")
     provider_method = "pawapay" if mmo_provider else payment_method
     payload = {
