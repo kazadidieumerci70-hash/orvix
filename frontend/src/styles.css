@@ -5551,3 +5551,36 @@ button:disabled {
     transition-duration: .01ms !important;
   }
 }
+
+/* Zone de saisie : le texte reste toujours dans le champ, même sans espaces. */
+.orvix-functional-writing,
+.chat-view > .composer .composer-input-stack {
+  min-width: 0;
+}
+
+.orvix-functional-writing textarea,
+.chat-view > .composer .composer-input-stack > textarea {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow-x: hidden !important;
+}
+
+.chat-view > .composer .composer-input-stack > textarea {
+  overflow-y: auto !important;
+}
+
+@media (max-width: 900px) {
+  .orvix-functional-composer {
+    align-items: end;
+    max-height: 126px;
+  }
+
+  .orvix-functional-writing textarea {
+    max-height: 104px;
+    overflow-y: auto;
+  }
+}
