@@ -1049,10 +1049,9 @@ function ChatView({ language, documents, onDocumentsChange, activeDocumentId, on
   }
   function resize(event: React.ChangeEvent<HTMLTextAreaElement>) {
     const el = event.currentTarget;
-    const maxHeight = 88;
-    el.style.height = "24px";
-    el.style.overflowY = "hidden";
-    const nextHeight = Math.min(Math.max(el.scrollHeight, 24), maxHeight);
+    const maxHeight = 112;
+    el.style.height = "auto";
+    const nextHeight = Math.min(Math.max(el.scrollHeight, 28), maxHeight);
     el.style.height = `${nextHeight}px`;
     if (el.scrollHeight > maxHeight) el.style.overflowY = "auto";
   }
@@ -1078,7 +1077,7 @@ function ChatView({ language, documents, onDocumentsChange, activeDocumentId, on
       <div ref={bottomRef} />
     </div>
     <form className="orvix-functional-composer" onSubmit={submit}>
-      <div className="orvix-functional-writing"><textarea ref={textareaRef} autoFocus inputMode="text" enterKeyHint="send" value={message} onFocus={() => setAttachmentMenu(false)} onChange={(event) => { setMessage(event.target.value); resize(event); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Poser une question" aria-label="Poser une question" rows={1} /></div>
+      <div className="orvix-functional-writing"><textarea ref={textareaRef} autoFocus inputMode="text" enterKeyHint="send" value={message} onFocus={() => setAttachmentMenu(false)} onChange={(event) => { setMessage(event.target.value); resize(event); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Poser une question" aria-label="Poser une question" rows={1} wrap="soft" /></div>
       <div className="orvix-functional-actions"><button ref={attachmentButtonRef} type="button" aria-label="Ajouter un support" aria-expanded={attachmentMenu} onClick={() => setAttachmentMenu((value) => !value)}><Plus size={30} /></button><input ref={fileRef} type="file" hidden multiple accept=".pdf,.txt,.md" onChange={(event) => addSupports(event.target.files)} />{attachmentMenu && <div ref={attachmentMenuRef} className="orvix-functional-menu"><button type="button" onClick={() => { setAttachmentMenu(false); fileRef.current?.click(); }}>Ajouter un document</button></div>}<div><button type="button" aria-label="Microphone"><Mic size={28} /></button><button type={responding ? "button" : "submit"} aria-label={responding ? "Arrêter la réponse" : "Envoyer"} onClick={responding ? stopResponse : undefined} disabled={!responding && !message.trim()}>{responding ? <Square size={13} fill="currentColor" /> : <Send size={22} fill="currentColor" />}</button></div></div>
     </form>
   </section>;

@@ -5584,3 +5584,27 @@ button:disabled {
     overflow-y: auto;
   }
 }
+
+/* Le champ grandit avec le texte, puis défile sans recouvrir les actions. */
+.orvix-functional-composer {
+  align-items: end;
+  min-height: 64px;
+  max-height: 136px;
+}
+
+.orvix-functional-writing textarea {
+  min-height: 28px;
+  max-height: 112px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #9bcfc9 transparent;
+}
+
+.orvix-functional-writing textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.orvix-functional-writing textarea::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #9bcfc9;
+}

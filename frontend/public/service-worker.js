@@ -1,4 +1,4 @@
-const CACHE_NAME = "orvix-app-v2";
+const CACHE_NAME = "orvix-app-v3";
 const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest", "/orvix-logo-transparent.png"];
 
 self.addEventListener("install", (event) => {
@@ -19,7 +19,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.pathname.startsWith("/api/")) return;
 
-  if (request.mode === "navigate") {
+  if (request.mode === "navigate" || /\.(?:css|js|html)$/.test(url.pathname)) {
     event.respondWith(fetch(request).catch(() => caches.match("/index.html")));
     return;
   }
