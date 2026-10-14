@@ -652,6 +652,9 @@ button { cursor: pointer; }
 .country-picker-list button { display: grid; grid-template-columns: 27px 1fr auto; align-items: center; gap: 11px; min-height: 61px; padding: 0 2px; border: 0; border-bottom: 1px solid #e8efed; color: #26383d; background: transparent; font: inherit; font-size: 14px; font-weight: 800; text-align: left; cursor: pointer; }
 .country-picker-list button.selected { color: #10877d; }
 .country-picker-list button svg { color: #18a095; }
+.payment-feedback { margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; font-size: 13px; font-weight: 700; line-height: 1.45; }
+.payment-feedback.error { border: 1px solid #f5c5bc; color: #ad462f; background: #fff4f1; }
+.payment-feedback.success { border: 1px solid #bfe7df; color: #14796f; background: #eefaf7; }
 .payment-method-section { display: grid; gap: 13px; padding: 22px 0; border-top: 1px solid #e7eeee; }
 .payment-method-section small { color: #188f85; font-size: 10px; font-weight: 850; letter-spacing: .09em; }
 .payment-method-section h3 { margin: 4px 0 0; color: #1a2a32; font-size: 17px; }

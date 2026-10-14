@@ -73,13 +73,13 @@ def _configured() -> bool:
 
 
 def _provider_headers() -> dict[str, str]:
-    """Keep provider credentials on the server; the browser only receives a Stripe publishable key."""
+    """Keep GeniusPay credentials on the server; they are never sent to the browser."""
     settings = get_settings()
     return {
-        "Authorization": f"Bearer {settings.geniuspay_api_key}",
         "X-API-Key": settings.geniuspay_api_key,
         "X-API-Secret": settings.geniuspay_api_secret,
         "Accept": "application/json",
+        "Content-Type": "application/json",
     }
 
 
@@ -209,8 +209,12 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
             logger.error("Genius Pay rejected checkout fields: %s", list((result.get("errors") or {}).keys()) if isinstance(result.get("errors"), dict) else "validation")
             raise HTTPException(502, "Les informations du paiement doivent être vérifiées. Contactez le support.")
         if response.status_code >= 400:
-            logger.error("Genius Pay checkout failed (status %s)", response.status_code)
-            raise HTTPException(502, "Le service de paiement est temporairement indisponible.")
+            provider_error = result.get("error") if isinstance(result, dict) else None
+            provider_message = (
+                provider_error.get("message") if isinstance(provider_error, dict) else None
+            ) or (result.get("message") if isinstance(result, dict) else None) or "unknown error"
+            logger.error("Genius Pay checkout failed (status %s): %s", response.status_code, provider_message)
+            raise HTTPException(502, "Le paiement n’a pas pu être créé avec ce réseau. Vérifie le numéro ou choisis un autre opérateur.")
         data = result.get("data") or {}
         # A direct method can be accompanied by both URLs.  The generic
         # checkout_url is allowed to auto-select another gateway, whereas

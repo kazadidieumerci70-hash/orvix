@@ -509,7 +509,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     try {
       const result = await createSubscriptionCheckout(planId, checkout.billingCycle, customerEmail.trim(), paymentMethod, customerPhone, customerCountry);
       if (result.payment_url) {
-        window.location.assign(result.payment_url);
+        setMessage("La demande de paiement a été envoyée sur ton téléphone. Valide-la dans ton application Mobile Money pour activer ton forfait.");
       } else if (result.simulation) {
         const refreshed = await getSubscription();
         setSubscription(refreshed);
@@ -562,7 +562,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     {settingsSection === "language" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Langue de l’interface</h2><p>Le français est disponible maintenant. Les autres langues arrivent bientôt.</p></div><div className="setting-options">{["Français", "English", "Italiano", "Español"].map((item) => <button type="button" key={item} className={language === item ? "selected" : ""} disabled={item !== "Français"} onClick={() => item === "Français" && onLanguageChange("Français")}>{item}{item !== "Français" && <small>Bientôt</small>}</button>)}</div></section></section>}
     {settingsSection === "help" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Besoin d’aide ?</h2><p>Importe un document, sélectionne-le puis pose ta question à ORVIX. Si un problème survient, actualise la page puis réessaie.</p></div></section></section>}
     {settingsSection === "about" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>À propos d’ORVIX</h2><p>ORVIX est une intelligence artificielle créée par DIEU MERCI KAZADI pour aider les étudiants à comprendre leurs documents.</p></div></section></section>}
-    {settingsSection === "subscription" && checkout && <PaymentChoice checkout={checkout} loading={!!paymentLoading} emailHint={user.phone.includes("@") ? user.phone : ""} onPay={startCheckout} onBack={() => setCheckout(null)} />}
+    {settingsSection === "subscription" && checkout && <PaymentChoice checkout={checkout} loading={!!paymentLoading} emailHint={user.phone.includes("@") ? user.phone : ""} error={error} message={message} onPay={startCheckout} onBack={() => { setError(""); setMessage(""); setCheckout(null); }} />}
     {settingsSection === "subscription" && !checkout && <section className="subscription-panel">
       <div className="subscription-heading"><div><span>ABONNEMENT · CRÉDITS ORVIX</span><h2>Choisis ton forfait ORVIX</h2><p>Choisis l’offre qui correspond à tes besoins.</p></div><div className="billing-switch"><button className={billingCycle === "monthly" ? "active" : ""} onClick={() => setBillingCycle("monthly")}>Mensuel</button><button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Annuel <small>2 mois offerts</small></button></div></div>
       {subscription && <div className="quota-summary"><span>Forfait actuel : <strong>{subscription.plan.name}</strong></span><span>Crédits disponibles {subscription.credit_period === "daily" ? "aujourd’hui" : "ce mois"} : <strong>{subscription.credits_remaining}/{subscription.credits_limit}</strong></span><span>{subscription.credit_period === "daily" ? "Renouvelés chaque jour" : "Renouvelés chaque mois"}</span><span>Documents autorisés : <strong>{subscription.plan.documents}</strong></span></div>}
@@ -597,7 +597,7 @@ function suggestedPaymentCountry(): PaymentCountry {
   return Intl.DateTimeFormat().resolvedOptions().timeZone === "Africa/Douala" ? "CM" : "CD";
 }
 
-function PaymentChoice({ checkout, loading, emailHint, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; emailHint: string; onPay: (method: MobileMethod, phone?: string, country?: PaymentCountry, email?: string) => void; onBack: () => void }) {
+function PaymentChoice({ checkout, loading, emailHint, error, message, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; emailHint: string; error: string; message: string; onPay: (method: MobileMethod, phone?: string, country?: PaymentCountry, email?: string) => void; onBack: () => void }) {
   const initialCountry = suggestedPaymentCountry();
   const [country, setCountry] = useState<PaymentCountry>(initialCountry);
   const [method, setMethod] = useState<MobileMethod>(paymentCountries[initialCountry].methods[0].id);
@@ -632,6 +632,8 @@ function PaymentChoice({ checkout, loading, emailHint, onPay, onBack }: { checko
       <label className="payment-phone"><span>Numéro {countryInfo.methods.find((item) => item.id === method)?.label}</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={`${countryInfo.prefix} 000 000 000`} required /><small>Tu recevras la demande de confirmation sur ce numéro.</small></label>
       <label className="payment-email"><span>E-mail pour le reçu</span><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ton@email.com" required /></label>
       <section className="payment-next-step"><ShieldCheck size={18} /><p><b>Tu confirmes sur ton téléphone</b><span>Après « Continuer », valide la demande Mobile Money pour activer ton forfait.</span></p></section>
+      {error && <p className="payment-feedback error" role="alert">{error}</p>}
+      {message && <p className="payment-feedback success" role="status">{message}</p>}
       <footer className="payment-sheet-footer"><div><small>Total à payer</small><strong>{checkout.amountLabel}</strong></div><button className="payment-choice-primary" disabled={loading || !email.trim() || !phoneValid}><LockKeyhole size={17} />{loading ? "Préparation…" : "Continuer"}</button></footer>
     </form>
   </section>;
@@ -734,6 +736,7 @@ function AuthView({ onAuthenticated }: { onAuthenticated: (user: UserProfile) =>
   const [verificationEmail, setVerificationEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [googleAccountUsed, setGoogleAccountUsed] = useState(() => localStorage.getItem("orvix_google_account_used") === "true");
+  const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim());
   function completeAuthentication(profile: UserProfile) {
     localStorage.setItem("orvix_user", JSON.stringify(profile));
     onAuthenticated(profile);
