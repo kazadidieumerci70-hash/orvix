@@ -36,6 +36,22 @@ class DocumentIsolationTests(unittest.TestCase):
                     self.assertEqual(error.exception.status_code, 422)
         asyncio.run(run())
 
+    def test_preparation_is_private_to_each_document(self):
+        async def run():
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d); upload_dir = root / "uploads"; upload_dir.mkdir()
+                settings = type("S", (), {"upload_dir": upload_dir, "database_url": "", "data_dir": root, "document_owners_file": root / "owners.json", "deleted_documents_file": root / "deleted.json", "max_upload_bytes": 10000})()
+                with patch.object(documents, "get_settings", return_value=settings), patch.object(document_memory, "get_settings", return_value=settings), patch.object(documents, "document_upload_limit_bytes", return_value=10000):
+                    for name, content in (("biologie.txt", b"Cellule mitochondrie respiration cellulaire"), ("histoire.txt", b"Revolution empire chronologie historique")):
+                        upload = UploadFile(filename=name, file=__import__('io').BytesIO(content), headers=Headers({"content-type":"text/plain"}))
+                        await documents.save_document("student", upload)
+                    items = documents.list_documents("student")
+                cards = {item.name: item.preparation for item in items}
+                self.assertEqual(cards["biologie.txt"]["status"], "ready")
+                self.assertIn("cellule", cards["biologie.txt"]["keywords"])
+                self.assertNotIn("cellule", cards["histoire.txt"]["keywords"])
+        asyncio.run(run())
+
 
 if __name__ == "__main__":
     unittest.main()

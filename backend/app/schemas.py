@@ -126,6 +126,7 @@ class DocumentInfo(BaseModel):
     name: str
     size: int
     created_at: str
+    preparation: dict = Field(default_factory=lambda: {"status": "preparing"})
 
 
 class DocumentsResponse(BaseModel):

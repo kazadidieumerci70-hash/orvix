@@ -53,6 +53,28 @@ def _chunks_from_content(name: str, content: bytes) -> list[dict]:
     return chunks
 
 
+def _preparation(chunks: list[dict]) -> dict:
+    """Keep a small, per-document reading card alongside the private index."""
+    headings: list[str] = []
+    terms: dict[str, int] = {}
+    pages = {chunk.get("page") for chunk in chunks if chunk.get("page")}
+    ignored = {"avec", "dans", "pour", "mais", "sont", "cette", "document", "chapitre", "cours", "vous", "plus"}
+    for chunk in chunks:
+        heading = (chunk.get("chapter") or "").strip()
+        if heading and heading != "Introduction" and heading not in headings:
+            headings.append(heading)
+        for term in re.findall(r"[A-Za-zÀ-ÿ]{4,}", chunk.get("text", "").lower()):
+            if term not in ignored:
+                terms[term] = terms.get(term, 0) + 1
+    return {
+        "status": "ready",
+        "chunks": len(chunks),
+        "pages": len(pages) or 1,
+        "headings": headings[:6],
+        "keywords": [term for term, _ in sorted(terms.items(), key=lambda item: (-item[1], item[0]))[:8]],
+    }
+
+
 def content_has_readable_text(name: str, content: bytes) -> bool:
     """Reject files that can be stored but cannot provide any learning context."""
     return any(len(re.sub(r"\s+", "", chunk.get("text", ""))) >= 3 for chunk in _chunks_from_content(name, content))
@@ -69,7 +91,12 @@ def build_document_memory(user_id: str, path: Path) -> dict:
 
 def build_document_memory_from_content(user_id: str, document_id: str, name: str, content: bytes) -> dict:
     """Index uploaded bytes so document memory survives service restarts."""
-    record = {"user_id": user_id, "document_id": document_id, "document_name": name, "chunks": _chunks_from_content(name, content), "updated_at": datetime.now(timezone.utc).isoformat()}
+    chunks = _chunks_from_content(name, content)
+    record = {
+        "user_id": user_id, "document_id": document_id, "document_name": name,
+        "chunks": chunks, "preparation": _preparation(chunks),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
     settings = get_settings()
     if settings.database_url:
         import psycopg
@@ -115,6 +142,19 @@ def get_document_memory_from_content(user_id: str, document_id: str, name: str, 
         if record and record.get("chunks"):
             return record
     return build_document_memory_from_content(user_id, document_id, name, content)
+
+
+def document_preparation(user_id: str, document_id: str) -> dict:
+    """Return only the prepared card; never expose another document's record."""
+    settings = get_settings()
+    if settings.database_url:
+        import psycopg
+        with psycopg.connect(settings.database_url) as connection:
+            connection.execute("CREATE TABLE IF NOT EXISTS document_memories (user_id TEXT NOT NULL, document_id TEXT NOT NULL, record JSONB NOT NULL, PRIMARY KEY(user_id, document_id))")
+            row = connection.execute("SELECT record FROM document_memories WHERE user_id=%s AND document_id=%s", (user_id, document_id)).fetchone()
+        return (row[0].get("preparation") or {"status": "preparing"}) if row else {"status": "preparing"}
+    record = _read().get("documents", {}).get(f"{user_id}:{document_id}", {})
+    return record.get("preparation") or {"status": "preparing"}
 
 
 def chapter_groups(record: dict, max_chars: int = 12_000) -> list[tuple[str, str]]:

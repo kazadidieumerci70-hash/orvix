@@ -13,7 +13,7 @@ from fastapi import HTTPException, UploadFile
 from pypdf import PdfReader
 
 from .config import get_settings
-from .document_memory import build_document_memory, build_document_memory_from_content, chapter_groups, content_has_readable_text, forget_document_memory, get_document_memory, get_document_memory_from_content
+from .document_memory import build_document_memory, build_document_memory_from_content, chapter_groups, content_has_readable_text, document_preparation, forget_document_memory, get_document_memory, get_document_memory_from_content
 from .subscriptions import document_page_limit, document_upload_limit_bytes
 from .json_store import atomic_write_json
 from .schemas import DocumentInfo
@@ -196,7 +196,7 @@ def list_documents(user_id: str) -> list[DocumentInfo]:
                 "SELECT id, name, size, created_at FROM uploaded_documents WHERE user_id=%s ORDER BY created_at, name",
                 (user_id,),
             ).fetchall()
-        return [DocumentInfo(id=row[0], number=index, name=row[1], size=row[2], created_at=row[3].isoformat()) for index, row in enumerate(rows, 1)]
+        return [DocumentInfo(id=row[0], number=index, name=row[1], size=row[2], created_at=row[3].isoformat(), preparation=document_preparation(user_id, row[0])) for index, row in enumerate(rows, 1)]
     result = []
     deleted = _deleted_names()
     owners = _owners()
@@ -214,6 +214,7 @@ def list_documents(user_id: str) -> list[DocumentInfo]:
                 name=path.name,
                 size=stat.st_size,
                 created_at=datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat(),
+                preparation=document_preparation(user_id, sha256(path.name.encode()).hexdigest()[:16]),
             ))
     return result
 
