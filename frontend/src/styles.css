@@ -5370,3 +5370,184 @@ select:focus-visible {
 .document-reading-card { margin-top: 16px; padding: 18px; border: 1px solid #cfe5e1; border-radius: 16px; background: #f7fcfb; color: #334946; }
 .document-reading-card header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }.document-reading-card header small { color: #198b82; font-size: 10px; font-weight: 800; letter-spacing: .07em; }.document-reading-card h2 { margin: 3px 0 0; font-size: 17px; }.document-reading-card header button { border: 0; color: #57716d; background: transparent; font-size: 12px; }.document-reading-card > p { margin: 14px 0; line-height: 1.55; }.document-reading-card > div { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }.document-reading-card section { padding: 12px; border-radius: 12px; background: #fff; }.document-reading-card strong { display: block; margin-bottom: 8px; font-size: 12px; }.document-reading-card ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.6; }.document-reading-card section > span { color: #718480; font-size: 12px; }.document-keyword-list { display: flex; flex-wrap: wrap; gap: 6px; }.document-keyword-list span { padding: 4px 7px; border-radius: 999px; color: #167d76; background: #e4f5f1; font-size: 11px; }
 @media (max-width: 600px) { .document-reading-card > div { grid-template-columns: 1fr; } }
+
+/* Passe UX globale : lisibilité, cohérence et interactions prévisibles. */
+:root {
+  --orvix-focus: rgba(14, 151, 140, .32);
+  --orvix-border: #dce8e5;
+  --orvix-text-muted: #647773;
+}
+
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+select:not(:disabled),
+input:not(:disabled),
+textarea:not(:disabled) {
+  cursor: pointer;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+textarea {
+  cursor: text;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid var(--orvix-focus) !important;
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.main-content {
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+}
+
+/* Navigation : la page active ressort, le reste reste calme et lisible. */
+@media (min-width: 901px) {
+  .sidebar {
+    padding: 26px 14px 16px;
+  }
+
+  .sidebar-brand {
+    margin: 0 10px 28px;
+  }
+
+  .sidebar nav {
+    gap: 4px;
+  }
+
+  .nav-item {
+    min-height: 46px;
+    gap: 13px;
+    padding: 10px 13px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  .recents {
+    padding: 30px 8px 12px;
+  }
+
+  .conversation-link {
+    min-height: 38px;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+
+  .profile-card {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 11px;
+    border-radius: 13px;
+  }
+}
+
+/* Les pages de travail partagent les mêmes repères de lecture. */
+.workspace-page {
+  padding-bottom: max(64px, env(safe-area-inset-bottom));
+}
+
+.page-intro p,
+.settings-form p,
+.profile-simple-panel p {
+  color: var(--orvix-text-muted);
+}
+
+.workspace-page :is(.document-picker select, .inline-form input, .inline-form textarea, .settings-field input, .settings-field textarea) {
+  border-color: var(--orvix-border);
+}
+
+.workspace-page :is(.document-picker select, .inline-form input, .inline-form textarea, .settings-field input, .settings-field textarea):hover:not(:focus) {
+  border-color: #b8d8d2;
+}
+
+.page-actions {
+  backdrop-filter: blur(10px);
+}
+
+.page-actions button,
+.top-document-selector select {
+  transition: transform .16s ease, border-color .16s ease, background-color .16s ease, box-shadow .16s ease;
+}
+
+.page-actions button:hover,
+.top-document-selector select:hover {
+  border-color: #a8d9d2;
+}
+
+.page-actions button:active {
+  transform: scale(.96);
+}
+
+/* Les états de chargement et les retours sont plus nets sans changer la logique. */
+.error-banner,
+.subscription-load-error,
+.payment-feedback,
+.settings-success {
+  border-radius: 14px;
+}
+
+.message-actions button,
+.document-card-button,
+.document-retry,
+.document-favorite,
+.document-organize {
+  transition: color .16s ease, background-color .16s ease, transform .16s ease;
+}
+
+.message-actions button:hover,
+.document-card-button:hover,
+.document-favorite:hover,
+.document-organize:hover {
+  transform: translateY(-1px);
+}
+
+/* Mobile : aucune action principale ne doit être masquée par le navigateur. */
+@media (max-width: 900px) {
+  .main-content {
+    min-height: 100dvh;
+    height: 100dvh;
+  }
+
+  .workspace-page {
+    padding-inline: 18px;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .page-intro h1 {
+    letter-spacing: -.025em;
+  }
+
+  .page-actions {
+    padding-inline: 12px;
+  }
+
+  .settings-page,
+  .profile-page {
+    width: min(100% - 28px, 820px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
