@@ -108,14 +108,13 @@ function App() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeConversationId, setActiveConversationId] = useState(() => localStorage.getItem("orvix_active_conversation") || "");
   const [activeMessages, setActiveMessages] = useState<ChatMessage[]>([]);
-  const [view, setView] = useState<View>(() => (localStorage.getItem("orvix_view") as View) || "chat");
+  const [view, setView] = useState<View>(() => { const savedView = localStorage.getItem("orvix_view"); return savedView === "chat" || savedView === "revision" || savedView === "quiz" || savedView === "exam" || savedView === "support" || savedView === "account" ? savedView : "chat"; });
   const [mobileNav, setMobileNav] = useState(false);
   const [accountPlanName, setAccountPlanName] = useState("Gratuit");
   const [maxDocumentMb, setMaxDocumentMb] = useState(10);
   const [maxDocumentPages, setMaxDocumentPages] = useState(100);
   const [theme, setTheme] = useState<"light" | "dark">(() => localStorage.getItem("orvix_theme") === "dark" ? "dark" : "light");
   const [language, setLanguage] = useState("Français");
-  const openedFreshChat = useRef(false);
   // A late conversation fetch must never overwrite a support the user just chose.
   const conversationDocumentHydratedRef = useRef("");
 
@@ -216,10 +215,6 @@ function App() {
 
   useEffect(() => {
     if (!user?.onboarding_completed) return;
-    if (!openedFreshChat.current) {
-      openedFreshChat.current = true;
-      setView("chat");
-    }
     const accountKey = encodeURIComponent(user.phone || user.name);
     const cachedConversations = localStorage.getItem(`orvix_conversations_${accountKey}`);
     const cachedActiveConversation = localStorage.getItem(`orvix_active_conversation_${accountKey}`);
