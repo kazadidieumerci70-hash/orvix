@@ -3319,3 +3319,66 @@ html[data-theme="dark"] .setting-options button.selected {
   border-color: #39716b !important;
   background: #203b38 !important;
 }
+
+/* Correctif final du compositeur : les contrôles restent fixes, le texte défile dans sa zone. */
+@media (min-width: 901px) {
+  .app-shell:has(.main-content.chat-main) .main-content.chat-main .orvix-functional-composer {
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) 76px !important;
+    grid-template-rows: 1fr !important;
+    align-items: end !important;
+    width: min(790px, calc(100vw - 48px)) !important;
+    min-height: 96px !important;
+    height: 96px !important;
+    max-height: 96px !important;
+    padding: 10px 14px !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-writing {
+    grid-column: 2 !important;
+    display: flex !important;
+    align-items: stretch !important;
+    min-width: 0 !important;
+    height: 76px !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-writing textarea {
+    width: 100% !important;
+    height: 76px !important;
+    min-height: 76px !important;
+    max-height: 76px !important;
+    margin: 0 !important;
+    padding: 8px 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-actions {
+    display: contents !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-actions > button:first-child {
+    position: static !important;
+    grid-column: 1 !important;
+    align-self: end !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-actions > div:last-child {
+    position: static !important;
+    grid-column: 3 !important;
+    align-self: end !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
+}
