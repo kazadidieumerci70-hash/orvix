@@ -610,26 +610,31 @@ function PaymentChoice({ checkout, loading, emailHint, onPay, onBack }: { checko
   const [email, setEmail] = useState(emailHint);
   const countryInfo = paymentCountries[country];
   const chooseCountry = (nextCountry: PaymentCountry) => {
-    const firstMethod = paymentCountries[nextCountry].methods[0].id;
-    setCountry(nextCountry); setMethod(firstMethod); setPhone(paymentCountries[nextCountry].prefix);
+    setCountry(nextCountry);
+    setMethod(paymentCountries[nextCountry].methods[0].id);
+    setPhone(paymentCountries[nextCountry].prefix);
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, ""))) return;
     onPay(method, phone.replace(/[\s-]/g, ""), country, email);
   };
-  return <section className="payment-choice" aria-labelledby="payment-choice-title">
-    <header className="payment-sheet-head"><button type="button" aria-label="Retour aux forfaits" onClick={onBack}><X size={21} /></button><div><h2 id="payment-choice-title">Finaliser ton forfait</h2><p><ShieldCheck size={13} /> Paiement sécurisé</p></div><ShieldCheck className="payment-sheet-mark" size={20} /></header>
+  const phoneValid = /^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, ""));
+  return <section className="payment-choice payment-redesign" aria-labelledby="payment-choice-title">
+    <header className="payment-brand-bar">
+      <button type="button" aria-label="Retour aux forfaits" onClick={onBack}><ArrowLeft size={20} /></button>
+      <div className="payment-brand"><img src="/orvix-logo-transparent.png" alt="Logo Orvix" /><strong>ORVIX</strong></div>
+      <span aria-hidden="true" />
+    </header>
     <form onSubmit={submit} className="payment-choice-form">
-      <div className="payment-steps" aria-label="Étapes du paiement"><span className="active">1. Pays</span><span>2. Moyen</span><span>3. Confirmation</span></div>
+      <header className="payment-redesign-intro"><p><ShieldCheck size={14} /> Paiement Mobile Money sécurisé</p><h2 id="payment-choice-title">Finaliser ton forfait</h2><span>Ton accès est activé dès que tu confirmes le paiement sur ton téléphone.</span></header>
+      <section className="payment-plan-summary" aria-label="Récapitulatif du forfait"><span className="payment-plan-icon"><Crown size={20} /></span><div><strong>{checkout.planName}</strong><small>{checkout.billingCycle === "annual" ? "Abonnement annuel" : "Abonnement mensuel"}</small></div><b>{checkout.amountLabel}</b></section>
       <fieldset className="payment-country-picker"><legend>Dans quel pays paies-tu ?</legend><div>{(Object.keys(paymentCountries) as PaymentCountry[]).map((id) => <button type="button" key={id} className={country === id ? "selected" : ""} onClick={() => chooseCountry(id)}>{paymentCountries[id].label}</button>)}</div></fieldset>
-      <fieldset className="payment-methods payment-methods-list"><legend>Choisis ton moyen de paiement</legend>
-        <label className="selected"><Smartphone className="mobile-money-icon" size={21} /><span><b>Argent mobile</b><small>{countryInfo.methods.map((item) => item.label).join(" · ")}</small></span><strong>Disponible</strong></label>
-      </fieldset>
-      <section className="mobile-money-details"><div className="network-radios" aria-label="Réseau mobile">{countryInfo.methods.map((item) => <label key={item.id} className={method === item.id ? "selected" : ""}><input type="radio" name="network" checked={method === item.id} onChange={() => setMethod(item.id)} /><span>{item.label}</span></label>)}</div><label className="payment-phone"><span>Numéro lié à {countryInfo.methods.find((item) => item.id === method)?.label}</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={`${countryInfo.prefix} 000 000 000`} required /><small>Tu confirmeras la demande depuis ton téléphone.</small></label></section>
-      <label className="payment-email"><span>Adresse e-mail pour le reçu</span><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nom@email.com" required /></label>
-      <section className="payment-security-note"><strong><ShieldCheck size={16} /> Tes informations restent protégées</strong><p>ORVIX ne stocke ni ton numéro de carte ni ton code de confirmation.</p></section>
-      <footer className="payment-sheet-footer"><div><small>{checkout.planName} · {checkout.billingCycle === "annual" ? "Annuel" : "Mensuel"}</small><strong>{checkout.amountLabel}</strong></div><button className="payment-choice-primary" disabled={loading || !email.trim() || !/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, ""))}><LockKeyhole size={17} />{loading ? "Préparation…" : "Continuer"}</button></footer>
+      <section className="payment-method-section" aria-labelledby="payment-method-title"><div><small>MOYEN DE PAIEMENT</small><h3 id="payment-method-title">Mobile Money</h3><p>Choisis le réseau lié à ton numéro.</p></div><div className="network-radios" aria-label="Réseau Mobile Money">{countryInfo.methods.map((item) => <label key={item.id} className={method === item.id ? "selected" : ""}><input type="radio" name="network" checked={method === item.id} onChange={() => setMethod(item.id)} /><span>{item.label}</span></label>)}</div></section>
+      <label className="payment-phone"><span>Numéro {countryInfo.methods.find((item) => item.id === method)?.label}</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={`${countryInfo.prefix} 000 000 000`} required /><small>Tu recevras la demande de confirmation sur ce numéro.</small></label>
+      <label className="payment-email"><span>E-mail pour le reçu</span><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ton@email.com" required /></label>
+      <section className="payment-next-step"><ShieldCheck size={18} /><p><b>Tu confirmes sur ton téléphone</b><span>Après « Continuer », valide la demande Mobile Money pour activer ton forfait.</span></p></section>
+      <footer className="payment-sheet-footer"><div><small>Total à payer</small><strong>{checkout.amountLabel}</strong></div><button className="payment-choice-primary" disabled={loading || !email.trim() || !phoneValid}><LockKeyhole size={17} />{loading ? "Préparation…" : "Continuer"}</button></footer>
     </form>
   </section>;
 }
