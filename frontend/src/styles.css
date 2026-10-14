@@ -633,12 +633,25 @@ button { cursor: pointer; }
 .payment-plan-summary strong { color: #1d2a34; font-size: 15px; }
 .payment-plan-summary small { color: #79888c; font-size: 11px; }
 .payment-plan-summary > b { color: #112530; font-size: 18px; }
-.payment-country-picker { margin: 23px 0; padding: 0; border: 0; }
-.payment-country-picker legend { margin: 0 0 9px; color: #39494e; font-size: 12px; font-weight: 800; }
-.payment-country-picker > div { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
-.payment-country-picker button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border: 1px solid #d9e5e3; border-radius: 12px; color: #596b70; background: #fff; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
-.payment-country-picker button img { width: 22px; height: 16px; object-fit: cover; border-radius: 2px; box-shadow: 0 1px 3px rgba(21, 40, 50, .16); }
-.payment-country-picker button.selected { border-color: #159b90; color: #137d75; background: #effbf8; box-shadow: inset 0 0 0 1px #159b90; }
+.payment-country-picker { display: grid; gap: 9px; margin: 23px 0; }
+.payment-country-picker > span { color: #39494e; font-size: 12px; font-weight: 800; }
+.payment-country-trigger { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 0 14px; border: 1px solid #d9e5e3; border-radius: 13px; color: #1d3338; background: #fff; font: inherit; text-align: left; cursor: pointer; }
+.payment-country-trigger:hover { border-color: #20a398; background: #f8fdfc; }
+.payment-country-trigger img, .country-picker-list img { width: 23px; height: 17px; object-fit: cover; border-radius: 2px; box-shadow: 0 1px 3px rgba(21, 40, 50, .16); }
+.payment-country-trigger b { font-size: 14px; }
+.payment-country-trigger svg { color: #839194; }
+.country-picker-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: end; justify-content: center; padding: 16px; background: rgba(16, 33, 37, .34); backdrop-filter: blur(3px); }
+.country-picker-sheet { width: min(100%, 500px); padding: 9px 22px calc(24px + env(safe-area-inset-bottom)); border-radius: 24px 24px 18px 18px; background: #fff; box-shadow: 0 -12px 42px rgba(12, 37, 40, .18); }
+.country-picker-handle { width: 42px; height: 4px; margin: 0 auto 18px; border-radius: 999px; background: #dce5e3; }
+.country-picker-sheet header { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.country-picker-sheet small { color: #168e84; font-size: 10px; font-weight: 850; letter-spacing: .09em; }
+.country-picker-sheet h3 { margin: 4px 0 0; color: #14262d; font-size: 22px; letter-spacing: -.02em; }
+.country-picker-sheet header button { display: grid; width: 38px; height: 38px; place-items: center; border: 0; border-radius: 50%; color: #315054; background: #f0f6f5; cursor: pointer; }
+.country-picker-sheet > p { margin: 12px 0 18px; color: #718084; font-size: 12px; line-height: 1.45; }
+.country-picker-list { display: grid; border-top: 1px solid #e8efed; }
+.country-picker-list button { display: grid; grid-template-columns: 27px 1fr auto; align-items: center; gap: 11px; min-height: 61px; padding: 0 2px; border: 0; border-bottom: 1px solid #e8efed; color: #26383d; background: transparent; font: inherit; font-size: 14px; font-weight: 800; text-align: left; cursor: pointer; }
+.country-picker-list button.selected { color: #10877d; }
+.country-picker-list button svg { color: #18a095; }
 .payment-method-section { display: grid; gap: 13px; padding: 22px 0; border-top: 1px solid #e7eeee; }
 .payment-method-section small { color: #188f85; font-size: 10px; font-weight: 850; letter-spacing: .09em; }
 .payment-method-section h3 { margin: 4px 0 0; color: #1a2a32; font-size: 17px; }
