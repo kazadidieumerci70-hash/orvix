@@ -196,14 +196,29 @@ class OrvixAI:
         return any(term in normalized for term in ("résume", "resume", "résumé", "synthèse", "synthese", "récapitulatif", "recapitulatif"))
 
     @staticmethod
-    def _social_response(message: str) -> str | None:
+    def _social_response(message: str, history: list[ChatMessage] | None = None, user: UserProfile | None = None) -> str | None:
         normalized = " ".join(re.findall(r"[a-zA-ZÀ-ÿ0-9']+", message.lower())).strip()
+        history = history or []
+        recent_user_messages = [item.content for item in history[-12:] if item.role == "user"]
+        greeting_count = sum(
+            " ".join(re.findall(r"[a-zA-ZÀ-ÿ0-9']+", content.lower())).strip()
+            in {"bonjour", "bonsoir", "salut", "coucou", "hello", "hey"}
+            for content in recent_user_messages
+        )
+        first_name = ""
+        profile_name = str(getattr(user, "name", "")).strip()
+        if profile_name.lower() not in {"", "etudiant", "étudiant"}:
+            first_name = f" {profile_name.split()[0]}"
         if normalized in {"bonjour", "bonsoir", "salut", "coucou", "hello", "hey"}:
-            return "Bonjour ! Que veux-tu comprendre aujourd'hui ?"
+            if greeting_count >= 2:
+                return "Je suis toujours là 🙂 Écris-moi directement ce que tu veux comprendre ou faire."
+            if greeting_count == 1:
+                return "Re-salut ! On reprend ce qu’on faisait, ou tu as un nouveau sujet ?"
+            return f"Salut{first_name} 👋 Qu’est-ce qu’on regarde ensemble aujourd’hui ?"
         if normalized in {"merci", "merci beaucoup"}:
-            return "Avec plaisir."
+            return "Avec plaisir 🙂"
         if normalized in {"comment vas tu", "comment allez vous", "ça va", "ca va"}:
-            return "Je vais bien, merci. Sur quoi veux-tu avancer ?"
+            return "Ça va, merci 🙂 Et toi, tu veux qu’on travaille sur quoi ?"
         if normalized in {"au revoir", "à bientôt", "a bientot"}:
             return "À bientôt !"
         return None
@@ -256,7 +271,7 @@ class OrvixAI:
     async def chat(self, message: str, history: list[ChatMessage], user: UserProfile, document_ids: list[str], *, response_instructions: str = "") -> str:
         user_message = message.strip()
         intent = analyze_intent(user_message)
-        social_response = self._social_response(user_message)
+        social_response = self._social_response(user_message, history, user)
         if social_response:
             return social_response
         if self._asks_about_creator(user_message):
