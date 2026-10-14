@@ -264,6 +264,14 @@ function App() {
     ? documents.map((document) => document.id)
     : activeDocumentId && documents.some((document) => document.id === activeDocumentId) ? [activeDocumentId] : [];
 
+  function selectDocument(documentId: string) {
+    // A conversation request may still be in flight. Mark the current
+    // conversation as already hydrated so its late response cannot erase the
+    // support the user has just selected.
+    if (activeConversationId) conversationDocumentHydratedRef.current = activeConversationId;
+    setActiveDocumentId(documentId);
+  }
+
   function newChat() {
     conversationDocumentHydratedRef.current = "";
     setActiveConversationId("");
@@ -325,16 +333,16 @@ function App() {
       <main className={`main-content ${view === "account" ? "account-scroll" : ""} ${view === "chat" ? "chat-main" : ""} ${view === "revision" ? "revision-main" : ""} ${view === "quiz" ? "quiz-main" : ""} ${view === "support" ? "support-main" : ""}`}>
         <div className="page-actions">
           <button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Ouvrir le menu"><Menu /></button>
-          {view === "chat" && <label className="top-document-selector"><select aria-label="Mode de réponse et support utilisé" value={activeDocumentId} onChange={(event) => setActiveDocumentId(event.target.value)}><option value="">Question libre</option><option value="__all__">Tous les documents</option>{documents.map((doc) => <option key={doc.id} value={doc.id}>Document {doc.number} · {doc.name}</option>)}</select></label>}
+          {view === "chat" && <label className="top-document-selector"><select aria-label="Mode de réponse et support utilisé" value={activeDocumentId} onChange={(event) => selectDocument(event.target.value)}><option value="">Question libre</option><option value="__all__">Tous les documents</option>{documents.map((doc) => <option key={doc.id} value={doc.id}>Document {doc.number} · {doc.name}</option>)}</select></label>}
           {view === "revision" && <div className="top-view-label" aria-label="Page Révision de cours">Révision de cours</div>}
           {view === "quiz" && <div className="top-view-label" aria-label="Page Quiz de cours">Quiz de cours</div>}
           {view === "support" && <div className="top-view-label" aria-label="Page Supports de cours">Supports de cours</div>}
           <div className="top-actions-right"><button className="top-new-conversation-button" aria-label="Nouvelle discussion" onClick={newChat}><MessageCirclePlus size={22} /></button></div>
         </div>
-        {view === "chat" && <ChatView language={language} documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} conversationId={activeConversationId} onConversationChange={setActiveConversationId} messages={activeMessages} onMessagesChange={setActiveMessages} onSaved={refreshConversations} />}
-        {view === "revision" && <RevisionView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} />}
-        {view === "quiz" && <QuizView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} documentIds={activeDocumentIds} />}
-        {view === "support" && <SupportView documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={setActiveDocumentId} maxDocumentMb={maxDocumentMb} maxDocumentPages={maxDocumentPages} />}
+        {view === "chat" && <ChatView language={language} documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={selectDocument} documentIds={activeDocumentIds} conversationId={activeConversationId} onConversationChange={setActiveConversationId} messages={activeMessages} onMessagesChange={setActiveMessages} onSaved={refreshConversations} />}
+        {view === "revision" && <RevisionView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={selectDocument} documentIds={activeDocumentIds} />}
+        {view === "quiz" && <QuizView documents={documents} activeDocumentId={activeDocumentId} onActiveDocumentChange={selectDocument} documentIds={activeDocumentIds} />}
+        {view === "support" && <SupportView documents={documents} onDocumentsChange={setDocuments} activeDocumentId={activeDocumentId} onActiveDocumentChange={selectDocument} maxDocumentMb={maxDocumentMb} maxDocumentPages={maxDocumentPages} />}
         {view === "account" && <AccountView user={user} onSaved={(profile) => { localStorage.setItem("orvix_user", JSON.stringify(profile)); setUser(profile); }} documentCount={documents.length} conversationCount={conversations.length} theme={theme} onThemeChange={() => setTheme((current) => current === "dark" ? "light" : "dark")} language={language} onLanguageChange={setLanguage} onLogout={() => { clearToken(); localStorage.removeItem("orvix_user"); setUser(null); }} />}
       </main>
     </div>

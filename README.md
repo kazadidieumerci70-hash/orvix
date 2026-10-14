@@ -48,7 +48,8 @@ Dans `backend/.env` :
 
 ```env
 GEMINI_API_KEY=...
-GEMINI_MODEL=gemini-3.6-flash
+GEMINI_MODEL=gemini-3.8-flash
+GEMINI_FALLBACK_MODELS=gemini-3.6-flash,gemini-3.1-flash-lite
 FRONTEND_ORIGINS=https://orvix.pages.dev,https://orvix.com
 MAX_UPLOAD_MB=10
 ```

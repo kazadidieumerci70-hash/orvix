@@ -15,7 +15,7 @@ from .response_rules import RESPONSE_RULES
 from .conversation_context import conversation_context
 from .retrieval import retrieval_query
 from .memory import relevant
-from .documents import document_chapters, document_context, document_context_with_sources
+from .documents import document_context, document_context_with_sources
 from .learning_engines import analyze_intent, pedagogical_strategy, verify_answer
 from .schemas import ChatMessage, ExamModeResponse, QuizResponse, UserProfile, MAX_CONTEXT_MESSAGES
 from .subscriptions import document_reading_limits
@@ -280,20 +280,6 @@ class OrvixAI:
             return ORVIX_PRESENTATION
         if self._asks_for_summary(user_message) and not document_ids:
             return "Sélectionne d’abord un document dans le menu en haut de la discussion. Je pourrai ensuite le résumer sans utiliser d’autre support."
-        if self._asks_for_summary(user_message) and len(document_ids) == 1:
-            try:
-                chapters = document_chapters(user.id, document_ids[0])
-            except HTTPException as error:
-                if error.status_code == 404:
-                    return "Le document choisi n’est plus disponible. Sélectionne un support présent dans ta bibliothèque avant de demander un résumé."
-                raise
-            if chapters:
-                async def summarize_chapter(chapter: str, content: str) -> str:
-                    return await self._generate(f"Résume pédagogiquement cette partie du cours, sans inventer : {chapter}\n\n{content}")
-                chapter_summaries = await asyncio.gather(*(summarize_chapter(chapter, content) for chapter, content in chapters))
-                joined = "\n\n".join(f"{chapter}\n{summary}" for (chapter, _), summary in zip(chapters, chapter_summaries))
-                answer = await self._generate("Rédige un résumé global clair, structuré comme un professeur, à partir de ces résumés de chapitres. Explique les liens entre les notions et termine par les points à retenir.\n\n" + joined)
-                return self._remove_unverified_source_lines(answer)
         transcript = conversation_context(history[-MAX_CONTEXT_MESSAGES:])
         allow_general = self._general_knowledge_authorized(user_message, history)
         needs_document = self._needs_document_context(user_message)

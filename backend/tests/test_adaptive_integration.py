@@ -32,6 +32,15 @@ def test_missing_source_guard_still_requires_consent():
     assert "non étayée" not in answer
 
 
+def test_document_summary_uses_one_model_call():
+    ai = object.__new__(OrvixAI)
+    source = {"id": "doc:1", "document_id": "doc", "document_number": 1, "document_name": "cours.pdf", "page": 1, "location": "page 1", "excerpt": "extrait"}
+    with patch.object(ai, "_context_with_sources", return_value=("extraits répartis dans le document", [source])), patch.object(ai, "_student_profile", return_value=""), patch.object(ai, "_generate", new_callable=AsyncMock, return_value="Résumé en 20 lignes") as generate:
+        answer = asyncio.run(ai.chat("Résume ce livre en 20 lignes", [], SimpleNamespace(id="u"), ["doc"]))
+    assert generate.await_count == 1
+    assert "Résumé en 20 lignes" in answer
+
+
 def test_quiz_uses_existing_memory_without_new_store():
     ai = object.__new__(OrvixAI)
     raw = '{"title":"Cours","questions":[{"question":"Q","choices":["A","B","C","D"],"answer_index":0,"explanation":"E"}]}'

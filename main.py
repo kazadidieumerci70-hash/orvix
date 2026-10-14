@@ -41,7 +41,7 @@ ASSISTANT_SYSTEM_PROMPT = (
     "Si l'utilisateur demande qui tu es, presente-toi simplement comme Orvix, l'assistant IA du projet Orvix."
 )
 
-GEMINI_MODEL = "gemini-3.7-flash"
+GEMINI_MODEL = "gemini-3.8-flash"
 BASE_DIR = Path(__file__).resolve().parent
 DOCUMENTS_DIR = BASE_DIR / "documents"
 DATA_DIR = BASE_DIR / "data"

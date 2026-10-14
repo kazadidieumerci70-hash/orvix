@@ -15,14 +15,14 @@ class Settings:
     database_url = next((os.getenv(name, "").strip() for name in ("DATABASE_URL", "DATABASE_PRIVATE_URL", "DATABASE_PUBLIC_URL", "POSTGRES_URL") if os.getenv(name, "").strip()), "")
     gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip().replace("\\_", "_")
     orvix_auth_secret = os.getenv("ORVIX_AUTH_SECRET", "")
-    gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
     gemini_fallback_models = tuple(
         model.strip()
         for model in os.getenv(
             "GEMINI_FALLBACK_MODELS",
-            "gemini-2.5-flash-lite,gemini-2.0-flash",
+            "gemini-3.6-flash,gemini-3.1-flash-lite",
         ).split(",")
-        if model.strip() and model.strip() != os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        if model.strip() and model.strip() != os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
     )
     gemini_verify_ssl = os.getenv("GEMINI_VERIFY_SSL", "true").strip().lower() != "false"
     model_provider = os.getenv("MODEL_PROVIDER", "ollama")
