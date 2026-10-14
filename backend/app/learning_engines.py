@@ -55,4 +55,8 @@ def verify_answer(answer: str, *, document_mode: bool, sources_found: bool) -> s
     answer = re.sub(r"(?im)^\s*(?:📖\s*)?(?:source dans vos documents|support consulté)\s*:.*(?:\n|$)", "", answer).strip()
     if document_mode and not sources_found:
         return "Je n'ai pas trouvé d'information dans les documents fournis qui permette de répondre à cette question. Souhaites-tu que je te réponde avec mes connaissances générales ?"
+    # A provider occasionally returns an empty shell despite receiving context.
+    # Never display that as a completed pedagogical answer.
+    if not re.sub(r"[^A-Za-zÀ-ÿ0-9]", "", answer):
+        return "Je n'ai pas pu formuler une réponse fiable à partir des éléments disponibles. Peux-tu reformuler ta question ?"
     return answer

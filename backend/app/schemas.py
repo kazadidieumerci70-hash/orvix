@@ -127,6 +127,13 @@ class DocumentInfo(BaseModel):
     size: int
     created_at: str
     preparation: dict = Field(default_factory=lambda: {"status": "preparing"})
+    subject: str = ""
+    favorite: bool = False
+
+
+class DocumentUpdateRequest(BaseModel):
+    subject: str = Field(default="", max_length=80)
+    favorite: bool = False
 
 
 class DocumentsResponse(BaseModel):

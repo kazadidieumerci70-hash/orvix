@@ -5339,3 +5339,6 @@ select:focus-visible {
 .support-upload-progress { display:block; width:100%; height:5px; margin-top:8px; overflow:hidden; border-radius:999px; background:#dcefed; }
 .support-upload-progress > i { display:block; height:100%; border-radius:inherit; background:#159f95; transition:width .2s ease; }
 .support-page .document-keywords { color: #168f85 !important; font-size: 10px !important; }
+.support-page .document-subject-filter { width: 100%; margin-top: 8px; padding: 10px 12px; border: 1px solid #cfddda; border-radius: 12px; color: #38524e; background: #fff; }
+.support-page .document-favorite, .support-page .document-organize { flex: 0 0 auto; border: 0; color: #78918d; background: transparent; padding: 6px; }
+.support-page .document-favorite.active { color: #d69322; }

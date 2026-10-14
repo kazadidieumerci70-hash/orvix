@@ -14,7 +14,7 @@ from .auth import begin_email_registration, complete_onboarding, create_password
 from .ai import OrvixAI
 from .config import get_settings
 from .conversations import append_exchange, get_conversation, list_conversations
-from .documents import delete_document, list_documents, save_document
+from .documents import delete_document, list_documents, save_document, update_document_library_metadata
 from .schemas import (
     AdminLoginRequest,
     AuthRequest,
@@ -35,6 +35,7 @@ from .schemas import (
     ConversationDetail,
     ConversationsResponse,
     DocumentsResponse,
+    DocumentUpdateRequest,
     ExamModeRequest,
     ExamModeResponse,
     OnboardingRequest,
@@ -96,7 +97,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=list(settings.frontend_origins),
     allow_credentials=False,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Orvix-Language", "X-Request-ID"],
 )
 
@@ -447,6 +448,12 @@ async def upload_documents(files: list[UploadFile] = File(...), user: UserProfil
     ensure_document_quota(user.id, len(list_documents(user.id)), len(files))
     for upload in files:
         await save_document(user.id, upload)
+    return DocumentsResponse(documents=list_documents(user.id))
+
+
+@app.patch(f"{settings.api_prefix}/documents/{{document_id}}", response_model=DocumentsResponse)
+async def update_document(document_id: str, payload: DocumentUpdateRequest, user: UserProfile = Depends(current_user)):
+    update_document_library_metadata(user.id, document_id, payload.subject, payload.favorite)
     return DocumentsResponse(documents=list_documents(user.id))
 
 

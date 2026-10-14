@@ -1,6 +1,6 @@
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 export type DocumentPreparation = { status: "preparing" | "ready"; chunks?: number; pages?: number; headings?: string[]; keywords?: string[] };
-export type DocumentInfo = { id: string; number: number; name: string; size: number; created_at: string; preparation?: DocumentPreparation };
+export type DocumentInfo = { id: string; number: number; name: string; size: number; created_at: string; preparation?: DocumentPreparation; subject?: string; favorite?: boolean };
 export type ConversationSummary = { id: string; title: string; updated_at: string };
 export type ConversationDetail = ConversationSummary & { messages: ChatMessage[]; document_ids: string[] };
 export type UserProfile = {
@@ -291,4 +291,8 @@ export function uploadDocuments(files: File[], onProgress?: (percent: number) =>
 
 export function deleteDocument(documentId: string) {
   return request<{ documents: DocumentInfo[] }>(`/api/v1/documents/${documentId}`, { method: "DELETE" });
+}
+
+export function updateDocument(documentId: string, subject: string, favorite: boolean) {
+  return request<{ documents: DocumentInfo[] }>(`/api/v1/documents/${documentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subject, favorite }) });
 }

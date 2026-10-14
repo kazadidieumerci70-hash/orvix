@@ -127,6 +127,7 @@ def _ensure_database_documents() -> None:
         connection.execute("ALTER TABLE uploaded_documents ADD COLUMN IF NOT EXISTS content_hash CHAR(64)")
         connection.execute("ALTER TABLE uploaded_documents ALTER COLUMN content DROP NOT NULL")
         connection.execute("CREATE INDEX IF NOT EXISTS uploaded_documents_owner_hash_idx ON uploaded_documents(user_id, content_hash) WHERE content_hash IS NOT NULL")
+        connection.execute("CREATE TABLE IF NOT EXISTS document_library_metadata (user_id TEXT NOT NULL, document_id TEXT NOT NULL, subject TEXT NOT NULL DEFAULT '', favorite BOOLEAN NOT NULL DEFAULT FALSE, PRIMARY KEY(user_id, document_id))")
         connection.commit()
 
 
@@ -193,10 +194,10 @@ def list_documents(user_id: str) -> list[DocumentInfo]:
         _migrate_legacy_documents(user_id)
         with psycopg.connect(settings.database_url) as connection:
             rows = connection.execute(
-                "SELECT id, name, size, created_at FROM uploaded_documents WHERE user_id=%s ORDER BY created_at, name",
+                "SELECT d.id, d.name, d.size, d.created_at, COALESCE(m.subject,''), COALESCE(m.favorite,FALSE) FROM uploaded_documents d LEFT JOIN document_library_metadata m ON m.user_id=d.user_id AND m.document_id=d.id WHERE d.user_id=%s ORDER BY m.favorite DESC NULLS LAST, d.created_at, d.name",
                 (user_id,),
             ).fetchall()
-        return [DocumentInfo(id=row[0], number=index, name=row[1], size=row[2], created_at=row[3].isoformat(), preparation=document_preparation(user_id, row[0])) for index, row in enumerate(rows, 1)]
+        return [DocumentInfo(id=row[0], number=index, name=row[1], size=row[2], created_at=row[3].isoformat(), preparation=document_preparation(user_id, row[0]), subject=row[4], favorite=row[5]) for index, row in enumerate(rows, 1)]
     result = []
     deleted = _deleted_names()
     owners = _owners()
@@ -217,6 +218,19 @@ def list_documents(user_id: str) -> list[DocumentInfo]:
                 preparation=document_preparation(user_id, sha256(path.name.encode()).hexdigest()[:16]),
             ))
     return result
+
+
+def update_document_library_metadata(user_id: str, document_id: str, subject: str, favorite: bool) -> None:
+    """Persist library organization independently from the private file bytes."""
+    if not get_settings().database_url:
+        raise HTTPException(501, "L'organisation de la bibliothèque nécessite le stockage sécurisé.")
+    _ensure_database_documents()
+    with __import__("psycopg").connect(get_settings().database_url) as connection:
+        exists = connection.execute("SELECT 1 FROM uploaded_documents WHERE user_id=%s AND id=%s", (user_id, document_id)).fetchone()
+        if not exists:
+            raise HTTPException(404, "Document introuvable.")
+        connection.execute("INSERT INTO document_library_metadata(user_id,document_id,subject,favorite) VALUES(%s,%s,%s,%s) ON CONFLICT(user_id,document_id) DO UPDATE SET subject=EXCLUDED.subject,favorite=EXCLUDED.favorite", (user_id, document_id, subject.strip(), favorite))
+        connection.commit()
 
 
 def _document_path_from_id(user_id: str, document_id: str) -> Path:
@@ -455,6 +469,11 @@ def document_context_with_sources(
     selected = set(document_ids or [])
     documents = [info for info in list_documents(user_id) if info.id in selected]
     per_document_limit = max(3_200, max_chars // max(1, len(documents)))
+    # Reserve at least one verified passage per selected document whenever the
+    # plan allows it.  Without this, the first file in the library can use all
+    # source slots and make "Tous les documents" misleading.
+    per_document_sources = max(1, max_sources // max(1, len(documents)))
+    extra_source_slots = max(0, max_sources - per_document_sources * len(documents))
     for info in documents:
         if remaining <= 0:
             break
@@ -486,6 +505,10 @@ def document_context_with_sources(
                 positions = {round(index * (len(candidates) - 1) / (sample_count - 1)) for index in range(sample_count)}
                 candidates = [candidate for index, candidate in enumerate(candidates) if index in positions]
         used_for_document = 0
+        sources_for_document = 0
+        document_source_cap = per_document_sources + (1 if extra_source_slots > 0 else 0)
+        if extra_source_slots:
+            extra_source_slots -= 1
         for score, page_number, offset, passage in candidates:
             if query_terms and has_matching_passage and score == 0 and sources:
                 continue
@@ -506,7 +529,8 @@ def document_context_with_sources(
             })
             remaining -= len(excerpt)
             used_for_document += len(excerpt)
-            if len(sources) >= max_sources:
+            sources_for_document += 1
+            if sources_for_document >= document_source_cap or len(sources) >= max_sources:
                 break
         if len(sources) >= max_sources:
             break

@@ -78,6 +78,7 @@ import {
   saveToken,
   sendChat,
   uploadDocuments,
+  updateDocument,
   verifyEmailRegistration,
 } from "./api";
 
@@ -1312,6 +1313,7 @@ function SupportView({ documents, onDocumentsChange, activeDocumentId, onActiveD
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deletingId, setDeletingId] = useState("");
   const [search, setSearch] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("");
   const [dragging, setDragging] = useState(false);
   useEffect(() => { listDocuments().then((r) => onDocumentsChange(r.documents)).catch(() => undefined); }, [onDocumentsChange]);
   async function upload(files: FileList | null) { if (!files?.length) return; setLoading(true); setUploadProgress(1); setError(""); try { onDocumentsChange((await uploadDocuments(Array.from(files), setUploadProgress)).documents); } catch (e) { setError(e instanceof Error ? e.message : "Import impossible."); } finally { setLoading(false); setUploadProgress(0); } }
@@ -1326,13 +1328,25 @@ function SupportView({ documents, onDocumentsChange, activeDocumentId, onActiveD
       setError(e instanceof Error ? e.message : "Suppression impossible.");
     } finally { setDeletingId(""); }
   }
-  const visibleDocuments = documents.filter((doc) => `${doc.number} ${doc.name}`.toLowerCase().includes(search.trim().toLowerCase()));
+  const subjects = [...new Set(documents.map((doc) => doc.subject).filter(Boolean))].sort();
+  const visibleDocuments = documents.filter((doc) => {
+    const haystack = `${doc.number} ${doc.name} ${doc.subject || ""} ${doc.preparation?.keywords?.join(" ") || ""}`.toLowerCase();
+    return haystack.includes(search.trim().toLowerCase()) && (!subjectFilter || doc.subject === subjectFilter);
+  });
+  async function organize(doc: DocumentInfo) {
+    const subject = window.prompt("Matière ou dossier pour ce document :", doc.subject || "")?.trim();
+    if (subject === undefined) return;
+    try { onDocumentsChange((await updateDocument(doc.id, subject, Boolean(doc.favorite))).documents); } catch (e) { setError(e instanceof Error ? e.message : "Organisation impossible."); }
+  }
+  async function toggleFavorite(doc: DocumentInfo) {
+    try { onDocumentsChange((await updateDocument(doc.id, doc.subject || "", !doc.favorite)).documents); } catch (e) { setError(e instanceof Error ? e.message : "Mise à jour impossible."); }
+  }
   return <section className="workspace-page support-page">
     <p className="support-lead">Ajoute tes cours une fois, puis utilise-les dans Chat, Révision et Quiz.</p>
     <label className={dragging ? "upload-zone support-upload dragging" : "upload-zone support-upload"} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={(event) => { event.preventDefault(); setDragging(false); upload(event.dataTransfer.files); }}><UploadCloud size={27} /><span><strong>{loading ? (uploadProgress >= 100 ? "Préparation du support…" : `Import en cours · ${uploadProgress}%`) : "Dépose tes fichiers ici"}</strong><small>ou clique pour les sélectionner · PDF, TXT, Markdown · {maxDocumentMb} Mo · {maxDocumentPages} pages max.</small>{loading && <i className="support-upload-progress" aria-label={`Progression de l’import : ${uploadProgress}%`}><i style={{ width: `${uploadProgress}%` }} /></i>}</span><b>{loading ? `${uploadProgress}%` : "Ajouter"}</b><input type="file" multiple accept=".pdf,.txt,.md" onChange={(e) => upload(e.target.files)} disabled={loading} /></label>
     {error && <p className="error-banner">{error}</p>}
-    <div className="support-library-head"><div><strong>Mes documents</strong><span>{documents.length} support{documents.length > 1 ? "s" : ""}</span></div><input className="document-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher…" /></div>
-    <div className="document-grid support-grid">{visibleDocuments.map((doc) => <article className={activeDocumentId === doc.id ? "document-card active" : "document-card"} key={doc.id}><button className="document-select" onClick={() => onActiveDocumentChange(activeDocumentId === doc.id ? "" : doc.id)}><span className="file-icon"><FileText /></span><span className="document-details"><strong>{doc.name}</strong><small>Document {doc.number} · {(doc.size / 1024).toFixed(1)} Ko · {doc.preparation?.status === "ready" ? `Prêt · ${doc.preparation.pages || 1} ${doc.preparation.pages === 1 ? "page" : "pages"}` : "Préparation…"}</small>{doc.preparation?.keywords?.length ? <small className="document-keywords">{doc.preparation.keywords.slice(0, 3).join(" · ")}</small> : null}</span>{activeDocumentId === doc.id && <span className="support-active">Utilisé</span>}</button><button className="document-delete" onClick={() => remove(doc)} disabled={deletingId === doc.id} aria-label={`Supprimer ${doc.name}`} title="Supprimer le document"><Trash2 size={16} /></button></article>)}</div>
+    <div className="support-library-head"><div><strong>Mes documents</strong><span>{documents.length} support{documents.length > 1 ? "s" : ""}</span></div><input className="document-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher par nom, matière ou notion…" />{subjects.length > 0 && <select className="document-subject-filter" value={subjectFilter} onChange={(event) => setSubjectFilter(event.target.value)}><option value="">Toutes les matières</option>{subjects.map((subject) => <option key={subject} value={subject}>{subject}</option>)}</select>}</div>
+    <div className="document-grid support-grid">{visibleDocuments.map((doc) => <article className={activeDocumentId === doc.id ? "document-card active" : "document-card"} key={doc.id}><button className="document-select" onClick={() => onActiveDocumentChange(activeDocumentId === doc.id ? "" : doc.id)}><span className="file-icon"><FileText /></span><span className="document-details"><strong>{doc.name}</strong><small>{doc.subject ? `${doc.subject} · ` : ""}Document {doc.number} · {(doc.size / 1024).toFixed(1)} Ko · {doc.preparation?.status === "ready" ? `Prêt · ${doc.preparation.pages || 1} ${doc.preparation.pages === 1 ? "page" : "pages"}` : "Préparation…"}</small>{doc.preparation?.keywords?.length ? <small className="document-keywords">{doc.preparation.keywords.slice(0, 3).join(" · ")}</small> : null}</span>{activeDocumentId === doc.id && <span className="support-active">Utilisé</span>}</button><button className={doc.favorite ? "document-favorite active" : "document-favorite"} onClick={() => toggleFavorite(doc)} aria-label={doc.favorite ? `Retirer ${doc.name} des favoris` : `Ajouter ${doc.name} aux favoris`}><Star size={16} fill={doc.favorite ? "currentColor" : "none"} /></button><button className="document-organize" onClick={() => organize(doc)} aria-label={`Classer ${doc.name}`} title="Choisir une matière"><Pencil size={15} /></button><button className="document-delete" onClick={() => remove(doc)} disabled={deletingId === doc.id} aria-label={`Supprimer ${doc.name}`} title="Supprimer le document"><Trash2 size={16} /></button></article>)}</div>
     {!documents.length && <EmptyState icon={<FileText />} text="Aucun support importé pour le moment." />}
     {Boolean(documents.length && !visibleDocuments.length) && <EmptyState icon={<FileText />} text="Aucun document ne correspond à cette recherche." />}
   </section>;

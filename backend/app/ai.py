@@ -304,7 +304,15 @@ class OrvixAI:
                 "Ne réponds pas que le document ne contient pas la réponse lorsque les extraits permettent une synthèse."
             )
         strategy = pedagogical_strategy(intent, user)
-        prompt = f"CONSIGNES DE RÉPONSE : {response_instructions}\n\nMODE : {mode}\n\nINTENTION DÉTECTÉE (indicative) : {intent.name} ({intent.complexity}).\nSTRATÉGIE PÉDAGOGIQUE :\n{strategy}{summary_instruction}\n\nHISTORIQUE RÉCENT (MESSAGES JSON, ÉVENTUELLEMENT ABRÉGÉS) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
+        multi_document_instruction = ""
+        if len({source.get('document_id') for source in sources}) > 1:
+            names = ", ".join(dict.fromkeys(str(source.get("document_name", "")) for source in sources if source.get("document_name")))
+            multi_document_instruction = (
+                f"\n\nPLUSIEURS DOCUMENTS SONT UTILISÉS : {names}. "
+                "Distingue clairement les documents lorsque leurs idées diffèrent. "
+                "Ne présente jamais une comparaison comme un accord si les extraits ne le montrent pas."
+            )
+        prompt = f"CONSIGNES DE RÉPONSE : {response_instructions}\n\nMODE : {mode}\n\nINTENTION DÉTECTÉE (indicative) : {intent.name} ({intent.complexity}).\nSTRATÉGIE PÉDAGOGIQUE :\n{strategy}{summary_instruction}{multi_document_instruction}\n\nHISTORIQUE RÉCENT (MESSAGES JSON, ÉVENTUELLEMENT ABRÉGÉS) :\n{transcript}\n\nMESSAGE ACTUEL :\n{message}{self._student_profile(user)}{context}"
         answer = verify_answer(self._remove_unverified_source_lines(await self._generate(prompt)), document_mode=needs_document and requested_support and not allow_general, sources_found=bool(sources))
         return self._attach_sources(answer, sources) if context else answer
 
