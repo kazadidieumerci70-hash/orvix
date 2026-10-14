@@ -214,6 +214,8 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
                 provider_error.get("message") if isinstance(provider_error, dict) else None
             ) or (result.get("message") if isinstance(result, dict) else None) or "unknown error"
             logger.error("Genius Pay checkout failed (status %s): %s", response.status_code, provider_message)
+            if "DEPOSITS_NOT_ALLOWED" in provider_message:
+                raise HTTPException(503, "Ce réseau Mobile Money n’est pas encore activé pour le compte marchand ORVIX. L’activation doit être demandée auprès de GeniusPay.")
             raise HTTPException(502, "Le paiement n’a pas pu être créé avec ce réseau. Vérifie le numéro ou choisis un autre opérateur.")
         data = result.get("data") or {}
         # A direct method can be accompanied by both URLs.  The generic
