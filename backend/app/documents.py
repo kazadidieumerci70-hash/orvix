@@ -13,7 +13,7 @@ from fastapi import HTTPException, UploadFile
 from pypdf import PdfReader
 
 from .config import get_settings
-from .document_memory import build_document_memory, build_document_memory_from_content, chapter_groups, content_has_readable_text, document_preparation, forget_document_memory, get_document_memory, get_document_memory_from_content
+from .document_memory import build_document_memory, build_document_memory_from_content, chapter_groups, content_has_readable_text, document_preparation, forget_document_memory, get_document_memory, get_document_memory_from_content, mark_document_preparation_error
 from .subscriptions import document_page_limit, document_upload_limit_bytes
 from .json_store import atomic_write_json
 from .schemas import DocumentInfo
@@ -315,7 +315,7 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
             build_document_memory_from_content(user_id, document_id, candidate, content)
         except Exception:
             # The upload is durable even if indexing must be retried later.
-            pass
+            mark_document_preparation_error(user_id, document_id, candidate)
         return
 
     target = settings.upload_dir / filename
@@ -332,6 +332,23 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
     owners[target.name] = user_id
     _write_owners(owners)
     build_document_memory(user_id, target)
+
+
+def prepare_document(user_id: str, document_id: str) -> None:
+    """Retry preparation from the durable, owner-scoped document bytes."""
+    info = next((item for item in list_documents(user_id) if item.id == document_id), None)
+    if not info:
+        raise HTTPException(404, "Document introuvable.")
+    settings = get_settings()
+    try:
+        if settings.database_url:
+            name, content = _database_document(user_id, document_id)
+            build_document_memory_from_content(user_id, document_id, name, content)
+        else:
+            build_document_memory(user_id, settings.upload_dir / info.name)
+    except Exception as error:
+        mark_document_preparation_error(user_id, document_id, info.name)
+        raise HTTPException(422, "La préparation de ce document a échoué. Vérifie qu'il contient du texte, puis réessaie.") from error
 
 
 def delete_document(user_id: str, document_id: str) -> None:

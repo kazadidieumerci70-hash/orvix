@@ -14,7 +14,7 @@ from .auth import begin_email_registration, complete_onboarding, create_password
 from .ai import OrvixAI
 from .config import get_settings
 from .conversations import append_exchange, get_conversation, list_conversations
-from .documents import delete_document, list_documents, save_document, update_document_library_metadata
+from .documents import delete_document, list_documents, prepare_document, save_document, update_document_library_metadata
 from .schemas import (
     AdminLoginRequest,
     AuthRequest,
@@ -454,6 +454,12 @@ async def upload_documents(files: list[UploadFile] = File(...), user: UserProfil
 @app.patch(f"{settings.api_prefix}/documents/{{document_id}}", response_model=DocumentsResponse)
 async def update_document(document_id: str, payload: DocumentUpdateRequest, user: UserProfile = Depends(current_user)):
     update_document_library_metadata(user.id, document_id, payload.subject, payload.favorite)
+    return DocumentsResponse(documents=list_documents(user.id))
+
+
+@app.post(f"{settings.api_prefix}/documents/{{document_id}}/prepare", response_model=DocumentsResponse)
+async def retry_document_preparation(document_id: str, user: UserProfile = Depends(current_user)):
+    prepare_document(user.id, document_id)
     return DocumentsResponse(documents=list_documents(user.id))
 
 

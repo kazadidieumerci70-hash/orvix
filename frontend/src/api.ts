@@ -1,5 +1,5 @@
 export type ChatMessage = { role: "user" | "assistant"; content: string };
-export type DocumentPreparation = { status: "preparing" | "ready"; chunks?: number; pages?: number; headings?: string[]; keywords?: string[] };
+export type DocumentPreparation = { status: "preparing" | "ready" | "error"; chunks?: number; pages?: number; headings?: string[]; keywords?: string[] };
 export type DocumentInfo = { id: string; number: number; name: string; size: number; created_at: string; preparation?: DocumentPreparation; subject?: string; favorite?: boolean };
 export type ConversationSummary = { id: string; title: string; updated_at: string };
 export type ConversationDetail = ConversationSummary & { messages: ChatMessage[]; document_ids: string[] };
@@ -295,4 +295,8 @@ export function deleteDocument(documentId: string) {
 
 export function updateDocument(documentId: string, subject: string, favorite: boolean) {
   return request<{ documents: DocumentInfo[] }>(`/api/v1/documents/${documentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subject, favorite }) });
+}
+
+export function retryDocumentPreparation(documentId: string) {
+  return request<{ documents: DocumentInfo[] }>(`/api/v1/documents/${documentId}/prepare`, { method: "POST" });
 }

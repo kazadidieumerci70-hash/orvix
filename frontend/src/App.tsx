@@ -79,6 +79,7 @@ import {
   sendChat,
   uploadDocuments,
   updateDocument,
+  retryDocumentPreparation,
   verifyEmailRegistration,
 } from "./api";
 
@@ -1138,8 +1139,9 @@ function parseMessageSources(content: string): { cleanContent: string; sources: 
 
 function DocumentSources({ sources }: { sources: MessageSource[] }) {
   const [openId, setOpenId] = useState("");
+  const documentCount = new Set(sources.map((source) => source.document_name)).size;
   return <section className="message-sources" aria-label="Sources dans vos documents">
-    <strong><BookOpenText size={16} />Source dans vos documents</strong>
+    <strong><BookOpenText size={16} />Sources vérifiées · {sources.length} passage{sources.length > 1 ? "s" : ""} · {documentCount} document{documentCount > 1 ? "s" : ""}</strong>
     {sources.map((source) => <article key={source.id}>
       <div><span>{source.document_name}</span><small>{source.page ? `Page ${source.page}` : source.location}</small></div>
       <button type="button" onClick={() => setOpenId((current) => current === source.id ? "" : source.id)}>{openId === source.id ? "Masquer le passage" : "Voir le passage"}</button>
@@ -1312,6 +1314,7 @@ function SupportView({ documents, onDocumentsChange, activeDocumentId, onActiveD
   const [loading, setLoading] = useState(false); const [error, setError] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deletingId, setDeletingId] = useState("");
+  const [preparingId, setPreparingId] = useState("");
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -1341,12 +1344,16 @@ function SupportView({ documents, onDocumentsChange, activeDocumentId, onActiveD
   async function toggleFavorite(doc: DocumentInfo) {
     try { onDocumentsChange((await updateDocument(doc.id, doc.subject || "", !doc.favorite)).documents); } catch (e) { setError(e instanceof Error ? e.message : "Mise à jour impossible."); }
   }
+  async function retryPreparation(doc: DocumentInfo) {
+    setPreparingId(doc.id); setError("");
+    try { onDocumentsChange((await retryDocumentPreparation(doc.id)).documents); } catch (e) { setError(e instanceof Error ? e.message : "Préparation impossible."); } finally { setPreparingId(""); }
+  }
   return <section className="workspace-page support-page">
     <p className="support-lead">Ajoute tes cours une fois, puis utilise-les dans Chat, Révision et Quiz.</p>
     <label className={dragging ? "upload-zone support-upload dragging" : "upload-zone support-upload"} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={(event) => { event.preventDefault(); setDragging(false); upload(event.dataTransfer.files); }}><UploadCloud size={27} /><span><strong>{loading ? (uploadProgress >= 100 ? "Préparation du support…" : `Import en cours · ${uploadProgress}%`) : "Dépose tes fichiers ici"}</strong><small>ou clique pour les sélectionner · PDF, TXT, Markdown · {maxDocumentMb} Mo · {maxDocumentPages} pages max.</small>{loading && <i className="support-upload-progress" aria-label={`Progression de l’import : ${uploadProgress}%`}><i style={{ width: `${uploadProgress}%` }} /></i>}</span><b>{loading ? `${uploadProgress}%` : "Ajouter"}</b><input type="file" multiple accept=".pdf,.txt,.md" onChange={(e) => upload(e.target.files)} disabled={loading} /></label>
     {error && <p className="error-banner">{error}</p>}
     <div className="support-library-head"><div><strong>Mes documents</strong><span>{documents.length} support{documents.length > 1 ? "s" : ""}</span></div><input className="document-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher par nom, matière ou notion…" />{subjects.length > 0 && <select className="document-subject-filter" value={subjectFilter} onChange={(event) => setSubjectFilter(event.target.value)}><option value="">Toutes les matières</option>{subjects.map((subject) => <option key={subject} value={subject}>{subject}</option>)}</select>}</div>
-    <div className="document-grid support-grid">{visibleDocuments.map((doc) => <article className={activeDocumentId === doc.id ? "document-card active" : "document-card"} key={doc.id}><button className="document-select" onClick={() => onActiveDocumentChange(activeDocumentId === doc.id ? "" : doc.id)}><span className="file-icon"><FileText /></span><span className="document-details"><strong>{doc.name}</strong><small>{doc.subject ? `${doc.subject} · ` : ""}Document {doc.number} · {(doc.size / 1024).toFixed(1)} Ko · {doc.preparation?.status === "ready" ? `Prêt · ${doc.preparation.pages || 1} ${doc.preparation.pages === 1 ? "page" : "pages"}` : "Préparation…"}</small>{doc.preparation?.keywords?.length ? <small className="document-keywords">{doc.preparation.keywords.slice(0, 3).join(" · ")}</small> : null}</span>{activeDocumentId === doc.id && <span className="support-active">Utilisé</span>}</button><button className={doc.favorite ? "document-favorite active" : "document-favorite"} onClick={() => toggleFavorite(doc)} aria-label={doc.favorite ? `Retirer ${doc.name} des favoris` : `Ajouter ${doc.name} aux favoris`}><Star size={16} fill={doc.favorite ? "currentColor" : "none"} /></button><button className="document-organize" onClick={() => organize(doc)} aria-label={`Classer ${doc.name}`} title="Choisir une matière"><Pencil size={15} /></button><button className="document-delete" onClick={() => remove(doc)} disabled={deletingId === doc.id} aria-label={`Supprimer ${doc.name}`} title="Supprimer le document"><Trash2 size={16} /></button></article>)}</div>
+    <div className="document-grid support-grid">{visibleDocuments.map((doc) => <article className={activeDocumentId === doc.id ? "document-card active" : "document-card"} key={doc.id}><button className="document-select" onClick={() => onActiveDocumentChange(activeDocumentId === doc.id ? "" : doc.id)}><span className="file-icon"><FileText /></span><span className="document-details"><strong>{doc.name}</strong><small>{doc.subject ? `${doc.subject} · ` : ""}Document {doc.number} · {(doc.size / 1024).toFixed(1)} Ko · {doc.preparation?.status === "ready" ? `Prêt · ${doc.preparation.pages || 1} ${doc.preparation.pages === 1 ? "page" : "pages"}` : doc.preparation?.status === "error" ? "Préparation à reprendre" : "Préparation…"}</small>{doc.preparation?.keywords?.length ? <small className="document-keywords">{doc.preparation.keywords.slice(0, 3).join(" · ")}</small> : null}</span>{activeDocumentId === doc.id && <span className="support-active">Utilisé</span>}</button>{doc.preparation?.status === "error" && <button className="document-retry" onClick={() => retryPreparation(doc)} disabled={preparingId === doc.id}>{preparingId === doc.id ? "Reprise…" : "Réessayer"}</button>}<button className={doc.favorite ? "document-favorite active" : "document-favorite"} onClick={() => toggleFavorite(doc)} aria-label={doc.favorite ? `Retirer ${doc.name} des favoris` : `Ajouter ${doc.name} aux favoris`}><Star size={16} fill={doc.favorite ? "currentColor" : "none"} /></button><button className="document-organize" onClick={() => organize(doc)} aria-label={`Classer ${doc.name}`} title="Choisir une matière"><Pencil size={15} /></button><button className="document-delete" onClick={() => remove(doc)} disabled={deletingId === doc.id} aria-label={`Supprimer ${doc.name}`} title="Supprimer le document"><Trash2 size={16} /></button></article>)}</div>
     {!documents.length && <EmptyState icon={<FileText />} text="Aucun support importé pour le moment." />}
     {Boolean(documents.length && !visibleDocuments.length) && <EmptyState icon={<FileText />} text="Aucun document ne correspond à cette recherche." />}
   </section>;

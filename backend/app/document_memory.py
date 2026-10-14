@@ -157,6 +157,25 @@ def document_preparation(user_id: str, document_id: str) -> dict:
     return record.get("preparation") or {"status": "preparing"}
 
 
+def mark_document_preparation_error(user_id: str, document_id: str, name: str) -> None:
+    """Keep the uploaded file available while making a failed analysis retryable."""
+    record = {
+        "user_id": user_id, "document_id": document_id, "document_name": name,
+        "chunks": [], "preparation": {"status": "error"},
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    settings = get_settings()
+    if settings.database_url:
+        import psycopg
+        with psycopg.connect(settings.database_url) as connection:
+            connection.execute("CREATE TABLE IF NOT EXISTS document_memories (user_id TEXT NOT NULL, document_id TEXT NOT NULL, record JSONB NOT NULL, PRIMARY KEY(user_id, document_id))")
+            connection.execute("INSERT INTO document_memories(user_id,document_id,record) VALUES(%s,%s,%s::jsonb) ON CONFLICT(user_id,document_id) DO UPDATE SET record=EXCLUDED.record", (user_id, document_id, json.dumps(record)))
+            connection.commit()
+        return
+    data = _read(); data.setdefault("documents", {})[f"{user_id}:{document_id}"] = record
+    atomic_write_json(_path(), data, ensure_ascii=False)
+
+
 def chapter_groups(record: dict, max_chars: int = 12_000) -> list[tuple[str, str]]:
     """Representative text per chapter for hierarchical AI summaries."""
     grouped: dict[str, list[str]] = {}
