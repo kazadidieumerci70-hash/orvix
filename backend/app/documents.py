@@ -3,6 +3,7 @@ from functools import lru_cache
 from hashlib import sha256
 from io import BytesIO
 import json
+import logging
 from pathlib import Path
 import re
 import secrets
@@ -12,13 +13,14 @@ from fastapi import HTTPException, UploadFile
 from pypdf import PdfReader
 
 from .config import get_settings
-from .document_memory import build_document_memory, build_document_memory_from_content, chapter_groups, forget_document_memory, get_document_memory, get_document_memory_from_content
+from .document_memory import build_document_memory, build_document_memory_from_content, chapter_groups, content_has_readable_text, forget_document_memory, get_document_memory, get_document_memory_from_content
 from .subscriptions import document_page_limit, document_upload_limit_bytes
 from .json_store import atomic_write_json
 from .schemas import DocumentInfo
 
 ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md"}
 MAX_PDF_PAGES = 1000
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -118,11 +120,13 @@ def _ensure_database_documents() -> None:
         connection.execute(
             "CREATE TABLE IF NOT EXISTS uploaded_documents ("
             "user_id TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, content BYTEA, object_key TEXT, "
-            "size INTEGER NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), "
+            "content_hash CHAR(64), size INTEGER NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), "
             "PRIMARY KEY(user_id, id), UNIQUE(user_id, name))"
         )
         connection.execute("ALTER TABLE uploaded_documents ADD COLUMN IF NOT EXISTS object_key TEXT")
+        connection.execute("ALTER TABLE uploaded_documents ADD COLUMN IF NOT EXISTS content_hash CHAR(64)")
         connection.execute("ALTER TABLE uploaded_documents ALTER COLUMN content DROP NOT NULL")
+        connection.execute("CREATE INDEX IF NOT EXISTS uploaded_documents_owner_hash_idx ON uploaded_documents(user_id, content_hash) WHERE content_hash IS NOT NULL")
         connection.commit()
 
 
@@ -131,14 +135,19 @@ def _database_document(user_id: str, document_id: str) -> tuple[str, bytes]:
     _ensure_database_documents()
     with psycopg.connect(get_settings().database_url) as connection:
         row = connection.execute(
-            "SELECT name, content, object_key FROM uploaded_documents WHERE user_id=%s AND id=%s",
+            "SELECT name, content, object_key, content_hash FROM uploaded_documents WHERE user_id=%s AND id=%s",
             (user_id, document_id),
         ).fetchone()
     if not row:
         raise HTTPException(404, "Document introuvable.")
-    name, content, object_key = row
+    name, content, object_key, content_hash = row
     if object_key:
-        return name, _r2_get(object_key)
+        raw_content = _r2_get(object_key)
+        if not content_hash:
+            with psycopg.connect(get_settings().database_url) as connection:
+                connection.execute("UPDATE uploaded_documents SET content_hash=%s WHERE user_id=%s AND id=%s", (sha256(raw_content).hexdigest(), user_id, document_id))
+                connection.commit()
+        return name, raw_content
     if content is None:
         raise HTTPException(404, "Document introuvable.")
     raw_content = bytes(content)
@@ -148,7 +157,11 @@ def _database_document(user_id: str, document_id: str) -> tuple[str, bytes]:
         key = _r2_key(user_id, document_id, Path(name).suffix)
         _r2_put(key, raw_content, name)
         with psycopg.connect(get_settings().database_url) as connection:
-            connection.execute("UPDATE uploaded_documents SET object_key=%s, content=NULL WHERE user_id=%s AND id=%s", (key, user_id, document_id))
+            connection.execute("UPDATE uploaded_documents SET object_key=%s, content=NULL, content_hash=%s WHERE user_id=%s AND id=%s", (key, sha256(raw_content).hexdigest(), user_id, document_id))
+            connection.commit()
+    elif not content_hash:
+        with psycopg.connect(get_settings().database_url) as connection:
+            connection.execute("UPDATE uploaded_documents SET content_hash=%s WHERE user_id=%s AND id=%s", (sha256(raw_content).hexdigest(), user_id, document_id))
             connection.commit()
     return name, raw_content
 
@@ -243,11 +256,22 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
             raise HTTPException(415, "Le PDF est endommagé ou non lisible.") from error
     if suffix in {".txt", ".md"} and b"\x00" in content:
         raise HTTPException(415, "Le fichier texte est invalide.")
+    try:
+        if not content_has_readable_text(filename, content):
+            raise HTTPException(422, "Ce document ne contient aucun texte exploitable. Pour un PDF scanné, utilise une version avec reconnaissance de texte (OCR).")
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(415, "Le contenu de ce document ne peut pas être lu.") from error
 
     if settings.database_url:
         import psycopg
         _ensure_database_documents()
         with psycopg.connect(settings.database_url) as connection:
+            content_hash = sha256(content).hexdigest()
+            duplicate = connection.execute("SELECT name FROM uploaded_documents WHERE user_id=%s AND content_hash=%s", (user_id, content_hash)).fetchone()
+            if duplicate:
+                raise HTTPException(409, f"Ce document est déjà enregistré sous le nom « {duplicate[0]} ».")
             existing_names = {row[0] for row in connection.execute("SELECT name FROM uploaded_documents WHERE user_id=%s", (user_id,)).fetchall()}
             candidate = filename
             stem, extension, index = Path(filename).stem, Path(filename).suffix, 2
@@ -260,8 +284,8 @@ async def save_document(user_id: str, upload: UploadFile) -> None:
                 _r2_put(object_key, content, candidate)
             try:
                 connection.execute(
-                    "INSERT INTO uploaded_documents(user_id,id,name,content,object_key,size) VALUES(%s,%s,%s,%s,%s,%s)",
-                    (user_id, document_id, candidate, None if settings.r2_enabled else content, object_key or None, len(content)),
+                    "INSERT INTO uploaded_documents(user_id,id,name,content,object_key,content_hash,size) VALUES(%s,%s,%s,%s,%s,%s,%s)",
+                    (user_id, document_id, candidate, None if settings.r2_enabled else content, object_key or None, content_hash, len(content)),
                 )
                 connection.commit()
             except Exception:
@@ -303,13 +327,18 @@ def delete_document(user_id: str, document_id: str) -> None:
             row = connection.execute("SELECT object_key FROM uploaded_documents WHERE user_id=%s AND id=%s", (user_id, document_id)).fetchone()
             if not row:
                 raise HTTPException(404, "Document introuvable.")
-            if row[0]:
-                _r2_delete(row[0])
             deleted = connection.execute("DELETE FROM uploaded_documents WHERE user_id=%s AND id=%s", (user_id, document_id)).rowcount
             connection.commit()
         if not deleted:
             raise HTTPException(404, "Document introuvable.")
         forget_document_memory(user_id, document_id)
+        if row[0]:
+            try:
+                _r2_delete(row[0])
+            except HTTPException:
+                # The user's library must remain consistent even if an already
+                # orphaned object cannot be removed immediately.
+                logger.warning("R2 object cleanup failed for document %s", document_id)
         return
     path = _document_path_from_id(user_id, document_id)
     forget_document_memory(user_id, document_id)

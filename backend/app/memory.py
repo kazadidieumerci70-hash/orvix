@@ -72,20 +72,38 @@ def _goals(message: str):
     return [(_key(content), content, "temporary" if re.search(r"(?:aujourd'hui|ce soir|cette semaine|chapitre)\b", content, re.I) else "long_term")]
 
 
+def _explicit_notes(message: str):
+    """Keep only facts the user explicitly asks Orvix to remember."""
+    match = re.search(
+        r"(?:retiens|mémorise|memorise|souviens[- ]toi|n['’]oublie pas)\s+(?:que\s+)?(.{3,240})",
+        message,
+        re.I,
+    )
+    if not match:
+        return []
+    content = _topic(match.group(1))
+    if not content or re.search(r"\b(?:mot de passe|password|code secret|otp|token|clé api|cle api)\b", content, re.I):
+        return []
+    return [(f"fact:{_key(content)}", content, .98)]
+
+
 def remember(user_id: str, message: str, document_ids: list[str] | None = None) -> None:
     """Extract only high-value learning signals; never persist the raw message."""
-    prefs, mastery, errors, goals = *_signals(message), _goals(message)
+    prefs, mastery, errors, goals, notes = *_signals(message), _goals(message), _explicit_notes(message)
     ids = document_ids or []
     if not get_settings().database_url:
         data = _read(); profile = data.setdefault(user_id, {})
         for key, content, _ in prefs: profile[f"preference:{key}"] = content
         for key, content, _ in goals: profile[f"goal:{key}"] = content
+        for key, content, _ in notes: profile[key] = content
         _write(data); return
-    if not (prefs or mastery or errors or goals or ids): return
+    if not (prefs or mastery or errors or goals or notes or ids): return
     _schema(); import psycopg; now = _now()
     with psycopg.connect(get_settings().database_url) as conn:
         for key, content, confidence in prefs:
             conn.execute("INSERT INTO learning_memory_notes(user_id,memory_key,memory_type,content,importance,confidence,created_at,updated_at) VALUES(%s,%s,'preference',%s,4,%s,%s,%s) ON CONFLICT(user_id,memory_key) DO UPDATE SET confidence=GREATEST(learning_memory_notes.confidence,EXCLUDED.confidence),updated_at=EXCLUDED.updated_at", (user_id, f"preference:{key}", content, confidence, now, now))
+        for key, content, confidence in notes:
+            conn.execute("INSERT INTO learning_memory_notes(user_id,memory_key,memory_type,content,importance,confidence,created_at,updated_at) VALUES(%s,%s,'fact',%s,4,%s,%s,%s) ON CONFLICT(user_id,memory_key) DO UPDATE SET content=EXCLUDED.content,confidence=EXCLUDED.confidence,updated_at=EXCLUDED.updated_at", (user_id, key, content, confidence, now, now))
         for key, content, horizon in goals:
             conn.execute("INSERT INTO learning_goals(user_id,goal_key,content,horizon,priority,status,confidence,created_at,updated_at) VALUES(%s,%s,%s,%s,'high','active',.9,%s,%s) ON CONFLICT(user_id,goal_key) DO UPDATE SET status='active',updated_at=EXCLUDED.updated_at", (user_id,key,content,horizon,now,now))
         last_topic = None
@@ -106,22 +124,26 @@ def relevant(user_id: str, message: str = "") -> str:
         values=list(_read().get(user_id,{}).values())[:8]; return f"\n\n[MÉMOIRE D'APPRENTISSAGE]\n"+"\n".join(f"- {x}" for x in values) if values else ""
     _schema(); import psycopg; terms=set(re.findall(r"[a-zA-ZÀ-ÿ0-9]{3,}",message.lower()))
     with psycopg.connect(get_settings().database_url) as conn:
-        prefs=conn.execute("SELECT content FROM learning_memory_notes WHERE user_id=%s AND memory_type='preference' ORDER BY confidence DESC LIMIT 4",(user_id,)).fetchall(); goals=conn.execute("SELECT content FROM learning_goals WHERE user_id=%s AND status='active' ORDER BY updated_at DESC LIMIT 3",(user_id,)).fetchall(); concepts=conn.execute("SELECT concept,status FROM user_concept_mastery WHERE user_id=%s ORDER BY updated_at DESC LIMIT 20",(user_id,)).fetchall()
+        prefs=conn.execute("SELECT content FROM learning_memory_notes WHERE user_id=%s AND memory_type='preference' ORDER BY confidence DESC LIMIT 4",(user_id,)).fetchall(); facts=conn.execute("SELECT memory_key,content FROM learning_memory_notes WHERE user_id=%s AND memory_type='fact' ORDER BY updated_at DESC LIMIT 8",(user_id,)).fetchall(); goals=conn.execute("SELECT content FROM learning_goals WHERE user_id=%s AND status='active' ORDER BY updated_at DESC LIMIT 3",(user_id,)).fetchall(); concepts=conn.execute("SELECT concept,status FROM user_concept_mastery WHERE user_id=%s ORDER BY updated_at DESC LIMIT 20",(user_id,)).fetchall(); errors=conn.execute("SELECT concept,description,frequency FROM recurring_errors WHERE user_id=%s ORDER BY last_seen_at DESC LIMIT 10",(user_id,)).fetchall()
     matches=[row for row in concepts if terms & set(re.findall(r"[a-zA-ZÀ-ÿ0-9]{3,}",row[0].lower()))] or concepts[:3]
-    lines=(["Objectifs : "+"; ".join(x[0] for x in goals)] if goals else [])+(["Préférences : "+", ".join(x[0] for x in prefs)] if prefs else [])+[f"Notion {concept} : {status}" for concept,status in matches[:5]]
+    fact_matches=[row for row in facts if terms & set(re.findall(r"[a-zA-ZÀ-ÿ0-9]{3,}",row[1].lower()))] or facts[:3]
+    error_matches=[row for row in errors if terms & set(re.findall(r"[a-zA-ZÀ-ÿ0-9]{3,}",row[0].lower()))]
+    lines=(["Objectifs : "+"; ".join(x[0] for x in goals)] if goals else [])+(["Préférences : "+", ".join(x[0] for x in prefs)] if prefs else [])+(["Faits à retenir : "+"; ".join(x[1] for x in fact_matches)] if fact_matches else [])+[f"Notion {concept} : {status}" for concept,status in matches[:5]]+[f"Difficulté récurrente ({frequency}×) : {description}" for _,description,frequency in error_matches[:3]]
     return "\n\n[MÉMOIRE D'APPRENTISSAGE — contexte indicatif, la conversation actuelle prime]\n"+"\n".join(f"- {x}" for x in lines[:12]) if lines else ""
 
 
 def snapshot(user_id: str) -> dict:
-    if not get_settings().database_url: return {"preferences": list(_read().get(user_id,{}).values()), "goals": [], "concepts": [], "errors": [], "documents": []}
+    if not get_settings().database_url:
+        stored = _read().get(user_id,{})
+        return {"preferences": [value for key,value in stored.items() if key.startswith("preference:")], "facts": [{"key":key,"content":value} for key,value in stored.items() if key.startswith("fact:")], "goals": [], "concepts": [], "errors": [], "documents": []}
     _schema(); import psycopg
     with psycopg.connect(get_settings().database_url) as conn:
-        prefs=conn.execute("SELECT memory_key,content,confidence,updated_at FROM learning_memory_notes WHERE user_id=%s ORDER BY updated_at DESC",(user_id,)).fetchall(); goals=conn.execute("SELECT goal_key,content,horizon,priority,status,updated_at FROM learning_goals WHERE user_id=%s ORDER BY updated_at DESC",(user_id,)).fetchall(); concepts=conn.execute("SELECT concept_key,concept,status,mastery_score,evidence_count,updated_at FROM user_concept_mastery WHERE user_id=%s ORDER BY updated_at DESC",(user_id,)).fetchall(); errors=conn.execute("SELECT error_key,concept,description,frequency,last_seen_at FROM recurring_errors WHERE user_id=%s ORDER BY last_seen_at DESC",(user_id,)).fetchall(); docs=conn.execute("SELECT document_id,last_topic,last_section,updated_at FROM document_progress WHERE user_id=%s ORDER BY updated_at DESC",(user_id,)).fetchall()
-    return {"preferences":[{"key":r[0],"content":r[1],"confidence":r[2],"updated_at":r[3].isoformat()} for r in prefs],"goals":[{"key":r[0],"content":r[1],"horizon":r[2],"priority":r[3],"status":r[4],"updated_at":r[5].isoformat()} for r in goals],"concepts":[{"key":r[0],"concept":r[1],"status":r[2],"score":r[3],"evidence_count":r[4],"updated_at":r[5].isoformat()} for r in concepts],"errors":[{"key":r[0],"concept":r[1],"description":r[2],"frequency":r[3],"last_seen_at":r[4].isoformat()} for r in errors],"documents":[{"document_id":r[0],"last_topic":r[1],"last_section":r[2],"updated_at":r[3].isoformat()} for r in docs]}
+        prefs=conn.execute("SELECT memory_key,memory_type,content,confidence,updated_at FROM learning_memory_notes WHERE user_id=%s ORDER BY updated_at DESC",(user_id,)).fetchall(); goals=conn.execute("SELECT goal_key,content,horizon,priority,status,updated_at FROM learning_goals WHERE user_id=%s ORDER BY updated_at DESC",(user_id,)).fetchall(); concepts=conn.execute("SELECT concept_key,concept,status,mastery_score,evidence_count,updated_at FROM user_concept_mastery WHERE user_id=%s ORDER BY updated_at DESC",(user_id,)).fetchall(); errors=conn.execute("SELECT error_key,concept,description,frequency,last_seen_at FROM recurring_errors WHERE user_id=%s ORDER BY last_seen_at DESC",(user_id,)).fetchall(); docs=conn.execute("SELECT document_id,last_topic,last_section,updated_at FROM document_progress WHERE user_id=%s ORDER BY updated_at DESC",(user_id,)).fetchall()
+    return {"preferences":[{"key":r[0],"content":r[2],"confidence":r[3],"updated_at":r[4].isoformat()} for r in prefs if r[1]=="preference"],"facts":[{"key":r[0],"content":r[2],"confidence":r[3],"updated_at":r[4].isoformat()} for r in prefs if r[1]=="fact"],"goals":[{"key":r[0],"content":r[1],"horizon":r[2],"priority":r[3],"status":r[4],"updated_at":r[5].isoformat()} for r in goals],"concepts":[{"key":r[0],"concept":r[1],"status":r[2],"score":r[3],"evidence_count":r[4],"updated_at":r[5].isoformat()} for r in concepts],"errors":[{"key":r[0],"concept":r[1],"description":r[2],"frequency":r[3],"last_seen_at":r[4].isoformat()} for r in errors],"documents":[{"document_id":r[0],"last_topic":r[1],"last_section":r[2],"updated_at":r[3].isoformat()} for r in docs]}
 
 
 def forget(user_id: str, category: str, key: str) -> None:
-    mapping={"preference":("learning_memory_notes","memory_key"),"goal":("learning_goals","goal_key"),"concept":("user_concept_mastery","concept_key"),"error":("recurring_errors","error_key"),"document":("document_progress","document_id")}
+    mapping={"preference":("learning_memory_notes","memory_key"),"fact":("learning_memory_notes","memory_key"),"goal":("learning_goals","goal_key"),"concept":("user_concept_mastery","concept_key"),"error":("recurring_errors","error_key"),"document":("document_progress","document_id")}
     if category not in mapping: raise ValueError("Catégorie de mémoire inconnue.")
     if not get_settings().database_url: data=_read(); data.get(user_id,{}).pop(key,None); _write(data); return
     _schema(); import psycopg; table,field=mapping[category]

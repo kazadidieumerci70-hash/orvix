@@ -53,6 +53,11 @@ def _chunks_from_content(name: str, content: bytes) -> list[dict]:
     return chunks
 
 
+def content_has_readable_text(name: str, content: bytes) -> bool:
+    """Reject files that can be stored but cannot provide any learning context."""
+    return any(len(re.sub(r"\s+", "", chunk.get("text", ""))) >= 3 for chunk in _chunks_from_content(name, content))
+
+
 def _chunks(path: Path) -> list[dict]:
     return _chunks_from_content(path.name, path.read_bytes())
 
