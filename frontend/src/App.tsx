@@ -416,10 +416,33 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
   const [waitlistedPlans, setWaitlistedPlans] = useState<Set<string>>(new Set());
   const [paymentLoading, setPaymentLoading] = useState("");
   const [checkout, setCheckout] = useState<{ planId: "student" | "pro"; planName: string; amountLabel: string; billingCycle: "monthly" | "annual" } | null>(null);
+  const [awaitingMobileConfirmation, setAwaitingMobileConfirmation] = useState<{ planId: "student" | "pro"; transactionId: string } | null>(null);
 
   useEffect(() => {
     void loadSubscriptionData();
   }, []);
+
+  useEffect(() => {
+    if (!awaitingMobileConfirmation) return;
+    let cancelled = false;
+    const checkConfirmation = async () => {
+      try {
+        const refreshed = await getSubscription();
+        if (cancelled) return;
+        setSubscription(refreshed);
+        if (refreshed.plan.id === awaitingMobileConfirmation.planId && refreshed.subscription.status === "active") {
+          setAwaitingMobileConfirmation(null);
+          setCheckout(null);
+          setMessage("Paiement confirmé. Ton forfait est maintenant actif.");
+        }
+      } catch {
+        // The next check will retry. The customer can keep validating on their phone.
+      }
+    };
+    void checkConfirmation();
+    const intervalId = window.setInterval(() => void checkConfirmation(), 5000);
+    return () => { cancelled = true; window.clearInterval(intervalId); };
+  }, [awaitingMobileConfirmation]);
 
   async function loadSubscriptionData() {
     setPlansLoading(true);
@@ -483,6 +506,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     }
     setError("");
     setMessage("");
+    setAwaitingMobileConfirmation(null);
     setCheckout({
       planId,
       planName: selectedPlan.name,
@@ -509,7 +533,8 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     try {
       const result = await createSubscriptionCheckout(planId, checkout.billingCycle, customerEmail.trim(), paymentMethod, customerPhone, customerCountry);
       if (result.payment_url) {
-        setMessage("La demande de paiement a été envoyée sur ton téléphone. Valide-la dans ton application Mobile Money pour activer ton forfait.");
+        setAwaitingMobileConfirmation({ planId, transactionId: result.transaction_id });
+        setMessage("La demande de paiement a été envoyée sur ton téléphone. Orvix vérifie automatiquement la confirmation.");
       } else if (result.simulation) {
         const refreshed = await getSubscription();
         setSubscription(refreshed);
@@ -562,7 +587,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     {settingsSection === "language" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Langue de l’interface</h2><p>Le français est disponible maintenant. Les autres langues arrivent bientôt.</p></div><div className="setting-options">{["Français", "English", "Italiano", "Español"].map((item) => <button type="button" key={item} className={language === item ? "selected" : ""} disabled={item !== "Français"} onClick={() => item === "Français" && onLanguageChange("Français")}>{item}{item !== "Français" && <small>Bientôt</small>}</button>)}</div></section></section>}
     {settingsSection === "help" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Besoin d’aide ?</h2><p>Importe un document, sélectionne-le puis pose ta question à ORVIX. Si un problème survient, actualise la page puis réessaie.</p></div></section></section>}
     {settingsSection === "about" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>À propos d’ORVIX</h2><p>ORVIX est une intelligence artificielle créée par DIEU MERCI KAZADI pour aider les étudiants à comprendre leurs documents.</p></div></section></section>}
-    {settingsSection === "subscription" && checkout && <PaymentChoice checkout={checkout} loading={!!paymentLoading} emailHint={user.phone.includes("@") ? user.phone : ""} error={error} message={message} onPay={startCheckout} onBack={() => { setError(""); setMessage(""); setCheckout(null); }} />}
+    {settingsSection === "subscription" && checkout && <PaymentChoice checkout={checkout} loading={!!paymentLoading} awaitingConfirmation={!!awaitingMobileConfirmation} emailHint={user.phone.includes("@") ? user.phone : ""} error={error} message={message} onPay={startCheckout} onBack={() => { setAwaitingMobileConfirmation(null); setError(""); setMessage(""); setCheckout(null); }} />}
     {settingsSection === "subscription" && !checkout && <section className="subscription-panel">
       <div className="subscription-heading"><div><span>ABONNEMENT · CRÉDITS ORVIX</span><h2>Choisis ton forfait ORVIX</h2><p>Choisis l’offre qui correspond à tes besoins.</p></div><div className="billing-switch"><button className={billingCycle === "monthly" ? "active" : ""} onClick={() => setBillingCycle("monthly")}>Mensuel</button><button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Annuel <small>2 mois offerts</small></button></div></div>
       {subscription && <div className="quota-summary"><span>Forfait actuel : <strong>{subscription.plan.name}</strong></span><span>Crédits disponibles {subscription.credit_period === "daily" ? "aujourd’hui" : "ce mois"} : <strong>{subscription.credits_remaining}/{subscription.credits_limit}</strong></span><span>{subscription.credit_period === "daily" ? "Renouvelés chaque jour" : "Renouvelés chaque mois"}</span><span>Documents autorisés : <strong>{subscription.plan.documents}</strong></span></div>}
@@ -597,7 +622,7 @@ function suggestedPaymentCountry(): PaymentCountry {
   return Intl.DateTimeFormat().resolvedOptions().timeZone === "Africa/Douala" ? "CM" : "CD";
 }
 
-function PaymentChoice({ checkout, loading, emailHint, error, message, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; emailHint: string; error: string; message: string; onPay: (method: MobileMethod, phone?: string, country?: PaymentCountry, email?: string) => void; onBack: () => void }) {
+function PaymentChoice({ checkout, loading, awaitingConfirmation, emailHint, error, message, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; awaitingConfirmation: boolean; emailHint: string; error: string; message: string; onPay: (method: MobileMethod, phone?: string, country?: PaymentCountry, email?: string) => void; onBack: () => void }) {
   const initialCountry = suggestedPaymentCountry();
   const [country, setCountry] = useState<PaymentCountry>(initialCountry);
   const [method, setMethod] = useState<MobileMethod>(paymentCountries[initialCountry].methods[0].id);
@@ -634,7 +659,7 @@ function PaymentChoice({ checkout, loading, emailHint, error, message, onPay, on
       <section className="payment-next-step"><ShieldCheck size={18} /><p><b>Tu confirmes sur ton téléphone</b><span>Après « Continuer », valide la demande Mobile Money pour activer ton forfait.</span></p></section>
       {error && <p className="payment-feedback error" role="alert">{error}</p>}
       {message && <p className="payment-feedback success" role="status">{message}</p>}
-      <footer className="payment-sheet-footer"><div><small>Total à payer</small><strong>{checkout.amountLabel}</strong></div><button className="payment-choice-primary" disabled={loading || !email.trim() || !phoneValid}><LockKeyhole size={17} />{loading ? "Préparation…" : "Continuer"}</button></footer>
+      <footer className="payment-sheet-footer"><div><small>Total à payer</small><strong>{checkout.amountLabel}</strong></div><button className="payment-choice-primary" disabled={loading || awaitingConfirmation || !email.trim() || !phoneValid}><LockKeyhole size={17} />{loading ? "Préparation…" : awaitingConfirmation ? "En attente…" : "Continuer"}</button></footer>
     </form>
   </section>;
 }
