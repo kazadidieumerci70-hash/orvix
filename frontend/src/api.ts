@@ -14,6 +14,7 @@ export type UserProfile = {
   learning_style: string;
   difficulties: string;
   welcome_seen: boolean;
+  country: "CD" | "CM";
 };
 export type AuthResponse = { token: string; user: UserProfile; existing_account?: boolean };
 export type RegistrationResponse = AuthResponse | { verification_required: true; email: string; message: string };
@@ -24,6 +25,7 @@ export type OnboardingPayload = {
   goal: string;
   learning_style: string;
   difficulties: string;
+  country: "CD" | "CM";
 };
 export type CreditCosts = { chat: number; chat_with_documents: number; revision: number; quiz_short: number; quiz_long: number; exam_plan: number };
 export type SubscriptionPlan = { id: string; name: string; tagline: string; monthly_price: number; annual_price: number; documents: number; documents_per_request: number; document_context_chars: number; document_sources: number; max_document_mb: number; max_document_pages: number; daily_credits: number; monthly_credits: number; daily_safety_limit: number; features: string[] };
@@ -162,11 +164,15 @@ export function joinSubscriptionWaitlist(planId: "student" | "pro") {
   });
 }
 
-export function createSubscriptionCheckout(planId: "student" | "pro", billingCycle: "monthly" | "annual", customerEmail: string, paymentMethod: "airtel_money" | "orange_money" | "mtn_money" | "card", customerPhone = "", customerCountry: "CD" | "CM" | "CI" = "CD") {
+export function createSubscriptionCheckout(planId: "student" | "pro", billingCycle: "monthly" | "annual", customerEmail: string, paymentMethod: "airtel_money" | "orange_money" | "mtn_money", customerPhone = "") {
   return request<{ transaction_id: string; payment_url: string; simulation: boolean }>("/api/v1/subscription/checkout", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ plan_id: planId, billing_cycle: billingCycle, customer_email: customerEmail, payment_method: paymentMethod, customer_phone: customerPhone, customer_country: customerCountry }),
+    body: JSON.stringify({ plan_id: planId, billing_cycle: billingCycle, customer_email: customerEmail, payment_method: paymentMethod, customer_phone: customerPhone }),
   });
+}
+
+export function getSubscriptionPaymentStatus(transactionId: string) {
+  return request<{ transaction_id: string; status: "pending" | "accepted" | "failed" | "replaced"; receipt_email: string }>(`/api/v1/subscription/payments/${encodeURIComponent(transactionId)}`);
 }
 
 export type CardSetup = { transaction_id: string; subscription_uuid: string; setup_intent_id: string; client_secret: string; stripe_public_key: string };

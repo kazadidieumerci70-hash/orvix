@@ -10,6 +10,7 @@ import {
   HelpCircle,
   Eye,
   EyeOff,
+  ExternalLink,
   LockKeyhole,
   Mail,
   Mic,
@@ -18,6 +19,7 @@ import {
   MessageCirclePlus,
   Moon,
   Plus,
+  RefreshCw,
   Send,
   Square,
   Settings,
@@ -65,6 +67,7 @@ import {
   exportQuizWord,
   getConversation,
   getSubscription,
+  getSubscriptionPaymentStatus,
   getSubscriptionPlans,
   joinSubscriptionWaitlist,
   login,
@@ -400,6 +403,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     goal: user.goal,
     learning_style: user.learning_style || styleOptions[0],
     difficulties: user.difficulties,
+    country: user.country || "CD",
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -416,7 +420,16 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
   const [waitlistedPlans, setWaitlistedPlans] = useState<Set<string>>(new Set());
   const [paymentLoading, setPaymentLoading] = useState("");
   const [checkout, setCheckout] = useState<{ planId: "student" | "pro"; planName: string; amountLabel: string; billingCycle: "monthly" | "annual" } | null>(null);
-  const [awaitingMobileConfirmation, setAwaitingMobileConfirmation] = useState<{ planId: "student" | "pro"; transactionId: string } | null>(null);
+  const [awaitingMobileConfirmation, setAwaitingMobileConfirmation] = useState<{ planId: "student" | "pro"; transactionId: string; paymentUrl: string; receiptEmail: string } | null>(() => {
+    try {
+      const saved = localStorage.getItem("orvix_pending_payment");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [paymentStatus, setPaymentStatus] = useState<"pending" | "checking" | "accepted" | "failed">("pending");
+  const [paymentCheckError, setPaymentCheckError] = useState("");
 
   useEffect(() => {
     void loadSubscriptionData();
@@ -427,22 +440,50 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     let cancelled = false;
     const checkConfirmation = async () => {
       try {
-        const refreshed = await getSubscription();
+        const payment = await getSubscriptionPaymentStatus(awaitingMobileConfirmation.transactionId);
         if (cancelled) return;
-        setSubscription(refreshed);
-        if (refreshed.plan.id === awaitingMobileConfirmation.planId && refreshed.subscription.status === "active") {
+        setPaymentStatus(payment.status === "accepted" ? "accepted" : payment.status === "failed" || payment.status === "replaced" ? "failed" : "pending");
+        setPaymentCheckError("");
+        if (payment.status === "accepted") {
+          const refreshed = await getSubscription();
+          if (cancelled) return;
+          setSubscription(refreshed);
           setAwaitingMobileConfirmation(null);
+          localStorage.removeItem("orvix_pending_payment");
           setCheckout(null);
-          setMessage("Paiement confirmé. Ton forfait est maintenant actif.");
+          setMessage(`Paiement confirmé. Ton forfait est actif et le reçu a été envoyé à ${payment.receipt_email}.`);
         }
       } catch {
-        // The next check will retry. The customer can keep validating on their phone.
+        if (!cancelled) setPaymentCheckError("Impossible de vérifier pour le moment. Réessaie dans quelques secondes.");
       }
     };
     void checkConfirmation();
     const intervalId = window.setInterval(() => void checkConfirmation(), 5000);
     return () => { cancelled = true; window.clearInterval(intervalId); };
   }, [awaitingMobileConfirmation]);
+
+  async function refreshPaymentStatus() {
+    if (!awaitingMobileConfirmation) return;
+    setPaymentStatus("checking");
+    setPaymentCheckError("");
+    try {
+      const payment = await getSubscriptionPaymentStatus(awaitingMobileConfirmation.transactionId);
+      if (payment.status === "accepted") {
+        const refreshed = await getSubscription();
+        setSubscription(refreshed);
+        setPaymentStatus("accepted");
+        setAwaitingMobileConfirmation(null);
+        localStorage.removeItem("orvix_pending_payment");
+        setCheckout(null);
+        setMessage(`Paiement confirmé. Ton forfait est actif et le reçu a été envoyé à ${payment.receipt_email}.`);
+        return;
+      }
+      setPaymentStatus(payment.status === "failed" || payment.status === "replaced" ? "failed" : "pending");
+    } catch {
+      setPaymentStatus("pending");
+      setPaymentCheckError("La vérification n’a pas abouti. Tu peux réessayer.");
+    }
+  }
 
   async function loadSubscriptionData() {
     setPlansLoading(true);
@@ -507,6 +548,8 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     setError("");
     setMessage("");
     setAwaitingMobileConfirmation(null);
+    localStorage.removeItem("orvix_pending_payment");
+    setPaymentStatus("pending");
     setCheckout({
       planId,
       planName: selectedPlan.name,
@@ -515,7 +558,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     });
   }
 
-  async function startCheckout(paymentMethod: "airtel_money" | "orange_money" | "mtn_money", customerPhone = "", customerCountry: "CD" | "CM" | "CI" = "CD", customerEmail = "") {
+  async function startCheckout(paymentMethod: "airtel_money" | "orange_money" | "mtn_money", customerPhone = "", customerEmail = "") {
     if (paymentLoading) return;
     if (!checkout) return;
     const planId = checkout.planId;
@@ -530,12 +573,18 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     setPaymentLoading(planId);
     setError("");
     setMessage("");
+    const paymentWindow = window.open("about:blank", "orvix-payment", "popup=yes,width=520,height=760,resizable=yes,scrollbars=yes");
     try {
-      const result = await createSubscriptionCheckout(planId, checkout.billingCycle, customerEmail.trim(), paymentMethod, customerPhone, customerCountry);
+      const result = await createSubscriptionCheckout(planId, checkout.billingCycle, customerEmail.trim(), paymentMethod, customerPhone);
       if (result.payment_url) {
-        setAwaitingMobileConfirmation({ planId, transactionId: result.transaction_id });
-        setMessage("La demande de paiement a été envoyée sur ton téléphone. Orvix vérifie automatiquement la confirmation.");
+        const pendingPayment = { planId, transactionId: result.transaction_id, paymentUrl: result.payment_url, receiptEmail: customerEmail.trim() };
+        setAwaitingMobileConfirmation(pendingPayment);
+        localStorage.setItem("orvix_pending_payment", JSON.stringify(pendingPayment));
+        setPaymentStatus("pending");
+        if (paymentWindow) paymentWindow.location.href = result.payment_url;
+        setMessage("Paiement ouvert. Termine la validation puis vérifie son statut.");
       } else if (result.simulation) {
+        paymentWindow?.close();
         const refreshed = await getSubscription();
         setSubscription(refreshed);
         setMessage("Ton abonnement a été activé.");
@@ -543,6 +592,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
         throw new Error("Le lien de paiement n’a pas été généré.");
       }
     } catch (e) {
+      paymentWindow?.close();
       setError(e instanceof Error ? e.message : "Impossible de démarrer le paiement.");
     } finally {
       setPaymentLoading("");
@@ -587,7 +637,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     {settingsSection === "language" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Langue de l’interface</h2><p>Le français est disponible maintenant. Les autres langues arrivent bientôt.</p></div><div className="setting-options">{["Français", "English", "Italiano", "Español"].map((item) => <button type="button" key={item} className={language === item ? "selected" : ""} disabled={item !== "Français"} onClick={() => item === "Français" && onLanguageChange("Français")}>{item}{item !== "Français" && <small>Bientôt</small>}</button>)}</div></section></section>}
     {settingsSection === "help" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Besoin d’aide ?</h2><p>Importe un document, sélectionne-le puis pose ta question à ORVIX. Si un problème survient, actualise la page puis réessaie.</p></div></section></section>}
     {settingsSection === "about" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>À propos d’ORVIX</h2><p>ORVIX est une intelligence artificielle créée par DIEU MERCI KAZADI pour aider les étudiants à comprendre leurs documents.</p></div></section></section>}
-    {settingsSection === "subscription" && checkout && <PaymentChoice checkout={checkout} loading={!!paymentLoading} awaitingConfirmation={!!awaitingMobileConfirmation} emailHint={user.phone.includes("@") ? user.phone : ""} error={error} message={message} onPay={startCheckout} onBack={() => { setAwaitingMobileConfirmation(null); setError(""); setMessage(""); setCheckout(null); }} />}
+    {settingsSection === "subscription" && checkout && <PaymentChoice checkout={checkout} country={user.country || "CD"} loading={!!paymentLoading} awaitingConfirmation={!!awaitingMobileConfirmation} emailHint={user.phone.includes("@") ? user.phone : ""} error={error} onPay={startCheckout} onBack={() => { if (!awaitingMobileConfirmation) setCheckout(null); setError(""); setMessage(""); }} />}
     {settingsSection === "subscription" && !checkout && <section className="subscription-panel">
       <div className="subscription-heading"><div><span>ABONNEMENT · CRÉDITS ORVIX</span><h2>Choisis ton forfait ORVIX</h2><p>Choisis l’offre qui correspond à tes besoins.</p></div><div className="billing-switch"><button className={billingCycle === "monthly" ? "active" : ""} onClick={() => setBillingCycle("monthly")}>Mensuel</button><button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Annuel <small>2 mois offerts</small></button></div></div>
       {subscription && <div className="quota-summary"><span>Forfait actuel : <strong>{subscription.plan.name}</strong></span><span>Crédits disponibles {subscription.credit_period === "daily" ? "aujourd’hui" : "ce mois"} : <strong>{subscription.credits_remaining}/{subscription.credits_limit}</strong></span><span>{subscription.credit_period === "daily" ? "Renouvelés chaque jour" : "Renouvelés chaque mois"}</span><span>Documents autorisés : <strong>{subscription.plan.documents}</strong></span></div>}
@@ -609,6 +659,7 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
       })}</div>
     </section>}
     {settingsSection === "appearance" && <AppSettingsView />}
+    {awaitingMobileConfirmation && <PaymentProgressModal payment={awaitingMobileConfirmation} status={paymentStatus} error={paymentCheckError} onRefresh={() => void refreshPaymentStatus()} onClose={() => setAwaitingMobileConfirmation(null)} />}
   </section>;
 }
 
@@ -618,50 +669,48 @@ const paymentCountries: Record<PaymentCountry, { label: string; prefix: string; 
   CD: { label: "RDC", prefix: "+243", flag: "/payment/flag-cd.png", methods: [{ id: "airtel_money", label: "Airtel Money", logo: "/payment/airtel.svg" }, { id: "orange_money", label: "Orange Money", logo: "/payment/orange.svg" }] },
   CM: { label: "Cameroun", prefix: "+237", flag: "/payment/flag-cm.png", methods: [{ id: "orange_money", label: "Orange Money", logo: "/payment/orange.svg" }, { id: "mtn_money", label: "MTN MoMo", logo: "/payment/mtn.ico" }] },
 };
-function suggestedPaymentCountry(): PaymentCountry {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone === "Africa/Douala" ? "CM" : "CD";
-}
-
-function PaymentChoice({ checkout, loading, awaitingConfirmation, emailHint, error, message, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; loading: boolean; awaitingConfirmation: boolean; emailHint: string; error: string; message: string; onPay: (method: MobileMethod, phone?: string, country?: PaymentCountry, email?: string) => void; onBack: () => void }) {
-  const initialCountry = suggestedPaymentCountry();
-  const [country, setCountry] = useState<PaymentCountry>(initialCountry);
-  const [method, setMethod] = useState<MobileMethod>(paymentCountries[initialCountry].methods[0].id);
-  const [phone, setPhone] = useState(paymentCountries[initialCountry].prefix);
-  const [email, setEmail] = useState(emailHint);
-  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+function PaymentChoice({ checkout, country, loading, awaitingConfirmation, emailHint, error, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; country: PaymentCountry; loading: boolean; awaitingConfirmation: boolean; emailHint: string; error: string; onPay: (method: MobileMethod, phone?: string, email?: string) => void; onBack: () => void }) {
   const countryInfo = paymentCountries[country];
-  const chooseCountry = (nextCountry: PaymentCountry) => {
-    setCountry(nextCountry);
-    setMethod(paymentCountries[nextCountry].methods[0].id);
-    setPhone(paymentCountries[nextCountry].prefix);
-    setCountryPickerOpen(false);
-  };
+  const [method, setMethod] = useState<MobileMethod>(countryInfo.methods[0].id);
+  const [phone, setPhone] = useState(countryInfo.prefix);
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, ""))) return;
-    onPay(method, phone.replace(/[\s-]/g, ""), country, email);
+    onPay(method, phone.replace(/[\s-]/g, ""), emailHint);
   };
   const phoneValid = /^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, ""));
-  return <section className="payment-choice payment-redesign" aria-labelledby="payment-choice-title">
+  return <section className="payment-choice payment-redesign" aria-label="Paiement du forfait">
     <header className="payment-brand-bar">
       <button type="button" aria-label="Retour aux forfaits" onClick={onBack}><ArrowLeft size={20} /></button>
       <div className="payment-brand"><img src="/orvix-logo-transparent.png" alt="Logo Orvix" /><strong>ORVIX</strong></div>
       <span aria-hidden="true" />
     </header>
     <form onSubmit={submit} className="payment-choice-form">
-      <header className="payment-redesign-intro"><p><ShieldCheck size={14} /> Paiement Mobile Money sécurisé</p><h2 id="payment-choice-title">Finaliser ton forfait</h2><span>Ton accès est activé dès que tu confirmes le paiement sur ton téléphone.</span></header>
       <section className="payment-plan-summary" aria-label="Récapitulatif du forfait"><span className="payment-plan-icon"><Crown size={20} /></span><div><strong>{checkout.planName}</strong><small>{checkout.billingCycle === "annual" ? "Abonnement annuel" : "Abonnement mensuel"}</small></div><b>{checkout.amountLabel}</b></section>
-      <section className="payment-country-picker"><span>Dans quel pays paies-tu ?</span><button type="button" className="payment-country-trigger" onClick={() => setCountryPickerOpen(true)} aria-haspopup="dialog" aria-expanded={countryPickerOpen}><img src={countryInfo.flag} alt="" /><b>{countryInfo.label}</b><ChevronRight size={17} /></button></section>
-      {countryPickerOpen && <div className="country-picker-backdrop" role="presentation" onMouseDown={() => setCountryPickerOpen(false)}><section className="country-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="country-picker-title" onMouseDown={(event) => event.stopPropagation()}><div className="country-picker-handle" /><header><div><small>PAIEMENT</small><h3 id="country-picker-title">Choisis ton pays</h3></div><button type="button" aria-label="Fermer" onClick={() => setCountryPickerOpen(false)}><X size={20} /></button></header><p>Les moyens de paiement disponibles dépendront du pays choisi.</p><div className="country-picker-list">{(Object.keys(paymentCountries) as PaymentCountry[]).map((id) => <button type="button" key={id} className={country === id ? "selected" : ""} onClick={() => chooseCountry(id)}><img src={paymentCountries[id].flag} alt="" /><span>{paymentCountries[id].label}</span>{country === id && <Check size={19} />}</button>)}</div></section></div>}
-      <section className="payment-method-section" aria-labelledby="payment-method-title"><div><small>MOYEN DE PAIEMENT</small><h3 id="payment-method-title">Mobile Money</h3><p>Choisis le réseau lié à ton numéro.</p></div><div className="network-radios" aria-label="Réseau Mobile Money">{countryInfo.methods.map((item) => <label key={item.id} className={method === item.id ? "selected" : ""}><input type="radio" name="network" checked={method === item.id} onChange={() => setMethod(item.id)} /><span className={`provider-mark ${item.id}`}><img src={item.logo} alt="" /></span><span>{item.label}</span></label>)}</div></section>
-      <label className="payment-phone"><span>Numéro {countryInfo.methods.find((item) => item.id === method)?.label}</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={`${countryInfo.prefix} 000 000 000`} required /><small>Tu recevras la demande de confirmation sur ce numéro.</small></label>
-      <label className="payment-email"><span>E-mail pour le reçu</span><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ton@email.com" required /></label>
-      <section className="payment-next-step"><ShieldCheck size={18} /><p><b>Tu confirmes sur ton téléphone</b><span>Après « Continuer », valide la demande Mobile Money pour activer ton forfait.</span></p></section>
+      <section className="payment-method-section" aria-labelledby="payment-method-title"><div><h3 id="payment-method-title">Réseau Mobile Money</h3></div><div className="network-radios" aria-label="Réseau Mobile Money">{countryInfo.methods.map((item) => <label key={item.id} className={method === item.id ? "selected" : ""}><input type="radio" name="network" checked={method === item.id} onChange={() => setMethod(item.id)} /><span className={`provider-mark ${item.id}`}><img src={item.logo} alt="" /></span><span>{item.label}</span></label>)}</div></section>
+      <label className="payment-phone"><span>Numéro {countryInfo.methods.find((item) => item.id === method)?.label}</span><input inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder={`${countryInfo.prefix} 000 000 000`} required /></label>
       {error && <p className="payment-feedback error" role="alert">{error}</p>}
-      {message && <p className="payment-feedback success" role="status">{message}</p>}
-      <footer className="payment-sheet-footer"><div><small>Total à payer</small><strong>{checkout.amountLabel}</strong></div><button className="payment-choice-primary" disabled={loading || awaitingConfirmation || !email.trim() || !phoneValid}><LockKeyhole size={17} />{loading ? "Préparation…" : awaitingConfirmation ? "En attente…" : "Continuer"}</button></footer>
+      <footer className="payment-sheet-footer simple"><button className="payment-choice-primary" disabled={loading || awaitingConfirmation || !emailHint || !phoneValid}><LockKeyhole size={17} />{loading ? "Ouverture…" : awaitingConfirmation ? "En attente…" : "Payer"}</button></footer>
     </form>
   </section>;
+}
+
+function PaymentProgressModal({ payment, status, error, onRefresh, onClose }: { payment: { transactionId: string; paymentUrl: string; receiptEmail: string }; status: "pending" | "checking" | "accepted" | "failed"; error: string; onRefresh: () => void; onClose: () => void }) {
+  return <div className="payment-progress-backdrop" role="presentation">
+    <section className="payment-progress-modal" role="dialog" aria-modal="true" aria-labelledby="payment-progress-title">
+      <button type="button" className="payment-progress-close" aria-label="Fermer" onClick={onClose}><X size={20} /></button>
+      <span className={`payment-progress-icon ${status}`}><Smartphone size={27} /></span>
+      <h2 id="payment-progress-title">{status === "failed" ? "Paiement non confirmé" : "Confirme sur ton téléphone"}</h2>
+      <p>{status === "failed" ? "La tentative a échoué ou a expiré. Tu peux rouvrir le paiement et réessayer." : "Termine le paiement dans la fenêtre sécurisée, puis vérifie son statut ici."}</p>
+      <div className="payment-progress-reference"><span>Référence</span><strong>{payment.transactionId}</strong></div>
+      <div className="payment-progress-reference"><span>Reçu</span><strong>{payment.receiptEmail}</strong></div>
+      {error && <p className="payment-feedback error" role="alert">{error}</p>}
+      <div className="payment-progress-actions">
+        <button type="button" onClick={() => window.open(payment.paymentUrl, "orvix-payment", "popup=yes,width=520,height=760,resizable=yes,scrollbars=yes")}><ExternalLink size={17} />Ouvrir le paiement</button>
+        <button type="button" className="primary" disabled={status === "checking"} onClick={onRefresh}><RefreshCw size={17} className={status === "checking" ? "spin" : ""} />{status === "checking" ? "Vérification…" : "J’ai payé, vérifier"}</button>
+      </div>
+    </section>
+  </div>;
 }
 
 function ProfileMenuGroup({ title, children }: { title: string; children: ReactNode }) {
@@ -673,6 +722,7 @@ const styleOptions = ["Explications simples", "Exemples concrets", "Questions pa
 function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; onCompleted: (user: UserProfile) => void; onLogout: () => void }) {
   const [form, setForm] = useState<OnboardingPayload>({
     name: user.name === "Etudiant" ? "" : user.name,
+    country: user.country || "CD",
     level: "",
     subjects: [],
     goal: "",
@@ -699,11 +749,11 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
     event.preventDefault();
     if (loading) return;
     if (step === 0 && !form.name.trim()) { setError("Écris ton nom pour continuer."); return; }
-    if (step === 1 && !form.level.trim()) { setError("Indique ton niveau ou ta classe pour continuer."); return; }
-    if (step === 2 && !form.subjects.length) { setError("Choisis au moins une matière pour continuer."); return; }
-    if (step === 2 && form.subjects.includes("Autres") && !customSubject.trim()) { setError("Écris la matière que tu veux ajouter."); return; }
-    if (step === 3 && !form.goal.trim()) { setError("Indique ton objectif pour continuer."); return; }
-    if (step < 5) { setError(""); setStep((value) => value + 1); return; }
+    if (step === 2 && !form.level.trim()) { setError("Indique ton niveau ou ta classe pour continuer."); return; }
+    if (step === 3 && !form.subjects.length) { setError("Choisis au moins une matière pour continuer."); return; }
+    if (step === 3 && form.subjects.includes("Autres") && !customSubject.trim()) { setError("Écris la matière que tu veux ajouter."); return; }
+    if (step === 4 && !form.goal.trim()) { setError("Indique ton objectif pour continuer."); return; }
+    if (step < 6) { setError(""); setStep((value) => value + 1); return; }
     if (!form.name.trim() || !form.level.trim() || !form.goal.trim()) return;
     const subjects = form.subjects.filter((subject) => subject !== "Autres");
     if (customSubject.trim()) subjects.push(customSubject.trim());
@@ -728,18 +778,19 @@ function OnboardingView({ user, onCompleted, onLogout }: { user: UserProfile; on
     <main className="auth-page onboarding-page">
       <section className="onboarding-panel">
         <div className="brand auth-brand"><img className="brand-logo" src="/orvix-logo-transparent.png" alt="Logo Orvix" /><span>ORVIX</span></div>
-        <div className="onboarding-steps" aria-label={`Étape ${Math.min(step + 1, 5)} sur 5`}>{[0, 1, 2, 3, 4].map((item) => <span key={item} className={item <= step ? "active" : ""} />)}</div>
+        <div className="onboarding-steps" aria-label={`Étape ${Math.min(step + 1, 6)} sur 6`}>{[0, 1, 2, 3, 4, 5].map((item) => <span key={item} className={item <= step ? "active" : ""} />)}</div>
         <form className="onboarding-form" onSubmit={submit}>
-          <div className="lia-question"><h2>{step === 5 ? `Oui ${form.name || "à toi"}, voici ton profil.` : ["Comment tu t’appelles ?", "Tu es en quelle classe ou quel niveau ?", "Quelles matières veux-tu travailler avec moi ?", "Quel est ton objectif ?", "Comment préfères-tu apprendre ?"][step]}</h2></div>
+          <div className="lia-question"><h2>{step === 6 ? `Oui ${form.name || "à toi"}, voici ton profil.` : ["Comment tu t’appelles ?", "Dans quel pays vis-tu ?", "Tu es en quelle classe ou quel niveau ?", "Quelles matières veux-tu travailler avec moi ?", "Quel est ton objectif ?", "Comment préfères-tu apprendre ?"][step]}</h2></div>
           {step === 0 && <input id="student-name" autoFocus value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Ton prénom et ton nom" aria-label="Ton prénom et ton nom" />}
-          {step === 1 && <input id="student-level" autoFocus value={form.level} onChange={(event) => update("level", event.target.value)} placeholder="Ton niveau ou ta classe" aria-label="Ton niveau ou ta classe" />}
-          {step === 2 && <><label>Matières principales</label><div className="chip-grid">{subjectOptions.map((subject) => <button type="button" key={subject} className={form.subjects.includes(subject) ? "selected" : ""} onClick={() => toggleSubject(subject)}>{subject}</button>)}</div>{form.subjects.includes("Autres") && <input autoFocus value={customSubject} onChange={(event) => setCustomSubject(event.target.value)} placeholder="Écris ta matière" aria-label="Ta matière personnalisée" />}</>}
-          {step === 3 && <textarea id="student-goal" autoFocus value={form.goal} onChange={(event) => update("goal", event.target.value)} placeholder="Ton objectif" aria-label="Ton objectif" />}
-          {step === 4 && <><label>Ta façon d’apprendre</label><div className="chip-grid">{styleOptions.map((style) => <button type="button" key={style} className={form.learning_style === style ? "selected" : ""} onClick={() => update("learning_style", style)}>{style}</button>)}</div></>}
-          {step === 5 && <div className="onboarding-summary"><p><strong>Nom</strong><span>{form.name || "Non renseigné"}</span></p><p><strong>Niveau</strong><span>{form.level || "Non renseigné"}</span></p><p><strong>Matières</strong><span>{[...form.subjects.filter((subject) => subject !== "Autres"), ...(customSubject.trim() ? [customSubject.trim()] : [])].join(", ") || "Non renseigné"}</span></p><p><strong>Objectif</strong><span>{form.goal || "Non renseigné"}</span></p><p><strong>Préférence</strong><span>{form.learning_style || "Non renseignée"}</span></p><small>Tu peux revenir en arrière pour modifier une réponse avant de valider.</small></div>}
+          {step === 1 && <div className="onboarding-country-grid">{(["CD", "CM"] as PaymentCountry[]).map((country) => <button type="button" key={country} className={form.country === country ? "selected" : ""} onClick={() => update("country", country)}><img src={paymentCountries[country].flag} alt="" /><span>{paymentCountries[country].label}</span>{form.country === country && <Check size={19} />}</button>)}</div>}
+          {step === 2 && <input id="student-level" autoFocus value={form.level} onChange={(event) => update("level", event.target.value)} placeholder="Ton niveau ou ta classe" aria-label="Ton niveau ou ta classe" />}
+          {step === 3 && <><label>Matières principales</label><div className="chip-grid">{subjectOptions.map((subject) => <button type="button" key={subject} className={form.subjects.includes(subject) ? "selected" : ""} onClick={() => toggleSubject(subject)}>{subject}</button>)}</div>{form.subjects.includes("Autres") && <input autoFocus value={customSubject} onChange={(event) => setCustomSubject(event.target.value)} placeholder="Écris ta matière" aria-label="Ta matière personnalisée" />}</>}
+          {step === 4 && <textarea id="student-goal" autoFocus value={form.goal} onChange={(event) => update("goal", event.target.value)} placeholder="Ton objectif" aria-label="Ton objectif" />}
+          {step === 5 && <><label>Ta façon d’apprendre</label><div className="chip-grid">{styleOptions.map((style) => <button type="button" key={style} className={form.learning_style === style ? "selected" : ""} onClick={() => update("learning_style", style)}>{style}</button>)}</div></>}
+          {step === 6 && <div className="onboarding-summary"><p><strong>Nom</strong><span>{form.name || "Non renseigné"}</span></p><p><strong>Pays</strong><span>{paymentCountries[form.country].label}</span></p><p><strong>Niveau</strong><span>{form.level || "Non renseigné"}</span></p><p><strong>Matières</strong><span>{[...form.subjects.filter((subject) => subject !== "Autres"), ...(customSubject.trim() ? [customSubject.trim()] : [])].join(", ") || "Non renseigné"}</span></p><p><strong>Objectif</strong><span>{form.goal || "Non renseigné"}</span></p><p><strong>Préférence</strong><span>{form.learning_style || "Non renseignée"}</span></p><small>Tu peux revenir en arrière pour modifier une réponse avant de valider.</small></div>}
 
           {error && <p className="error-banner">{error}</p>}
-          <div className="onboarding-actions">{step > 0 && <button type="button" onClick={() => setStep((value) => value - 1)}>{step === 5 ? "Modifier" : "Retour"}</button>}<button disabled={loading}>{loading ? "Enregistrement..." : step === 5 ? "Valider mon profil" : "Suivant"}</button></div>
+          <div className="onboarding-actions">{step > 0 && <button type="button" onClick={() => setStep((value) => value - 1)}>{step === 6 ? "Modifier" : "Retour"}</button>}<button disabled={loading}>{loading ? "Enregistrement..." : step === 6 ? "Valider mon profil" : "Suivant"}</button></div>
         </form>
       </section>
     </main>

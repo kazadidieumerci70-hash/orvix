@@ -158,6 +158,7 @@ def _profile(user: dict) -> UserProfile:
         learning_style=user.get("learning_style") or "",
         difficulties=user.get("difficulties") or "",
         welcome_seen=bool(user.get("welcome_seen", False)),
+        country=user.get("country") if user.get("country") in {"CD", "CM"} else "CD",
     )
 
 def _profile_is_complete(user: dict) -> bool:
@@ -174,15 +175,15 @@ def _db_user(row) -> dict:
     user = {"id": row[0], "phone": row[1], "name": row[2], "password_hash": row[3],
             "onboarding_completed": row[4], "level": row[5], "subjects": row[6] or [],
             "goal": row[7] or "", "learning_style": row[8] or "", "difficulties": row[9] or "",
-            "welcome_seen": row[10]}
+            "welcome_seen": row[10], "country": row[11] or "CD"}
     user["onboarding_completed"] = bool(user["onboarding_completed"]) or _profile_is_complete(user)
     return user
 
 def _user_select(connection, phone: str):
-    return connection.execute("SELECT id,phone,name,password_hash,onboarding_completed,level,subjects,goal,learning_style,difficulties,welcome_seen FROM users WHERE phone=%s", (phone,)).fetchone()
+    return connection.execute("SELECT id,phone,name,password_hash,onboarding_completed,level,subjects,goal,learning_style,difficulties,welcome_seen,country FROM users WHERE phone=%s", (phone,)).fetchone()
 
 def _user_by_id(connection, user_id: str):
-    return connection.execute("SELECT id,phone,name,password_hash,onboarding_completed,level,subjects,goal,learning_style,difficulties,welcome_seen FROM users WHERE id=%s", (user_id,)).fetchone()
+    return connection.execute("SELECT id,phone,name,password_hash,onboarding_completed,level,subjects,goal,learning_style,difficulties,welcome_seen,country FROM users WHERE id=%s", (user_id,)).fetchone()
 
 
 def register_user(phone: str, password: str) -> tuple[str, UserProfile]:
@@ -410,7 +411,7 @@ def complete_onboarding(user_id: str, payload: OnboardingRequest) -> UserProfile
     subjects = [subject.strip() for subject in payload.subjects if subject.strip()][:8]
     if _db_ready():
         with _db_connect() as connection:
-            connection.execute("UPDATE users SET name=%s, level=%s, subjects=%s::jsonb, goal=%s, learning_style=%s, difficulties=%s, onboarding_completed=TRUE, updated_at=now() WHERE id=%s", (payload.name.strip(), payload.level.strip(), json.dumps(subjects), payload.goal.strip(), payload.learning_style.strip(), payload.difficulties.strip(), user_id))
+            connection.execute("UPDATE users SET name=%s, level=%s, subjects=%s::jsonb, goal=%s, learning_style=%s, difficulties=%s, country=%s, onboarding_completed=TRUE, updated_at=now() WHERE id=%s", (payload.name.strip(), payload.level.strip(), json.dumps(subjects), payload.goal.strip(), payload.learning_style.strip(), payload.difficulties.strip(), payload.country, user_id))
             row = _user_by_id(connection, user_id)
             connection.commit()
         if row:
@@ -427,6 +428,7 @@ def complete_onboarding(user_id: str, payload: OnboardingRequest) -> UserProfile
                     "goal": payload.goal.strip(),
                     "learning_style": payload.learning_style.strip(),
                     "difficulties": payload.difficulties.strip(),
+                    "country": payload.country,
                     "onboarding_completed": True,
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }

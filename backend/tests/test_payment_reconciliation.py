@@ -73,6 +73,18 @@ class PaymentReconciliationTests(unittest.IsolatedAsyncioTestCase):
             await payments._send_confirmation(self.record)
             email.assert_not_awaited()
 
+    async def test_payment_status_is_private_and_reports_receipt_email(self):
+        record = {**self.record, "customer_email": "student@example.com"}
+        with patch.object(payments, "reconcile_user_payments", new_callable=AsyncMock), patch.object(
+            payments, "_read_payments", return_value={"payments": {record["transaction_id"]: record}}
+        ):
+            status = await payments.user_payment_status("user-1", record["transaction_id"])
+            self.assertEqual(status["status"], "pending")
+            self.assertEqual(status["receipt_email"], "student@example.com")
+            with self.assertRaises(HTTPException) as error:
+                await payments.user_payment_status("another-user", record["transaction_id"])
+            self.assertEqual(error.exception.status_code, 404)
+
 
 if __name__ == "__main__":
     unittest.main()

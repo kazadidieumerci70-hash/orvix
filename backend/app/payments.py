@@ -130,7 +130,10 @@ def _fail_checkout(record: dict) -> None:
 
 async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email: str, payment_method: str, customer_phone: str = "", customer_country: str = "CD") -> dict:
     ensure_checkout_allowed(user.id, plan_id)
-    customer_email = customer_email.strip().lower()
+    account_email = str(getattr(user, "phone", "")).strip().lower()
+    customer_email = account_email if "@" in account_email else customer_email.strip().lower()
+    account_country = str(getattr(user, "country", "CD"))
+    customer_country = account_country if account_country in {"CD", "CM"} else "CD"
     if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", customer_email):
         raise HTTPException(422, "Indiquez une adresse e-mail valide pour recevoir votre confirmation de paiement.")
     customer_phone = customer_phone.strip().replace(" ", "").replace("-", "")
@@ -215,7 +218,7 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
             ) or (result.get("message") if isinstance(result, dict) else None) or "unknown error"
             logger.error("Genius Pay checkout failed (status %s): %s", response.status_code, provider_message)
             if "DEPOSITS_NOT_ALLOWED" in provider_message:
-                raise HTTPException(503, "Ce réseau Mobile Money n’est pas encore activé pour le compte marchand ORVIX. L’activation doit être demandée auprès de GeniusPay.")
+                raise HTTPException(503, "GeniusPay a refusé l’initialisation de ce paiement Mobile Money. Réessaie ou contacte le support avec la référence de l’opération.")
             raise HTTPException(502, "Le paiement n’a pas pu être créé avec ce réseau. Vérifie le numéro ou choisis un autre opérateur.")
         data = result.get("data") or {}
         # A direct method can be accompanied by both URLs.  The generic
@@ -435,3 +438,18 @@ async def reconcile_user_payments(user_id: str) -> None:
                     logger.error("Completed payment did not match order %s", record["transaction_id"])
         except (httpx.HTTPError, ValueError, KeyError) as error:
             logger.warning("Payment status lookup failed: %s", type(error).__name__)
+
+
+async def user_payment_status(user_id: str, transaction_id: str) -> dict:
+    await reconcile_user_payments(user_id)
+    record = _read_payments()["payments"].get(transaction_id)
+    if not record or record.get("user_id") != user_id:
+        raise HTTPException(404, "Paiement introuvable.")
+    status = str(record.get("status", "PENDING")).lower()
+    if status not in {"pending", "accepted", "failed", "replaced"}:
+        status = "pending"
+    return {
+        "transaction_id": transaction_id,
+        "status": status,
+        "receipt_email": record.get("customer_email", ""),
+    }

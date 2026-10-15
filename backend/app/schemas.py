@@ -181,6 +181,7 @@ class UserProfile(BaseModel):
     learning_style: str = ""
     difficulties: str = ""
     welcome_seen: bool = False
+    country: Literal["CD", "CM"] = "CD"
 
 
 class OnboardingRequest(BaseModel):
@@ -190,6 +191,7 @@ class OnboardingRequest(BaseModel):
     goal: str = Field(min_length=2, max_length=300)
     learning_style: str = Field(min_length=2, max_length=120)
     difficulties: str = Field(default="", max_length=500)
+    country: Literal["CD", "CM"]
 
 
 class AuthResponse(BaseModel):
@@ -204,7 +206,7 @@ class CheckoutRequest(BaseModel):
     customer_email: str
     payment_method: Literal["airtel_money", "orange_money", "mtn_money"]
     customer_phone: str = ""
-    customer_country: Literal["CD", "CM", "CI"]
+    customer_country: Literal["CD", "CM"] = "CD"
 
 
 class WaitlistRequest(BaseModel):
@@ -215,6 +217,12 @@ class CheckoutResponse(BaseModel):
     transaction_id: str
     payment_url: str
     simulation: bool = False
+
+
+class PaymentStatusResponse(BaseModel):
+    transaction_id: str
+    status: Literal["pending", "accepted", "failed", "replaced"]
+    receipt_email: str
 
 
 class CardSetupRequest(BaseModel):

@@ -6,6 +6,194 @@
   --orvix-content-max: 1180px;
 }
 
+/* Paiement épuré : seules les décisions utiles restent sur l'écran principal. */
+.payment-choice.payment-redesign {
+  width: min(100%, 460px) !important;
+}
+
+.payment-choice .payment-redesign-intro {
+  padding: 4px 0 18px !important;
+}
+
+.payment-choice .payment-redesign-intro h2 {
+  font-size: 25px !important;
+}
+
+.payment-choice .payment-plan-summary {
+  padding: 13px 0 !important;
+}
+
+.payment-choice .payment-method-section {
+  gap: 10px !important;
+  padding: 18px 0 4px !important;
+}
+
+.payment-choice .payment-phone {
+  margin: 14px 0 20px !important;
+}
+
+.payment-choice .payment-sheet-footer.simple {
+  display: block !important;
+  margin-top: 2px !important;
+}
+
+.payment-choice .payment-sheet-footer.simple .payment-choice-primary {
+  width: 100% !important;
+}
+
+.payment-progress-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(13, 32, 35, .52);
+  backdrop-filter: blur(5px);
+}
+
+.payment-progress-modal {
+  position: relative;
+  width: min(100%, 430px);
+  padding: 30px;
+  border-radius: 24px;
+  color: #1c3035;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(6, 38, 40, .25);
+  text-align: center;
+}
+
+.payment-progress-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #486267;
+  background: #eef5f4;
+  cursor: pointer;
+}
+
+.payment-progress-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 16px;
+  place-items: center;
+  border-radius: 50%;
+  color: #0c8f85;
+  background: #e8f8f5;
+}
+
+.payment-progress-icon.failed {
+  color: #b84c36;
+  background: #fff0ec;
+}
+
+.payment-progress-modal h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.payment-progress-modal > p {
+  margin: 0 0 20px;
+  color: #67797d;
+  line-height: 1.55;
+}
+
+.payment-progress-reference {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 0;
+  border-top: 1px solid #e6eeec;
+  font-size: 12px;
+  text-align: left;
+}
+
+.payment-progress-reference span { color: #7b8a8d; }
+.payment-progress-reference strong { overflow-wrap: anywhere; text-align: right; }
+
+.payment-progress-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.payment-progress-actions button {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid #cfe0dd;
+  border-radius: 12px;
+  color: #1b6f69;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.payment-progress-actions button.primary {
+  border-color: #118f85;
+  color: #fff;
+  background: #118f85;
+}
+
+.payment-progress-actions button:disabled { opacity: .65; cursor: wait; }
+.payment-progress-actions .spin { animation: payment-spin .8s linear infinite; }
+@keyframes payment-spin { to { transform: rotate(360deg); } }
+
+.onboarding-country-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.onboarding-country-grid button {
+  display: grid;
+  grid-template-columns: 32px 1fr 20px;
+  min-height: 58px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid #d6e4e1;
+  border-radius: 14px;
+  color: #30464a;
+  background: #fff;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.onboarding-country-grid button.selected {
+  border-color: #15988e;
+  color: #117c74;
+  background: #effaf8;
+  box-shadow: inset 0 0 0 1px #15988e;
+}
+
+.onboarding-country-grid img {
+  width: 28px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+@media (max-width: 560px) {
+  .payment-progress-modal { padding: 26px 18px 20px; border-radius: 20px; }
+  .payment-progress-actions { grid-template-columns: 1fr; }
+}
+
 /* Definitive dark-theme surface lock.
    Theme-only overrides: no geometry, spacing or responsive behavior lives here. */
 html[data-theme="dark"] body,

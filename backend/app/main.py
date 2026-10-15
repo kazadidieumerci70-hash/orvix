@@ -40,6 +40,7 @@ from .schemas import (
     ExamModeRequest,
     ExamModeResponse,
     OnboardingRequest,
+    PaymentStatusResponse,
     QuizRequest,
     QuizExportRequest,
     QuizResponse,
@@ -51,7 +52,7 @@ from .schemas import (
 )
 from .quiz_word import build_quiz_docx
 from .subscriptions import credit_cost, document_reading_limits, ensure_ai_quota, ensure_document_quota, join_waitlist, plans_config, record_ai_request, refund_ai_request, subscription_status
-from .payments import create_checkout, create_card_setup, attach_card_setup, apply_geniuspay_webhook, reconcile_user_payments, valid_geniuspay_signature
+from .payments import create_checkout, create_card_setup, attach_card_setup, apply_geniuspay_webhook, reconcile_user_payments, user_payment_status, valid_geniuspay_signature
 from .core_engine import OrvixCoreEngine
 from .model_gateway import ModelGateway, create_model_provider
 from .memory import forget as forget_learning_memory, remember, relevant, reset as reset_learning_memory, snapshot as learning_memory_snapshot
@@ -403,7 +404,12 @@ async def subscription_waitlist(payload: WaitlistRequest, user: UserProfile = De
 
 @app.post(f"{settings.api_prefix}/subscription/checkout", response_model=CheckoutResponse)
 async def subscription_checkout(payload: CheckoutRequest, user: UserProfile = Depends(current_user)):
-    return await create_checkout(user, payload.plan_id, payload.billing_cycle, payload.customer_email, payload.payment_method, payload.customer_phone, payload.customer_country)
+    return await create_checkout(user, payload.plan_id, payload.billing_cycle, payload.customer_email, payload.payment_method, payload.customer_phone, user.country)
+
+
+@app.get(f"{settings.api_prefix}/subscription/payments/{{transaction_id}}", response_model=PaymentStatusResponse)
+async def subscription_payment_status(transaction_id: str, user: UserProfile = Depends(current_user)):
+    return await user_payment_status(user.id, transaction_id)
 
 
 @app.post(f"{settings.api_prefix}/subscription/card/setup", response_model=CardSetupResponse)
