@@ -11,7 +11,7 @@ class PaymentReconciliationTests(unittest.IsolatedAsyncioTestCase):
         current = {"plan": {"id": "pro"}, "subscription": {"expires_at": "2099-10-27T00:00:00+00:00"}}
         with patch.object(payments, "subscription_status", return_value=current), patch.object(payments, "_write_payments") as write, patch.object(payments.httpx, "AsyncClient") as client:
             with self.assertRaises(HTTPException) as error:
-                await payments.create_checkout(SimpleNamespace(id="user-1"), "student", "annual", "test@example.com")
+                await payments.create_checkout(SimpleNamespace(id="user-1"), "student", "annual", "test@example.com", "airtel_money")
             self.assertEqual(error.exception.status_code, 409)
             self.assertIn("27/10/2099", error.exception.detail)
             write.assert_not_called()
