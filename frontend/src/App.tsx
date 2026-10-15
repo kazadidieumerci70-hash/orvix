@@ -632,8 +632,8 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     {settingsSection === "language" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Langue de l’interface</h2><p>Le français est disponible maintenant. Les autres langues arrivent bientôt.</p></div><div className="setting-options">{["Français", "English", "Italiano", "Español"].map((item) => <button type="button" key={item} className={language === item ? "selected" : ""} disabled={item !== "Français"} onClick={() => item === "Français" && onLanguageChange("Français")}>{item}{item !== "Français" && <small>Bientôt</small>}</button>)}</div></section></section>}
     {settingsSection === "help" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Besoin d’aide ?</h2><p>Importe un document, sélectionne-le puis pose ta question à ORVIX. Si un problème survient, actualise la page puis réessaie.</p></div></section></section>}
     {settingsSection === "about" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>À propos d’ORVIX</h2><p>ORVIX est une intelligence artificielle créée par DIEU MERCI KAZADI pour aider les étudiants à comprendre leurs documents.</p></div></section></section>}
-    {settingsSection === "subscription" && checkout && !awaitingMobileConfirmation && <PaymentChoice checkout={checkout} country={user.country || "CD"} loading={!!paymentLoading} awaitingConfirmation={false} emailHint={user.phone.includes("@") ? user.phone : ""} error={error} onPay={startCheckout} onBack={() => { setCheckout(null); setError(""); setMessage(""); }} />}
-    {settingsSection === "subscription" && checkout && awaitingMobileConfirmation && <PaymentProgressPanel checkout={checkout} payment={awaitingMobileConfirmation} status={paymentStatus} error={paymentCheckError} onRefresh={() => void refreshPaymentStatus()} onBack={() => { setAwaitingMobileConfirmation(null); localStorage.removeItem("orvix_pending_payment"); setPaymentStatus("pending"); setPaymentCheckError(""); }} />}
+    {settingsSection === "subscription" && checkout && !awaitingMobileConfirmation && <PaymentChoice checkout={checkout} country={user.country || "CD"} loading={!!paymentLoading} awaitingConfirmation={false} emailHint={user.phone.includes("@") ? user.phone : ""} error={error} onPay={startCheckout} />}
+    {settingsSection === "subscription" && checkout && awaitingMobileConfirmation && <PaymentProgressPanel checkout={checkout} payment={awaitingMobileConfirmation} status={paymentStatus} error={paymentCheckError} onRefresh={() => void refreshPaymentStatus()} />}
     {settingsSection === "subscription" && !checkout && <section className="subscription-panel">
       <div className="subscription-heading"><div><span>ABONNEMENT · CRÉDITS ORVIX</span><h2>Choisis ton forfait ORVIX</h2><p>Choisis l’offre qui correspond à tes besoins.</p></div><div className="billing-switch"><button className={billingCycle === "monthly" ? "active" : ""} onClick={() => setBillingCycle("monthly")}>Mensuel</button><button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Annuel <small>2 mois offerts</small></button></div></div>
       {subscription && <div className="quota-summary"><span>Forfait actuel : <strong>{subscription.plan.name}</strong></span><span>Crédits disponibles {subscription.credit_period === "daily" ? "aujourd’hui" : "ce mois"} : <strong>{subscription.credits_remaining}/{subscription.credits_limit}</strong></span><span>{subscription.credit_period === "daily" ? "Renouvelés chaque jour" : "Renouvelés chaque mois"}</span><span>Documents autorisés : <strong>{subscription.plan.documents}</strong></span></div>}
@@ -664,7 +664,7 @@ const paymentCountries: Record<PaymentCountry, { label: string; prefix: string; 
   CD: { label: "RDC", prefix: "+243", flag: "/payment/flag-cd.png", methods: [{ id: "airtel_money", label: "Airtel Money", logo: "/payment/airtel.svg" }, { id: "orange_money", label: "Orange Money", logo: "/payment/orange.svg" }] },
   CM: { label: "Cameroun", prefix: "+237", flag: "/payment/flag-cm.png", methods: [{ id: "orange_money", label: "Orange Money", logo: "/payment/orange.svg" }, { id: "mtn_money", label: "MTN MoMo", logo: "/payment/mtn.ico" }] },
 };
-function PaymentChoice({ checkout, country, loading, awaitingConfirmation, emailHint, error, onPay, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; country: PaymentCountry; loading: boolean; awaitingConfirmation: boolean; emailHint: string; error: string; onPay: (method: MobileMethod, phone?: string, email?: string) => void; onBack: () => void }) {
+function PaymentChoice({ checkout, country, loading, awaitingConfirmation, emailHint, error, onPay }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; country: PaymentCountry; loading: boolean; awaitingConfirmation: boolean; emailHint: string; error: string; onPay: (method: MobileMethod, phone?: string, email?: string) => void }) {
   const countryInfo = paymentCountries[country];
   const [method, setMethod] = useState<MobileMethod>(countryInfo.methods[0].id);
   const [phone, setPhone] = useState(countryInfo.prefix);
@@ -676,7 +676,7 @@ function PaymentChoice({ checkout, country, loading, awaitingConfirmation, email
   const phoneValid = /^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s-]/g, ""));
   return <section className="payment-choice payment-redesign" aria-label="Paiement du forfait">
     <header className="payment-brand-bar">
-      <button type="button" aria-label="Retour aux forfaits" onClick={onBack}><ArrowLeft size={20} /></button>
+      <span aria-hidden="true" />
       <div className="payment-brand"><img src="/orvix-logo-transparent.png" alt="Logo Orvix" /><strong>ORVIX</strong></div>
       <span aria-hidden="true" />
     </header>
@@ -690,10 +690,10 @@ function PaymentChoice({ checkout, country, loading, awaitingConfirmation, email
   </section>;
 }
 
-function PaymentProgressPanel({ checkout, payment, status, error, onRefresh, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; payment: { transactionId: string; paymentUrl: string; receiptEmail: string }; status: "pending" | "checking" | "accepted" | "failed"; error: string; onRefresh: () => void; onBack: () => void }) {
+function PaymentProgressPanel({ checkout, payment, status, error, onRefresh }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; payment: { transactionId: string; paymentUrl: string; receiptEmail: string }; status: "pending" | "checking" | "accepted" | "failed"; error: string; onRefresh: () => void }) {
   return <section className="payment-choice payment-redesign payment-progress-screen" aria-labelledby="payment-progress-title">
     <header className="payment-brand-bar">
-      <button type="button" aria-label="Retour au paiement" onClick={onBack}><ArrowLeft size={20} /></button>
+      <span aria-hidden="true" />
       <div className="payment-brand"><img src="/orvix-logo-transparent.png" alt="Logo Orvix" /><strong>ORVIX</strong></div>
       <span aria-hidden="true" />
     </header>
