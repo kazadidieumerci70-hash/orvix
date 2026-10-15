@@ -3472,3 +3472,63 @@ html[data-theme="dark"] .setting-options button.selected {
     align-self: end !important;
   }
 }
+
+/* Composition à deux niveaux : saisie en haut, actions en bas. */
+@media (min-width: 901px) {
+  .app-shell:has(.main-content.chat-main) .main-content.chat-main .orvix-functional-composer {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(34px, auto) 38px !important;
+    align-items: stretch !important;
+    min-height: 94px !important;
+    max-height: 178px !important;
+    padding: 12px 14px 10px !important;
+    row-gap: 4px !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-writing {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-height: 34px !important;
+    max-height: 112px !important;
+    align-items: start !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-writing textarea {
+    padding: 3px 6px !important;
+    line-height: 22px !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-actions {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    position: static !important;
+    display: flex !important;
+    width: 100% !important;
+    height: 38px !important;
+    align-self: end !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-actions > button:first-child,
+  .app-shell:has(.main-content.chat-main) .orvix-functional-actions > div:last-child {
+    position: static !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    align-self: center !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-actions > button:first-child {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-actions > div:last-child {
+    display: flex !important;
+    width: auto !important;
+    height: 38px !important;
+    gap: 6px !important;
+  }
+}
