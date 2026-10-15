@@ -10,7 +10,6 @@ import {
   HelpCircle,
   Eye,
   EyeOff,
-  ExternalLink,
   LockKeyhole,
   Mail,
   Mic,
@@ -573,7 +572,6 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     setPaymentLoading(planId);
     setError("");
     setMessage("");
-    const paymentWindow = window.open("about:blank", "orvix-payment", "popup=yes,width=520,height=760,resizable=yes,scrollbars=yes");
     try {
       const result = await createSubscriptionCheckout(planId, checkout.billingCycle, customerEmail.trim(), paymentMethod, customerPhone);
       if (result.payment_url) {
@@ -581,10 +579,8 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
         setAwaitingMobileConfirmation(pendingPayment);
         localStorage.setItem("orvix_pending_payment", JSON.stringify(pendingPayment));
         setPaymentStatus("pending");
-        if (paymentWindow) paymentWindow.location.href = result.payment_url;
-        setMessage("Paiement ouvert. Termine la validation puis vérifie son statut.");
+        setMessage("Paiement lancé. Confirme sur ton téléphone puis vérifie son statut.");
       } else if (result.simulation) {
-        paymentWindow?.close();
         const refreshed = await getSubscription();
         setSubscription(refreshed);
         setMessage("Ton abonnement a été activé.");
@@ -592,7 +588,6 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
         throw new Error("Le lien de paiement n’a pas été généré.");
       }
     } catch (e) {
-      paymentWindow?.close();
       setError(e instanceof Error ? e.message : "Impossible de démarrer le paiement.");
     } finally {
       setPaymentLoading("");
@@ -637,7 +632,8 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
     {settingsSection === "language" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Langue de l’interface</h2><p>Le français est disponible maintenant. Les autres langues arrivent bientôt.</p></div><div className="setting-options">{["Français", "English", "Italiano", "Español"].map((item) => <button type="button" key={item} className={language === item ? "selected" : ""} disabled={item !== "Français"} onClick={() => item === "Français" && onLanguageChange("Français")}>{item}{item !== "Français" && <small>Bientôt</small>}</button>)}</div></section></section>}
     {settingsSection === "help" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>Besoin d’aide ?</h2><p>Importe un document, sélectionne-le puis pose ta question à ORVIX. Si un problème survient, actualise la page puis réessaie.</p></div></section></section>}
     {settingsSection === "about" && <section className="settings-form profile-simple-panel"><section className="setting-group full"><div><h2>À propos d’ORVIX</h2><p>ORVIX est une intelligence artificielle créée par DIEU MERCI KAZADI pour aider les étudiants à comprendre leurs documents.</p></div></section></section>}
-    {settingsSection === "subscription" && checkout && <PaymentChoice checkout={checkout} country={user.country || "CD"} loading={!!paymentLoading} awaitingConfirmation={!!awaitingMobileConfirmation} emailHint={user.phone.includes("@") ? user.phone : ""} error={error} onPay={startCheckout} onBack={() => { if (!awaitingMobileConfirmation) setCheckout(null); setError(""); setMessage(""); }} />}
+    {settingsSection === "subscription" && checkout && !awaitingMobileConfirmation && <PaymentChoice checkout={checkout} country={user.country || "CD"} loading={!!paymentLoading} awaitingConfirmation={false} emailHint={user.phone.includes("@") ? user.phone : ""} error={error} onPay={startCheckout} onBack={() => { setCheckout(null); setError(""); setMessage(""); }} />}
+    {settingsSection === "subscription" && checkout && awaitingMobileConfirmation && <PaymentProgressPanel checkout={checkout} payment={awaitingMobileConfirmation} status={paymentStatus} error={paymentCheckError} onRefresh={() => void refreshPaymentStatus()} onBack={() => { setAwaitingMobileConfirmation(null); localStorage.removeItem("orvix_pending_payment"); setPaymentStatus("pending"); setPaymentCheckError(""); }} />}
     {settingsSection === "subscription" && !checkout && <section className="subscription-panel">
       <div className="subscription-heading"><div><span>ABONNEMENT · CRÉDITS ORVIX</span><h2>Choisis ton forfait ORVIX</h2><p>Choisis l’offre qui correspond à tes besoins.</p></div><div className="billing-switch"><button className={billingCycle === "monthly" ? "active" : ""} onClick={() => setBillingCycle("monthly")}>Mensuel</button><button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Annuel <small>2 mois offerts</small></button></div></div>
       {subscription && <div className="quota-summary"><span>Forfait actuel : <strong>{subscription.plan.name}</strong></span><span>Crédits disponibles {subscription.credit_period === "daily" ? "aujourd’hui" : "ce mois"} : <strong>{subscription.credits_remaining}/{subscription.credits_limit}</strong></span><span>{subscription.credit_period === "daily" ? "Renouvelés chaque jour" : "Renouvelés chaque mois"}</span><span>Documents autorisés : <strong>{subscription.plan.documents}</strong></span></div>}
@@ -659,7 +655,6 @@ function AccountView({ user, onSaved, documentCount, conversationCount, theme, o
       })}</div>
     </section>}
     {settingsSection === "appearance" && <AppSettingsView />}
-    {awaitingMobileConfirmation && <PaymentProgressModal payment={awaitingMobileConfirmation} status={paymentStatus} error={paymentCheckError} onRefresh={() => void refreshPaymentStatus()} onClose={() => setAwaitingMobileConfirmation(null)} />}
   </section>;
 }
 
@@ -695,22 +690,26 @@ function PaymentChoice({ checkout, country, loading, awaitingConfirmation, email
   </section>;
 }
 
-function PaymentProgressModal({ payment, status, error, onRefresh, onClose }: { payment: { transactionId: string; paymentUrl: string; receiptEmail: string }; status: "pending" | "checking" | "accepted" | "failed"; error: string; onRefresh: () => void; onClose: () => void }) {
-  return <div className="payment-progress-backdrop" role="presentation">
-    <section className="payment-progress-modal" role="dialog" aria-modal="true" aria-labelledby="payment-progress-title">
-      <button type="button" className="payment-progress-close" aria-label="Fermer" onClick={onClose}><X size={20} /></button>
+function PaymentProgressPanel({ checkout, payment, status, error, onRefresh, onBack }: { checkout: { planName: string; amountLabel: string; billingCycle: "monthly" | "annual" }; payment: { transactionId: string; paymentUrl: string; receiptEmail: string }; status: "pending" | "checking" | "accepted" | "failed"; error: string; onRefresh: () => void; onBack: () => void }) {
+  return <section className="payment-choice payment-redesign payment-progress-screen" aria-labelledby="payment-progress-title">
+    <header className="payment-brand-bar">
+      <button type="button" aria-label="Retour au paiement" onClick={onBack}><ArrowLeft size={20} /></button>
+      <div className="payment-brand"><img src="/orvix-logo-transparent.png" alt="Logo Orvix" /><strong>ORVIX</strong></div>
+      <span aria-hidden="true" />
+    </header>
+    <section className="payment-progress-modal">
+      <section className="payment-plan-summary" aria-label="Récapitulatif du forfait"><span className="payment-plan-icon"><Crown size={20} /></span><div><strong>{checkout.planName}</strong><small>{checkout.billingCycle === "annual" ? "Abonnement annuel" : "Abonnement mensuel"}</small></div><b>{checkout.amountLabel}</b></section>
       <span className={`payment-progress-icon ${status}`}><Smartphone size={27} /></span>
       <h2 id="payment-progress-title">{status === "failed" ? "Paiement non confirmé" : "Confirme sur ton téléphone"}</h2>
-      <p>{status === "failed" ? "La tentative a échoué ou a expiré. Tu peux rouvrir le paiement et réessayer." : "Termine le paiement dans la fenêtre sécurisée, puis vérifie son statut ici."}</p>
+      <p>{status === "failed" ? "La tentative a échoué ou a expiré. Reviens au formulaire pour réessayer." : "Valide la demande Mobile Money sur ton téléphone, puis vérifie le paiement ici."}</p>
       <div className="payment-progress-reference"><span>Référence</span><strong>{payment.transactionId}</strong></div>
       <div className="payment-progress-reference"><span>Reçu</span><strong>{payment.receiptEmail}</strong></div>
       {error && <p className="payment-feedback error" role="alert">{error}</p>}
       <div className="payment-progress-actions">
-        <button type="button" onClick={() => window.open(payment.paymentUrl, "orvix-payment", "popup=yes,width=520,height=760,resizable=yes,scrollbars=yes")}><ExternalLink size={17} />Ouvrir le paiement</button>
-        <button type="button" className="primary" disabled={status === "checking"} onClick={onRefresh}><RefreshCw size={17} className={status === "checking" ? "spin" : ""} />{status === "checking" ? "Vérification…" : "J’ai payé, vérifier"}</button>
+        <button type="button" className="primary" disabled={status === "checking"} onClick={onRefresh}><RefreshCw size={17} className={status === "checking" ? "spin" : ""} />{status === "checking" ? "Vérification…" : "Actualiser le statut"}</button>
       </div>
     </section>
-  </div>;
+  </section>;
 }
 
 function ProfileMenuGroup({ title, children }: { title: string; children: ReactNode }) {

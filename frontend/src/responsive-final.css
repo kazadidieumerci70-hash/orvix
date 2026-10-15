@@ -63,6 +63,26 @@
   text-align: center;
 }
 
+.payment-progress-screen .payment-progress-modal {
+  width: 100%;
+  padding: 18px 28px 28px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.payment-progress-screen .payment-plan-summary {
+  margin-bottom: 28px;
+  text-align: left;
+}
+
+.payment-progress-screen .payment-progress-actions {
+  grid-template-columns: 1fr;
+}
+
+.payment-progress-screen .payment-progress-actions button.primary {
+  min-height: 50px;
+}
+
 .payment-progress-close {
   position: absolute;
   top: 14px;
