@@ -984,7 +984,7 @@ function ChatView({ language, documents, onDocumentsChange, activeDocumentId, on
   }, [responding]);
   useEffect(() => {
     if (!message && textareaRef.current) {
-      textareaRef.current.style.height = "24px";
+      textareaRef.current.style.setProperty("height", "28px", "important");
       textareaRef.current.style.overflowY = "hidden";
     }
   }, [message]);
@@ -1050,9 +1050,9 @@ function ChatView({ language, documents, onDocumentsChange, activeDocumentId, on
   function resize(event: React.ChangeEvent<HTMLTextAreaElement>) {
     const el = event.currentTarget;
     const maxHeight = 112;
-    el.style.height = "auto";
+    el.style.setProperty("height", "auto", "important");
     const nextHeight = Math.min(Math.max(el.scrollHeight, 28), maxHeight);
-    el.style.height = `${nextHeight}px`;
+    el.style.setProperty("height", `${nextHeight}px`, "important");
     if (el.scrollHeight > maxHeight) el.style.overflowY = "auto";
   }
 

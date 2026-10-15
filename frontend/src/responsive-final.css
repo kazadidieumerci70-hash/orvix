@@ -3431,3 +3431,44 @@ html[data-theme="dark"] .setting-options button.selected {
     width: 74px !important;
   }
 }
+
+/* Le compositeur s’agrandit naturellement, comme une messagerie moderne. */
+@media (min-width: 901px) {
+  .app-shell:has(.main-content.chat-main) .main-content.chat-main .orvix-functional-composer {
+    grid-template-columns: 38px minmax(0, 1fr) 74px !important;
+    grid-template-rows: minmax(50px, auto) !important;
+    align-items: end !important;
+    min-height: 70px !important;
+    height: auto !important;
+    max-height: 166px !important;
+    padding: 10px 12px !important;
+    overflow: visible !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-writing {
+    height: auto !important;
+    min-height: 50px !important;
+    max-height: 138px !important;
+    align-self: stretch !important;
+    align-items: end !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-writing textarea {
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 112px !important;
+    margin: 0 !important;
+    padding: 5px 6px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
+  .app-shell:has(.main-content.chat-main) .orvix-functional-actions > button:first-child,
+  .app-shell:has(.main-content.chat-main) .orvix-functional-actions > div:last-child {
+    grid-row: 1 !important;
+    align-self: end !important;
+  }
+}
