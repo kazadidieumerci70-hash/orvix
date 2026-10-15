@@ -218,7 +218,7 @@ async def create_checkout(user, plan_id: str, billing_cycle: str, customer_email
             ) or (result.get("message") if isinstance(result, dict) else None) or "unknown error"
             logger.error("Genius Pay checkout failed (status %s): %s", response.status_code, provider_message)
             if "DEPOSITS_NOT_ALLOWED" in provider_message:
-                raise HTTPException(503, "GeniusPay a refusé l’initialisation de ce paiement Mobile Money. Réessaie ou contacte le support avec la référence de l’opération.")
+                raise HTTPException(503, "Ce réseau Mobile Money est momentanément indisponible. Choisis un autre réseau ou réessaie plus tard.")
             raise HTTPException(502, "Le paiement n’a pas pu être créé avec ce réseau. Vérifie le numéro ou choisis un autre opérateur.")
         data = result.get("data") or {}
         # A direct method can be accompanied by both URLs.  The generic
