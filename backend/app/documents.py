@@ -17,6 +17,7 @@ from .document_memory import build_document_memory, build_document_memory_from_c
 from .subscriptions import document_page_limit, document_upload_limit_bytes
 from .json_store import atomic_write_json
 from .schemas import DocumentInfo
+from .retrieval import overview_requested, rank_scores, tokens
 
 ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md"}
 MAX_PDF_PAGES = 1000
@@ -533,18 +534,24 @@ def document_context_with_sources(
             pages = [(chunk.get("page"), int(chunk.get("offset", 0)), chunk.get("text", "")) for chunk in memory.get("chunks", [])]
         except Exception:
             continue
-        candidates: list[tuple[int, int | None, int, str]] = []
-        query_terms = _terms(query)
+        candidates: list[tuple[float, int | None, int, str]] = []
+        query_terms = set(tokens(query))
         for page_number, chunk_offset, text in pages:
             for offset, passage in _ranked_passages(text, query, per_document_limit):
                 offset += chunk_offset
-                score = sum(passage.lower().count(term) for term in query_terms) if query_terms else 1
-                candidates.append((score, page_number, offset, passage))
+                candidates.append((0.0, page_number, offset, passage))
+        if query_terms and candidates:
+            scores = rank_scores([passage for _, _, _, passage in candidates], query)
+            candidates = [(scores[index], page, offset, passage) for index, (_, page, offset, passage) in enumerate(candidates)]
+        elif candidates:
+            candidates = [(1.0, page, offset, passage) for _, page, offset, passage in candidates]
         candidates.sort(key=lambda item: (item[0], -(item[1] or 0), -item[2]), reverse=True)
         # "Résume" is a task, not necessarily a word found in the support.
         # For an overview request with no matching terms, sample the document
         # from beginning to end instead of only sending its cover page.
         has_matching_passage = any(score > 0 for score, _, _, _ in candidates)
+        if query_terms and candidates and not has_matching_passage and not overview_requested(query):
+            continue
         if query_terms and candidates and not has_matching_passage:
             candidates.sort(key=lambda item: ((item[1] or 0), item[2]))
             sample_count = min(max_sources, len(candidates))

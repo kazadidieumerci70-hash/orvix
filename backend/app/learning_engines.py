@@ -50,6 +50,33 @@ def pedagogical_strategy(intent: Intent, user) -> str:
     return "\n".join(f"- {item}" for item in directives)
 
 
+def response_blueprint(message: str, intent: Intent) -> str:
+    """Build a small, explicit writing contract for the current turn."""
+    text = message.casefold()
+    directives = [
+        "Commence directement par l'information utile, avec une première phrase qui répond à la demande.",
+        "Écris comme un professeur attentif dans une vraie conversation : naturel, précis, sans formule de chatbot.",
+        "Ne termine pas par une question ou une proposition automatique, sauf si une précision est indispensable.",
+    ]
+    if intent.complexity == "simple" or intent.name == "concise":
+        directives.append("Réponse courte : un petit paragraphe ou quelques points, sans développement annexe.")
+    elif intent.complexity == "complex":
+        directives.append("Réponse développée : idée centrale, explication structurée, puis éléments à retenir si utile.")
+    else:
+        directives.append("Réponse de longueur moyenne : explique assez pour comprendre, sans transformer la demande en cours complet.")
+    if re.search(r"\b(?:étape|etape|procédure|procedure|méthode|methode)\b", text):
+        directives.append("Présente les actions dans un ordre numéroté.")
+    if re.search(r"\b(?:compare|comparaison|différence|difference|versus|\bvs\b)\b", text):
+        directives.append("Fais ressortir les différences critère par critère ; utilise un tableau seulement s'il clarifie vraiment.")
+    if re.search(r"\b(?:exemple|cas concret|illustr)\b", text):
+        directives.append("Donne un exemple concret directement relié à l'explication.")
+    if re.search(r"\b(?:en (?:\d+|dix|vingt) lignes?|\d+ lignes?)\b", text):
+        directives.append("Respecte approximativement le nombre de lignes demandé, sans remplir artificiellement.")
+    if intent.name == "simplify":
+        directives.append("Utilise des mots plus simples et une nouvelle approche ; n'imite pas la réponse précédente.")
+    return "\n".join(f"- {item}" for item in directives)
+
+
 def verify_answer(answer: str, *, document_mode: bool, sources_found: bool) -> str:
     """Final deterministic guard; source assertions stay server-owned."""
     answer = re.sub(r"(?im)^\s*(?:📖\s*)?(?:source dans vos documents|support consulté)\s*:.*(?:\n|$)", "", answer).strip()
